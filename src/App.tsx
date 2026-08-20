@@ -92,7 +92,25 @@ function Brand() {
 }
 
 function Loading() {
-  return <main className="center"><div className="login-card"><Brand /><p className="muted" role="status">Controllo sessione…</p></div></main>
+  const [showWakeupMessage, setShowWakeupMessage] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setShowWakeupMessage(true), 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <main className="center">
+      <div className="login-card">
+        <Brand />
+        <p className="muted" role="status">Controllo sessione…</p>
+        {showWakeupMessage && (
+          <p className="loading-warning" style={{ fontSize: '0.85rem', color: '#888', marginTop: '12px', lineHeight: '1.4' }}>
+            ℹ️ Il server gratuito su Render si sta risvegliando. Può richiedere fino a 50 secondi di attesa.
+          </p>
+        )}
+      </div>
+    </main>
+  )
 }
 
 function Login({ onLogin, error, setError }: { onLogin: (user: User) => void; error: string; setError: (value: string) => void }) {
