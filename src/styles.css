@@ -357,7 +357,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   position: relative;
   min-width: 0;
   aspect-ratio: 4 / 5;
-  min-height: 480px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
