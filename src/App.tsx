@@ -1019,8 +1019,6 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
   const [busy, setBusy] = useState(false)
   const [preview, setPreview] = useState<{ data: PlaylistPreview; resolve: (urls: string[] | null) => void } | null>(null)
-  const [folderName, setFolderName] = useState('Cartella Drops Senza Nome 1')
-  const [editingFolder, setEditingFolder] = useState(false)
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => new Set())
 
   const queueRef = useRef<QueueJob[]>([])
@@ -1231,33 +1229,6 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
       })
   }
 
-  async function handleExportZip() {
-    if (!history.length) return
-    setBusy(true)
-    try {
-      const resp = await fetch(`${api.fileUrl('')}`.replace(/\/downloads\/.*\/file$/, '/downloads/zip'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_ids: history.map((h) => h.id) }),
-        credentials: 'include',
-      })
-      if (!resp.ok) throw new Error('Errore durante creazione ZIP')
-      const blob = await resp.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      const safeName = folderName.trim().replace(/[^a-zA-Z0-9_-]+/g, '_') || 'drops-crate'
-      a.download = `${safeName}.zip`
-      a.click()
-      URL.revokeObjectURL(url)
-      // mark all exported items as in folder
-      setDownloadedIds((cur) => new Set([...cur, ...history.map((h) => h.id)]))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore export ZIP')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   const savedInFolderItems = history.filter((h) => downloadedIds.has(h.id))
 
@@ -1302,16 +1273,6 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
             <span className="dl-count">{history.length} tracce pronte</span>
           </div>
           <div className="dl-history-actions">
-            {history.length > 0 && (
-              <button
-                type="button"
-                className="dl-export-btn"
-                onClick={handleExportZip}
-                title="Scarica archivio ZIP completo con MP3 taggati e playlist .m3u8"
-              >
-                📦 Scarica Pacchetto (.ZIP)
-              </button>
-            )}
             {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
           </div>
         </div>
@@ -1351,82 +1312,41 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
       )}
     </section>
 
-    {/* Right Column: Destination Folder Stile Trasparente */}
+    {/* Right Column: Download effettuati */}
     <aside className="card dl-folder-destination-card">
-      <div className="dl-folder-badge-hero">
-        <div className="dl-folder-icon-wrap" aria-hidden="true">
-          <svg className="dl-folder-svg" viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" strokeWidth="1.2">
-            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" fill="currentColor" fillOpacity="0.08" />
-            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke="currentColor" />
-          </svg>
-        </div>
-
-        <div className="dl-folder-info">
-          <span className="eyebrow">CARTELLA DI DESTINAZIONE</span>
-          {editingFolder ? (
-            <div className="dl-folder-name-edit">
-              <input
-                type="text"
-                className="dl-folder-input"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                onBlur={() => setEditingFolder(false)}
-                onKeyDown={(e) => { if (e.key === 'Enter') setEditingFolder(false) }}
-                autoFocus
-              />
-              <button type="button" className="secondary dl-folder-done-btn" onClick={() => setEditingFolder(false)}>Fatto</button>
-            </div>
-          ) : (
-            <div className="dl-folder-name-row" onClick={() => setEditingFolder(true)} title="Clicca per rinominare la cartella">
-              <h2 className="dl-folder-title">{folderName}</h2>
-              <span className="dl-folder-edit-badge">✏️</span>
-            </div>
-          )}
-          <p className="dl-folder-desc">
-            I brani salvati sul tuo computer (tramite download singolo o pacchetto ZIP) vengono organizzati qui.
-          </p>
-        </div>
+      <div className="dl-folder-contents-head">
+        <span className="eyebrow">Download effettuati</span>
+        <span className="dl-count">{savedInFolderItems.length} file</span>
       </div>
 
-      <div className="dl-folder-contents">
-        <div className="dl-folder-contents-head">
-          <span className="eyebrow">Salvati in cartella</span>
-          <span className="dl-count">{savedInFolderItems.length} file</span>
-        </div>
-
-        {savedInFolderItems.length === 0 ? (
-          <div className="dl-folder-empty-state">
-            <div className="dl-folder-dash-box">
-              <span className="dl-folder-arrow">↓</span>
-              <p>Tracce salvate sul disco</p>
-              <small>Scarica i file singoli o clicca su "Scarica Pacchetto (.ZIP)" per archiviarli in questa cartella.</small>
-            </div>
+      {savedInFolderItems.length === 0 ? (
+        <div className="dl-folder-empty-state">
+          <div className="dl-folder-dash-box">
+            <span className="dl-folder-arrow">↓</span>
+            <p>Ancora nessun download</p>
+            <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
           </div>
-        ) : (
-          <div className="dl-folder-file-list">
-            {savedInFolderItems.map((item) => (
-              <div key={`saved-${item.id}`} className="dl-folder-file-item">
-                <span className="dl-file-icon">🎵</span>
-                <div className="dl-file-info">
-                  <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}.mp3</span>
-                  {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
-                </div>
-                <span className="dl-file-status-badge">✓ salvato</span>
+        </div>
+      ) : (
+        <div className="dl-folder-file-list">
+          {savedInFolderItems.map((item) => (
+            <div key={`done-${item.id}`} className="dl-folder-file-item">
+              <span className="dl-file-icon">🎵</span>
+              <div className="dl-file-info">
+                <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
+                {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {history.length > 0 && (
-        <div className="dl-folder-footer-action">
-          <button
-            type="button"
-            className="primary dl-folder-zip-btn"
-            onClick={handleExportZip}
-          >
-            📦 Esporta {folderName} (.ZIP)
-          </button>
+              <a
+                className="dl-redownload-btn"
+                href={api.fileUrl(item.id)}
+                download
+                title={`Riscarica ${item.title}`}
+                aria-label={`Riscarica ${item.title}`}
+              >
+                ↻ Riscarica
+              </a>
+            </div>
+          ))}
         </div>
       )}
   </aside>

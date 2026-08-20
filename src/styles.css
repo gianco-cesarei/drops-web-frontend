@@ -1507,3 +1507,26 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
     margin: 6px 0 14px;
   }
 }
+
+/* Download effettuati — tasto Riscarica */
+.dl-redownload-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--weight-bold);
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.dl-redownload-btn:hover {
+  background: var(--color-accent);
+  color: #082713;
+}

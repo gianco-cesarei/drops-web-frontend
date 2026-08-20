@@ -65,6 +65,34 @@ export default function DeveloperRoadmap() {
           </li>
         </ul>
       </section>
+
+      <section style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '1.1rem', textTransform: 'uppercase', background: '#fff3e0', color: '#e65100', padding: '6px 12px', borderRadius: '4px', marginBottom: '16px', fontWeight: 'bold' }}>
+          ⚡ Macro Milestone: DJ & Producing Online
+        </h2>
+        <ul style={{ listStyleType: 'square', paddingLeft: '20px', lineHeight: '1.8' }}>
+          <li>
+            <strong>Learning Hub:</strong> Video lessons + text guides + practice sheets.
+            <br />
+            <span style={{ color: '#666' }}>→ Goal: Learn DJing and Producing online. No clutter.</span>
+          </li>
+          <li>
+            <strong>Interactive Map:</strong> Pins for music schools, recording studios, and DJ booths.
+            <br />
+            <span style={{ color: '#666' }}>→ Goal: Connect students to physical spaces.</span>
+          </li>
+          <li>
+            <strong>Track Reference pools:</strong> Suggestion engine selects learning-friendly tracks.
+            <br />
+            <span style={{ color: '#666' }}>→ Goal: Auto-curated music crates sorted by genre/bpm difficulty.</span>
+          </li>
+          <li>
+            <strong>Practice Audio Player:</strong> Custom player with pitch/speed control slider.
+            <br />
+            <span style={{ color: '#666' }}>→ Goal: Practice beatmatching and transition hearing inside browser.</span>
+          </li>
+        </ul>
+      </section>
     </main>
   )
 }

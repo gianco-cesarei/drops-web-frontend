@@ -9,6 +9,9 @@ const { section } = Astro.props
 
 <!doctype html>
 <html lang="it">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="theme-color" content="#f7f8f6" /><meta name="robots" content="noindex,nofollow" /><title>Area privata — Drops</title></head>
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="theme-color" content="#f7f8f6" /><meta name="robots" content="noindex,nofollow" /><title>Area privata — Drops</title>    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
   <body>{section === 'login' && <PublicHeader pathname="/app/login" />}<App section={section} client:load /></body>
 </html>
