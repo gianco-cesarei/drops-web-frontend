@@ -1186,6 +1186,11 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
     setQueue((cur) => cur.filter((x) => x.key !== key))
   }
 
+  function handleRemoveHistory(id: string) {
+    setHistory((cur) => cur.filter((x) => x.id !== id))
+    setDownloadedIds((cur) => { const next = new Set(cur); next.delete(id); return next })
+  }
+
   function handleRetryJob(job: QueueJob) {
     const freshKey = makeKey()
     setQueue((cur) => cur.map((x) => (x.key === job.key ? {
@@ -1286,6 +1291,7 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
                 playing={playingUrl === api.fileUrl(item.id)}
                 onToggleAudio={toggleAudio}
                 onDownloaded={() => markDownloaded(item.id)}
+                onRemove={() => handleRemoveHistory(item.id)}
                 isSaved={downloadedIds.has(item.id)}
               />
             ))}</div>}
@@ -1386,6 +1392,9 @@ function QueueRow({
         )}
       </div>
       <div className={`dl-job-badge ${ready ? 'ok' : failed ? 'err' : ''}`}>{ready ? '✓' : failed ? '!' : `${pct}%`}</div>
+      {!failed && onRemove && (
+        <button type="button" className="dl-job-remove" onClick={onRemove} title="Rimuovi dalla coda" aria-label="Rimuovi dalla coda">✕</button>
+      )}
     </div>
   )
 }
@@ -1395,12 +1404,14 @@ function HistoryRow({
   playing,
   onToggleAudio,
   onDownloaded,
+  onRemove,
   isSaved,
 }: {
   item: HistoryItem
   playing?: boolean
   onToggleAudio?: (url: string) => void
   onDownloaded?: () => void
+  onRemove?: () => void
   isSaved?: boolean
 }) {
   const fileUrl = api.fileUrl(item.id)
@@ -1425,16 +1436,21 @@ function HistoryRow({
           {isSaved && <span className="dl-saved-chip">✓ in cartella</span>}
         </div>
       </div>
-      <a
-        className={`dl-hist-dl ${isSaved ? 'dl-saved-btn' : ''}`}
-        href={fileUrl}
-        download
-        onClick={() => onDownloaded?.()}
-        title={`Scarica ${item.title} nella cartella`}
-        aria-label={`Scarica ${item.title}`}
-      >
-        {isSaved ? '✓' : '↓'}
-      </a>
+      <div className="dl-hist-actions">
+        <a
+          className={`dl-hist-dl ${isSaved ? 'dl-saved-btn' : ''}`}
+          href={fileUrl}
+          download
+          onClick={() => onDownloaded?.()}
+          title={`Scarica ${item.title} nella cartella`}
+          aria-label={`Scarica ${item.title}`}
+        >
+          {isSaved ? '✓' : '↓'}
+        </a>
+        {onRemove && (
+          <button type="button" className="dl-hist-remove" onClick={onRemove} title="Rimuovi dalla lista" aria-label="Rimuovi dalla lista">✕</button>
+        )}
+      </div>
     </div>
   )
 }

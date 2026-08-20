@@ -1530,3 +1530,30 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: var(--color-accent);
   color: #082713;
 }
+
+/* ✕ rimozione — coda e lista pronti */
+.dl-job-remove,
+.dl-hist-remove {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.dl-job-remove { width: 22px; height: 22px; font-size: 11px; margin-left: 6px; }
+.dl-job-remove:hover,
+.dl-hist-remove:hover {
+  background: #fdecec;
+  color: #c0392b;
+  border-color: #f0b4b4;
+}
+.dl-hist-actions { display: flex; align-items: center; gap: 6px; flex: none; }
