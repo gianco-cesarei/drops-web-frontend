@@ -199,6 +199,8 @@ function SpotifyLibrary({ onError, error }: { onError: (error: unknown) => void;
   const [searchQuery, setSearchQuery] = useState('')
   const [exportingZip, setExportingZip] = useState(false)
   const discogsRequested = useRef(new Set<string>())
+  const discogsQueue = useRef<string[]>([])
+  const discogsActiveCount = useRef(0)
   const { playingUrl, toggle: toggleAudio } = useAudioPlayer()
 
   useEffect(() => { api.spotifyStatus().then(setStatus).catch(onError) }, [onError])
@@ -228,13 +230,30 @@ function SpotifyLibrary({ onError, error }: { onError: (error: unknown) => void;
   }, [mode, onError, playlistId])
   useEffect(() => {
     if (!status?.connected) return
-    tracks.filter((track) => !track.label && !discogsRequested.current.has(track.id)).forEach((track) => {
+    const pending = tracks.filter((track) => !track.label && !discogsRequested.current.has(track.id))
+    if (pending.length === 0) return
+    pending.forEach((track) => {
       discogsRequested.current.add(track.id)
-      api.discogsEnrich(track).then((metadata) => {
-        if (!metadata?.label) return
-        setTracks((current) => current.map((item) => item.id === track.id ? { ...item, label: metadata.label, year: metadata.year, country: metadata.country, styles: metadata.styles, catalog_no: metadata.catalog_no, discogs_url: metadata.discogs_url } : item))
-      }).catch(() => { /* Discogs optional */ })
+      discogsQueue.current.push(track.id)
     })
+    const processQueue = () => {
+      while (discogsActiveCount.current < 2 && discogsQueue.current.length > 0) {
+        const trackId = discogsQueue.current.shift()
+        if (!trackId) break
+        const track = tracks.find((t) => t.id === trackId)
+        if (!track) continue
+        discogsActiveCount.current++
+        api.discogsEnrich(track).then((metadata) => {
+          if (!metadata?.label) return
+          setTracks((current) => current.map((item) => item.id === track.id ? { ...item, label: metadata.label, year: metadata.year, country: metadata.country, styles: metadata.styles, catalog_no: metadata.catalog_no, discogs_url: metadata.discogs_url } : item))
+        }).catch(() => { /* Discogs optional */ })
+        .finally(() => {
+          discogsActiveCount.current--
+          setTimeout(processQueue, 300)
+        })
+      }
+    }
+    processQueue()
   }, [status?.connected, tracks])
 
   function toggleSelected(id: string) {

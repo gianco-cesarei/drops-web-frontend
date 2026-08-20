@@ -19,10 +19,14 @@ function shouldProxy(pathname) {
 }
 
 function upstreamRequest(request, env, pathname) {
-  const target = new URL(pathname + new URL(request.url).search, apiOrigin(env))
+  const url = new URL(request.url)
+  const target = new URL(pathname + url.search, apiOrigin(env))
+  const headers = new Headers(request.headers)
+  headers.set('X-Forwarded-Host', url.host)
+  headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''))
   const init = {
     method: request.method,
-    headers: request.headers,
+    headers: headers,
   }
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     init.body = request.body
@@ -38,7 +42,7 @@ export default {
     if (shouldProxy(url.pathname) || url.pathname === '/health') {
       let upstream
       try {
-        upstream = await fetch(upstreamRequest(request, env, url.pathname))
+        upstream = await fetch(upstreamRequest(request, env, url.pathname), { redirect: 'manual' })
       } catch {
         return new Response('API upstream unavailable', { status: 502 })
       }
