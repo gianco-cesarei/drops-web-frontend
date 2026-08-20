@@ -217,7 +217,9 @@ function DiscoveryCard({ item, isFeatured = false }: { item: DiscoveryItem; isFe
       <div className="card-poster-content">
         <div className="card-top-row">
           <span className="content-badge">{kicker}</span>
-          <span className="card-location-pill">📍 {locationShort}</span>
+          {item.primaryLocation.kind === 'geographic' && (
+            <span className="card-location-pill">📍 {locationShort}</span>
+          )}
         </div>
 
         <div className="card-bottom-content">
