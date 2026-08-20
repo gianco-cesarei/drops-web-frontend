@@ -20,7 +20,15 @@ function shouldProxy(pathname) {
 
 function upstreamRequest(request, env, pathname) {
   const target = new URL(pathname + new URL(request.url).search, apiOrigin(env))
-  return new Request(target, request)
+  const init = {
+    method: request.method,
+    headers: request.headers,
+  }
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    init.body = request.body
+    init.duplex = 'half'
+  }
+  return new Request(target, init)
 }
 
 export default {

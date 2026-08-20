@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "build": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro check && cross-env ASTRO_TELEMETRY_DISABLED=1 astro build",
-    "test": "vitest run"
+    "test": "vitest run && node --test worker/index.test.mjs"
   },
   "dependencies": {
     "@astrojs/react": "6.0.2",
