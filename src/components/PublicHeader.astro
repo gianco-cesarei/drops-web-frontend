@@ -1,0 +1,6 @@
+---
+import PublicHeader from './PublicHeader'
+const { pathname = '/' } = Astro.props
+---
+
+<PublicHeader pathname={pathname} client:load />
