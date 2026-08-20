@@ -6,11 +6,12 @@ import { postLoginRoute } from './lib/routes'
 import { contentFields, contentStages, radarDevelopmentFixtures, radarLockedFixtures } from './data/private.fixture'
 import type { RadarFixture } from './data/private.fixture'
 import BrainGraph from './components/BrainGraph'
+import DeveloperRoadmap from './components/DeveloperRoadmap'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
 
-export type PrivateSection = 'login' | 'download' | 'spotify' | 'radar' | 'brain' | 'content' | 'editorial-suggestions' | 'settings'
+export type PrivateSection = 'login' | 'download' | 'spotify' | 'radar' | 'brain' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
 
 const terminalStatuses = new Set(['completed', 'complete', 'ready', 'failed', 'error', 'cancelled'])
 const readyStatuses = new Set(['completed', 'complete', 'ready'])
@@ -84,6 +85,7 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   if (section === 'radar') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
   if (section === 'content') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Content /></PrivateFrame>
+  if (section === 'developer') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><DeveloperRoadmap /></PrivateFrame>
   return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PrivatePlaceholder section={section} /></PrivateFrame>
 }
 
@@ -147,7 +149,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
     try { await api.logout() } catch { /* Local session remains invalidated. */ } finally { onLogoutEnd() }
   }
   return <div className={`private-layout private-layout-${section}`}>
-    <div className="private-header-bar"><header className="private-header"><a href="/" className="logo">Drops<span>.</span></a><nav aria-label="Area privata"><a href="/">Discovery</a><a href="/app/download">Download</a><a href="/app/spotify">Spotify</a><a href="/app/radar">Radar</a><a href="/app/brain">Brain</a><a href="/app/content">Content</a></nav><div className="account"><span>{user.name ?? user.username ?? user.email ?? 'Account'}</span><button className="secondary" onClick={logout}>Esci</button></div></header></div>
+    <div className="private-header-bar"><header className="private-header"><a href="/" className="logo">Drops<span>.</span></a><nav aria-label="Area privata"><a href="/">Discovery</a><a href="/app/download">Download</a><a href="/app/spotify">Spotify</a><a href="/app/radar">Radar</a><a href="/app/brain">Brain</a><a href="/app/content">Content</a><a href="/app/developer">Developer</a></nav><div className="account"><span>{user.name ?? user.username ?? user.email ?? 'Account'}</span><button className="secondary" onClick={logout}>Esci</button></div></header></div>
     {children}
   </div>
 }
@@ -155,7 +157,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
 function PrivatePlaceholder({ section }: { section: PrivateSection }) {
   const labels: Record<PrivateSection, string> = {
     login: 'Login', download: 'Download', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', content: 'Content',
-    'editorial-suggestions': 'Editorial suggestions', settings: 'Settings',
+    'editorial-suggestions': 'Editorial suggestions', settings: 'Settings', developer: 'Developer',
   }
   return <main className="private-placeholder"><span className="development-badge">Private development shell</span><h1 className="sr-only">{labels[section]}</h1><p>Strumento non implementato in questa milestone.</p></main>
 }
