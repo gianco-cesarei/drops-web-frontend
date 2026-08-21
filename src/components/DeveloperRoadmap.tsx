@@ -5,9 +5,6 @@ type Tag = 'front' | 'back' | 'desktop'
 interface SubTask {
   title: string
   tags: Tag[]
-  choices?: string
-  action?: string
-  actionList?: string[]
 }
 
 interface Task {
@@ -43,18 +40,10 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Integrazione libreria di estrazione audio (yt-dlp)',
             tags: ['back'],
-            choices:
-              "Usare la libreria yt-dlp installata direttamente sul backend FastAPI per estrarre l'audio in MP3 a 320kbps (Raccomandato per compatibilità ottimale con hardware DJ).",
-            action:
-              "Sviluppare l'endpoint /api/download/youtube-direct con gestione asincrona delle code sul server.",
           },
           {
             title: 'Interfaccia di input e feedback di progresso',
             tags: ['front'],
-            choices:
-              'Indicatore di caricamento globale con notifica di esito (Raccomandato per semplicità iniziale) oppure monitoraggio progressivo in tempo reale con Server-Sent Events (SSE).',
-            action:
-              'Creare il modulo di input URL nella dashboard e gestire gli stati della richiesta.',
           },
         ],
       },
@@ -67,10 +56,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Opzioni di conversione e formati (MP3 vs FLAC/HQ)',
             tags: ['back'],
-            choices:
-              'Default a MP3 320kbps per ottimizzare lo storage (Raccomandato), o download lossless FLAC/WAV per SoundCloud HQ.',
-            action:
-              "Configurare i parametri post-processor FFmpeg sul backend in base alla sorgente e alla scelta dell'utente.",
           },
         ],
       },
@@ -92,18 +77,10 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Limite massimo elementi risolti in simultanea',
             tags: ['back'],
-            choices:
-              'Limite massimo di 100 tracce a playlist (Raccomandato) per evitare blocchi IP temporanei ed esaurimento memoria sul server.',
-            action:
-              "Configurare il controllo del limite ed eventualmente la paginazione nell'endpoint /playlist/resolve.",
           },
           {
             title: 'Selezione tramite checkbox e filtro duplicati',
             tags: ['front'],
-            choices:
-              "Riconoscere automaticamente i file già presenti in locale o in cloud e deselezionarli per default (Raccomandato), lasciando all'utente la facoltà di forzare la sovrascrittura.",
-            action:
-              'Creare la tabella dei brani trovati con checkbox dinamici e badge "Già presente".',
           },
         ],
       },
@@ -125,18 +102,10 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Configurazione dello storage personale (Cloudflare R2)',
             tags: ['back'],
-            choices:
-              'Utilizzare Cloudflare R2 (Raccomandato per i costi di traffico in uscita a $0) creando una cartella per ciascun utente sincronizzata con le credenziali Supabase.',
-            action:
-              'Sviluppare la logica di upload asincrono su R2 al termine del download e salvare il percorso su database Supabase.',
           },
           {
             title: 'Ricerca testuale e filtri nel catalogo cloud',
             tags: ['front'],
-            choices:
-              'Ricerca rapida client-side sui metadati (Raccomandato per reattività) o delega delle query interamente a Supabase.',
-            action:
-              'Disegnare la tabella di visualizzazione della libreria cloud con filtri di genere e barra di ricerca.',
           },
         ],
       },
@@ -149,17 +118,10 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Generazione di link sicuri per lo streaming (Presigned URLs)',
             tags: ['back'],
-            choices:
-              'Generare URL firmati a scadenza (es. validità 1 ora, Raccomandato) per proteggere i file audio da accessi esterni non autorizzati.',
-            action:
-              "Sviluppare l'endpoint /api/stream/{track_id} che rilascia il link temporaneo.",
           },
           {
             title: "Riproduttore audio persistente e coda d'ascolto",
             tags: ['front'],
-            choices:
-              "Player audio fisso a fondo pagina (Raccomandato) che resta attivo navigando nell'app, con supporto a una coda di riproduzione dinamica.",
-            action: 'Integrare lo stato del player nel contesto globale di React/Astro.',
           },
         ],
       },
@@ -181,16 +143,10 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Algoritmo di matching tra metadati Spotify e sorgenti audio',
             tags: ['back'],
-            choices:
-              'Ricerca su YouTube per combinazioni di Titolo + Artista + "Audio" per la corrispondenza migliore (Raccomandato), escludendo i video non musicali.',
-            action: "Creare il motore di matching automatico e l'endpoint di associazione tracce.",
           },
           {
             title: 'Interfaccia di gestione dei preferiti importati',
             tags: ['front'],
-            choices:
-              'Mostrare i brani importati con stato evidenziato ("Scaricabile", "Già scaricato", "Incertezza sulla fonte") e pulsante di download singolo e multiplo (Raccomandato).',
-            action: 'Sviluppare la dashboard Spotify-to-Cloud con griglia interattiva dei brani.',
           },
         ],
       },
@@ -203,10 +159,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Connessione e recupero dei preferiti senza API proprietarie',
             tags: ['back'],
-            choices:
-              "Per SoundCloud, chiedere all'utente l'URL del profilo pubblico e scansionare i like pubblici (Raccomandato per facilità d'uso), oppure far incollare un file JSON esportato.",
-            action:
-              'Configurare l’estrattore di metadati per i Mi Piace di SoundCloud e YouTube (via OAuth limitato).',
           },
         ],
       },
@@ -228,10 +180,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: "Struttura dell'area didattica e hosting dei video",
             tags: ['front', 'back'],
-            choices:
-              'Lettore video per lezioni ospitate su Vimeo/YouTube non in elenco (Raccomandato per ridurre costi di hosting e banda) invece di caricare video grezzi su R2.',
-            action:
-              "Progettare la griglia delle lezioni per moduli e salvare i progressi dell'utente nel database.",
           },
         ],
       },
@@ -244,10 +192,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: "Integrazione della mappa geografica dei punti d'interesse",
             tags: ['front'],
-            choices:
-              'Usare Leaflet con OpenStreetMap (Raccomandato perché open-source e gratuito al 100%) invece di Mapbox/Google Maps che richiedono chiavi API e piani a pagamento.',
-            action:
-              'Creare il componente Mappa con marker interattivi che mostrano prezzi, attrezzatura e contatti.',
           },
         ],
       },
@@ -260,16 +204,10 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Regolatore di velocità audio (Pitch Control) via Web Audio API',
             tags: ['front'],
-            choices:
-              'Pitch Slider (da -8% a +8%) con opzione "Key Lock" per mantenere o variare l’intonazione originale (Raccomandato per simulare i giradischi reali).',
-            action: 'Sviluppare la logica Web Audio API per regolare il tempo di riproduzione.',
           },
           {
             title: 'Selezione e catalogazione dei pacchetti didattici (Crate)',
             tags: ['back'],
-            choices:
-              'Suddividere le tracce per difficoltà di beatmatching (Crate Facile: intro con cassa pulita; Crate Difficile: intro sincopate o corte).',
-            action: 'Popolare il database con i brani seed consigliati per l’apprendimento.',
           },
         ],
       },
@@ -284,6 +222,22 @@ const DEFAULT_SECTIONS: Section[] = [
     tasks: [
       {
         id: '6.1',
+        title: 'Sistema di ricerca e applicazione foto degli articoli',
+        benefit:
+          "Progettare un sistema che ricerca e applica la foto di copertina ideale agli articoli. Le immagini attuali non sono soddisfacenti ed è prioritario stabilire una procedura convalidata per la selezione visiva.",
+        subtasks: [
+          {
+            title: 'Algoritmo di ricerca immagini tramite API esterne (Unsplash/Google)',
+            tags: ['back'],
+          },
+          {
+            title: 'Interfaccia editor per approvare, ritagliare e applicare la foto in un click',
+            tags: ['front'],
+          },
+        ],
+      },
+      {
+        id: '6.2',
         title: 'Motore "Drops Suggest" e grafo di etichette, party e artisti',
         benefit:
           'Esplora le connessioni tra etichette di nicchia, party underground e DJ per scoprire nuove tracce affini al tuo gusto tramite consigli intelligenti.',
@@ -291,21 +245,15 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Visualizzazione del grafo relazionale e navigazione',
             tags: ['front'],
-            choices:
-              'Libreria interattiva leggera come ForceGraph2D o vis.js (Raccomandato perché gestisce bene dragging e zoom dei nodi in React).',
-            action: 'Sviluppare la vista del grafo relazionale nel tab "Brain".',
           },
           {
             title: 'Algoritmo di raccomandazione',
             tags: ['back'],
-            choices:
-              "Pesare le raccomandazioni combinando vicinanza geografica ai party, affinità dello stile delle etichette and momentum temporale (Raccomandato).",
-            action: 'Sviluppare le query SQL su Supabase/Postgres per estrarre le raccomandazioni affini.',
           },
         ],
       },
       {
-        id: '6.2',
+        id: '6.3',
         title: 'Guide editoriali pratiche per il settore musicale',
         benefit:
           'Leggi guide super-sintetiche e aggiornate su come pubblicare la tua musica, stampare in vinile nel 2026 e gestire i codici ISRC/UPC per proteggere i tuoi diritti.',
@@ -313,9 +261,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Gestione dei contenuti editoriali (CMS leggero vs file statici)',
             tags: ['front', 'back'],
-            choices:
-              'Salvare gli articoli come Markdown statici in Astro (Content Collections) per caricamenti istantanei ed evitare query complesse a database (Raccomandato per la velocità SEO).',
-            action: 'Configurare il layout Astro per il rendering dei blocchi di testo delle guide.',
           },
         ],
       },
@@ -337,9 +282,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Algoritmo e posizionamento del calcolo del BPM',
             tags: ['back'],
-            choices:
-              'Analisi del BPM sul backend FastAPI in modo asincrono con librerie Python (NumPy + FFmpeg) per la massima precisione (Raccomandato), salvando il risultato su database.',
-            action: 'Configurare la coda di analisi in background e i relativi endpoint.',
           },
         ],
       },
@@ -352,10 +294,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Scrittura fisica dei metadati sui file esportati',
             tags: ['desktop', 'front'],
-            choices:
-              'Comandi nativi Rust di Tauri per scrivere i tag ID3 direttamente sui file scaricati prima di copiarli sull’USB (Raccomandato per compatibilità Rekordbox).',
-            action:
-              "Implementare la chiamata Rust per l'aggiornamento dei metadati e il gestore dei percorsi delle cartelle.",
           },
         ],
       },
@@ -377,13 +315,6 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: 'Milestone storiche già completate',
             tags: ['front'],
-            actionList: [
-              'Split dei 3 monorepo e pulizia del codice morto.',
-              'Risoluzione dello schermo nero sul mini-player (dimensioni artwork bloccate a 56×56).',
-              'Gestione rate limit di Discogs (coda pacizzata con sleep di 300ms e thread pool sicura).',
-              'Estrazione IP reale del client Cloudflare per superare il blocco di rate limit globale.',
-              'Spotify OAuth iniziale con reindirizzamenti dinamici.',
-            ],
           },
         ],
       },
@@ -391,12 +322,11 @@ const DEFAULT_SECTIONS: Section[] = [
   },
 ]
 
-const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v2'
+const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v3'
 
 export default function DeveloperRoadmap() {
   const [sections, setSections] = useState<Section[]>([])
   const [active, setActive] = useState(0)
-  const [openSubs, setOpenSubs] = useState<Record<string, boolean>>({})
   
   // Stati di Editing & Form
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
@@ -430,22 +360,9 @@ export default function DeveloperRoadmap() {
     }
   }
 
-  const resetToDefault = () => {
-    if (window.confirm('Vuoi ripristinare la roadmap di default? Perderai tutte le tue personalizzazioni.')) {
-      saveSections(DEFAULT_SECTIONS)
-      setActive(0)
-      setEditingTaskId(null)
-      setIsAddingTask(false)
-    }
-  }
-
   if (sections.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>Caricamento Roadmap…</div>
 
   const section = sections[active]
-
-  const toggleSubtask = (key: string) => {
-    setOpenSubs((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
 
   // --- FUNZIONI DI GESTIONE TASK ---
 
@@ -496,7 +413,6 @@ export default function DeveloperRoadmap() {
 
     const updatedSections = sections.map((s, idx) => {
       if (idx === active) {
-        // Riassegna gli ID progressivi dopo l'eliminazione per mantenere l'ordine coerente
         const filteredTasks = s.tasks.filter((t) => t.id !== taskId)
         const reindexedTasks = filteredTasks.map((t, index) => ({
           ...t,
@@ -545,7 +461,6 @@ export default function DeveloperRoadmap() {
     if (!taskToMove) return
 
     const updatedSections = sections.map((s) => {
-      // Rimuovi dal modulo di origine e ricalcola gli ID
       if (s.n === section.n) {
         const filtered = s.tasks.filter((t) => t.id !== taskId)
         const reindexed = filtered.map((t, index) => ({
@@ -554,7 +469,6 @@ export default function DeveloperRoadmap() {
         }))
         return { ...s, tasks: reindexed }
       }
-      // Aggiungi al modulo di destinazione e ricalcola gli ID
       if (s.n === targetSectionN) {
         const newTaskList = [...s.tasks, taskToMove]
         const reindexed = newTaskList.map((t, index) => ({
@@ -604,7 +518,7 @@ export default function DeveloperRoadmap() {
   // --- HELPER DI EDITING SUBTASK NEI FORM ---
 
   const addSubtaskToForm = (isNew: boolean) => {
-    const emptySub: SubTask = { title: '', tags: ['front'], choices: '', action: '' }
+    const emptySub: SubTask = { title: '', tags: ['front'] }
     if (isNew) {
       setNewTaskData(prev => ({ ...prev, subtasks: [...prev.subtasks, emptySub] }))
     } else if (editingTaskData) {
@@ -643,15 +557,12 @@ export default function DeveloperRoadmap() {
     <div className="dev-container">
       <style>{CUSTOM_STYLES}</style>
 
-      {/* HEADER DELLA PAGINA CON RESET */}
+      {/* HEADER DELLA PAGINA */}
       <header className="dev-page-header">
         <div>
           <span className="dev-kicker">Pianificazione Strategica</span>
           <h1 className="dev-headline">Developer Cave</h1>
         </div>
-        <button type="button" className="secondary reset-btn" onClick={resetToDefault}>
-          Ripristina default
-        </button>
       </header>
 
       <div className="dev-grid">
@@ -724,8 +635,8 @@ export default function DeveloperRoadmap() {
             <p className="section-intro">{section.intro}</p>
           </header>
 
-          {/* LISTA DEI TASK */}
-          <div className="tasks-container">
+          {/* GRID DEI TASK (4:5 ASPECT RATIO) */}
+          <div className="tasks-grid">
             {section.tasks.map((task, index) => {
               const isEditing = editingTaskId === task.id
 
@@ -745,9 +656,9 @@ export default function DeveloperRoadmap() {
                     </label>
 
                     <label>
-                      Beneficio / Miglioramento per l'Utente
+                      Descrizione / Beneficio
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={editingTaskData.benefit || ''}
                         onChange={e => setEditingTaskData(prev => prev ? ({ ...prev, benefit: e.target.value }) : null)}
                       />
@@ -755,7 +666,7 @@ export default function DeveloperRoadmap() {
 
                     <div className="subtasks-editor">
                       <div className="subtasks-editor-header">
-                        <h4>Sub-task Operative</h4>
+                        <h4>Sub-task</h4>
                         <button type="button" className="secondary btn-xs" onClick={() => addSubtaskToForm(false)}>
                           + Aggiungi Sub-task
                         </button>
@@ -785,24 +696,12 @@ export default function DeveloperRoadmap() {
                               &times;
                             </button>
                           </div>
-                          <input
-                            type="text"
-                            placeholder="Scelte e raccomandazioni (opzionale)"
-                            value={sub.choices || ''}
-                            onChange={e => updateSubtaskInForm(false, sIdx, 'choices', e.target.value)}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Azione da compiere (opzionale)"
-                            value={sub.action || ''}
-                            onChange={e => updateSubtaskInForm(false, sIdx, 'action', e.target.value)}
-                          />
                         </div>
                       ))}
                     </div>
 
                     <div className="form-actions">
-                      <button type="submit" className="primary btn-sm">Salva Modifiche</button>
+                      <button type="submit" className="primary btn-sm">Salva</button>
                       <button type="button" className="secondary btn-sm" onClick={() => { setEditingTaskId(null); setEditingTaskData(null); }}>
                         Annulla
                       </button>
@@ -812,125 +711,101 @@ export default function DeveloperRoadmap() {
               }
 
               return (
-                <article className="task-card" key={task.id}>
-                  {/* BARRA AZIONI DEL TASK */}
-                  <div className="task-actions-toolbar">
-                    <div className="task-badge-id">{task.id}</div>
-                    
-                    <div className="task-order-buttons">
-                      <button
-                        type="button"
-                        className="order-btn"
-                        disabled={index === 0}
-                        onClick={() => handleMoveTaskPriority(index, 'up')}
-                        title="Sposta Su"
-                      >
-                        ▲
-                      </button>
-                      <button
-                        type="button"
-                        className="order-btn"
-                        disabled={index === section.tasks.length - 1}
-                        onClick={() => handleMoveTaskPriority(index, 'down')}
-                        title="Sposta Giù"
-                      >
-                        ▼
-                      </button>
+                <article className="discovery-card poster-card" key={task.id}>
+                  {/* BACKGROUND GRADIENT PER LE TASK */}
+                  <div className="card-bg-wrap">
+                    <div className="card-bg-placeholder" style={{ background: 'linear-gradient(135deg, #1b261f 0%, #070a08 100%)' }}>
+                      <span className="placeholder-brand">Drops Task</span>
                     </div>
-
-                    <div className="task-move-section">
-                      <select
-                        aria-label="Sposta in sezione"
-                        value={section.n}
-                        onChange={e => handleMoveTaskToSection(task.id, parseInt(e.target.value))}
-                        className="section-move-dropdown"
-                      >
-                        <option value={section.n}>Sposta in Sezione…</option>
-                        {sections.map(s => s.n !== section.n && (
-                          <option key={s.n} value={s.n}>{s.short}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="edit-task-btn"
-                      onClick={() => {
-                        setEditingTaskId(task.id)
-                        setEditingTaskData({ ...task })
-                      }}
-                    >
-                      Modifica
-                    </button>
-                    <button
-                      type="button"
-                      className="delete-task-btn"
-                      onClick={() => handleDeleteTask(task.id)}
-                    >
-                      Elimina
-                    </button>
+                    <div className="card-gradient-overlay" />
                   </div>
 
-                  {/* CORPO DEL TASK */}
-                  <h3 className="task-card-title">{task.title}</h3>
-                  {task.benefit && <p className="task-card-benefit">{task.benefit}</p>}
+                  {/* CONTENUTO IN SOVRAPPOSIZIONE */}
+                  <div className="card-poster-content">
+                    <div className="card-top-row">
+                      <span className="content-badge">Task {task.id}</span>
+                      
+                      <div className="task-order-buttons">
+                        <button
+                          type="button"
+                          className="order-btn"
+                          disabled={index === 0}
+                          onClick={() => handleMoveTaskPriority(index, 'up')}
+                          title="Sposta Su"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          className="order-btn"
+                          disabled={index === section.tasks.length - 1}
+                          onClick={() => handleMoveTaskPriority(index, 'down')}
+                          title="Sposta Giù"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    </div>
 
-                  {/* SUBTASKS ACCORDIONS */}
-                  <div className="subtasks-list">
-                    {task.subtasks.map((sub, sIdx) => {
-                      const key = `${section.n}-${task.id}-${sIdx}`
-                      const isOpen = !!openSubs[key]
-                      return (
-                        <div className={`subtask-acc ${isOpen ? 'is-open' : ''}`} key={key}>
-                          <button
-                            type="button"
-                            className="subtask-acc-head"
-                            onClick={() => toggleSubtask(key)}
-                            aria-expanded={isOpen}
-                          >
-                            <span className="subtask-chevron">
-                              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M7 5l5 5-5 5" />
-                              </svg>
-                            </span>
-                            <span className="subtask-acc-title">{sub.title}</span>
-                            <span className="subtask-acc-tags">
-                              {sub.tags.map((t) => (
-                                <span key={t} className={`subtask-tag-badge tag-${t}`}>
-                                  {t}
-                                </span>
-                              ))}
-                            </span>
-                          </button>
-                          {isOpen && (
-                            <div className="subtask-acc-body">
-                              {sub.choices && (
-                                <div className="subtask-body-section border-choice">
-                                  <span className="subtask-section-label label-choice">Scelte &amp; Raccomandazioni</span>
-                                  <p className="subtask-section-text">{sub.choices}</p>
-                                </div>
+                    <div className="card-bottom-content">
+                      <h2 className="card-title">
+                        {task.title}
+                      </h2>
+                      <p className="card-summary">
+                        {task.benefit}
+                      </p>
+
+                      {/* SUBTASK STATICHE (NON COLLAPSIBILI) */}
+                      {task.subtasks && task.subtasks.length > 0 && (
+                        <ul className="task-subtasks-preview">
+                          {task.subtasks.map((sub, sIdx) => (
+                            <li key={sIdx} className="task-subtask-item">
+                              <span className="bullet">•</span>
+                              <span className="subtask-title-text">{sub.title}</span>
+                              {sub.tags && sub.tags.length > 0 && (
+                                <span className={`subtask-mini-tag tag-${sub.tags[0]}`}>{sub.tags[0]}</span>
                               )}
-                              {sub.action && (
-                                <div className="subtask-body-section border-action">
-                                  <span className="subtask-section-label label-action">Azione</span>
-                                  <p className="subtask-section-text">{sub.action}</p>
-                                </div>
-                              )}
-                              {sub.actionList && sub.actionList.length > 0 && (
-                                <ul className="subtask-milestone-list">
-                                  {sub.actionList.map((item, mIdx) => (
-                                    <li key={mIdx}>
-                                      <span className="check-icon">✓</span>
-                                      {item}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* PULSANTI DI AZIONE */}
+                      <div className="card-actions">
+                        <button
+                          type="button"
+                          className="card-read-btn"
+                          style={{ padding: '6px 12px', fontSize: '11px', height: 'auto', background: 'var(--color-accent)' }}
+                          onClick={() => {
+                            setEditingTaskId(task.id)
+                            setEditingTaskData({ ...task })
+                          }}
+                        >
+                          Modifica
+                        </button>
+                        
+                        <button
+                          type="button"
+                          className="card-source-link"
+                          style={{ padding: '5px 10px', fontSize: '11px', background: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171' }}
+                          onClick={() => handleDeleteTask(task.id)}
+                        >
+                          Elimina
+                        </button>
+
+                        <select
+                          aria-label="Sposta sezione"
+                          value={section.n}
+                          onChange={e => handleMoveTaskToSection(task.id, parseInt(e.target.value))}
+                          className="card-section-move-select"
+                        >
+                          <option value={section.n}>Sposta…</option>
+                          {sections.map(s => s.n !== section.n && (
+                            <option key={s.n} value={s.n}>{s.short}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </article>
               )
@@ -947,14 +822,14 @@ export default function DeveloperRoadmap() {
               + Aggiungi Task a questa Sezione
             </button>
           ) : (
-            <form onSubmit={handleAddTask} className="task-form-card add-task-card">
+            <form onSubmit={handleAddTask} className="task-form-card">
               <h3>Aggiungi Nuovo Task</h3>
 
               <label>
                 Titolo Task
                 <input
                   type="text"
-                  placeholder="Es. Download diretto da YouTube per tracce esclusive"
+                  placeholder="Es. Sviluppo sistema di tagging"
                   required
                   value={newTaskData.title}
                   onChange={e => setNewTaskData(prev => ({ ...prev, title: e.target.value }))}
@@ -962,10 +837,10 @@ export default function DeveloperRoadmap() {
               </label>
 
               <label>
-                Beneficio / Miglioramento per l'Utente
+                Descrizione / Beneficio
                 <textarea
                   placeholder="Descrivi come questo task migliora concretamente l'esperienza dell'utente..."
-                  rows={2}
+                  rows={3}
                   value={newTaskData.benefit || ''}
                   onChange={e => setNewTaskData(prev => ({ ...prev, benefit: e.target.value }))}
                 />
@@ -973,7 +848,7 @@ export default function DeveloperRoadmap() {
 
               <div className="subtasks-editor">
                 <div className="subtasks-editor-header">
-                  <h4>Sub-task Operative</h4>
+                  <h4>Sub-task</h4>
                   <button type="button" className="secondary btn-xs" onClick={() => addSubtaskToForm(true)}>
                     + Aggiungi Sub-task
                   </button>
@@ -1003,18 +878,6 @@ export default function DeveloperRoadmap() {
                         &times;
                       </button>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Scelte e raccomandazioni (opzionale)"
-                      value={sub.choices || ''}
-                      onChange={e => updateSubtaskInForm(true, sIdx, 'choices', e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Azione da compiere (opzionale)"
-                      value={sub.action || ''}
-                      onChange={e => updateSubtaskInForm(true, sIdx, 'action', e.target.value)}
-                    />
                   </div>
                 ))}
               </div>
@@ -1035,7 +898,7 @@ export default function DeveloperRoadmap() {
 
 const CUSTOM_STYLES = `
 .dev-container {
-  max-width: 1200px;
+  max-width: 1208px;
   margin: 0 auto;
   padding: 1.5rem clamp(14px, 3vw, 24px) 4rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -1043,9 +906,6 @@ const CUSTOM_STYLES = `
 }
 
 .dev-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
   border-bottom: 1px solid var(--color-border, #dce1dc);
   padding-bottom: 1.5rem;
   margin-bottom: 2rem;
@@ -1067,13 +927,6 @@ const CUSTOM_STYLES = `
   margin: 0;
   letter-spacing: -0.03em;
   color: var(--color-text, #151815);
-}
-
-.reset-btn {
-  padding: 8px 14px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  border-radius: 8px;
 }
 
 /* LAYOUT GRID */
@@ -1247,56 +1100,24 @@ const CUSTOM_STYLES = `
   max-width: 70ch;
 }
 
-.tasks-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+/* TASKS GRID */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+  margin-bottom: 2.5rem;
 }
 
-/* TASK CARD */
-.task-card {
-  background: var(--color-surface, #ffffff);
-  border: 1px solid var(--color-border, #dce1dc);
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: var(--shadow-card, 0 10px 30px rgba(25, 35, 27, .04));
-  position: relative;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.task-card:hover {
-  border-color: var(--color-border-strong, #c8cec8);
-  box-shadow: var(--shadow-hover, 0 16px 36px rgba(25, 35, 27, .08));
-}
-
-.task-actions-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.task-badge-id {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--color-accent-strong, #15803d);
-  background: var(--color-accent-soft, #dcfce7);
-  border: 1px solid rgba(34, 197, 94, 0.28);
-  border-radius: 6px;
-  padding: 2.5px 7px;
-}
-
+/* CUSTOM TOP ROW STUFF */
 .task-order-buttons {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 .order-btn {
-  background: var(--color-surface-subtle, #f2f4f1);
-  border: 1px solid var(--color-border, #dce1dc);
-  color: var(--color-text-muted, #626862);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #edf3ee;
   width: 24px;
   height: 24px;
   border-radius: 4px;
@@ -1308,8 +1129,9 @@ const CUSTOM_STYLES = `
 }
 
 .order-btn:hover:not(:disabled) {
-  background: var(--color-border-strong, #c8cec8);
-  color: var(--color-text, #151815);
+  background: var(--color-accent, #22c55e);
+  color: #05230f;
+  border-color: var(--color-accent);
 }
 
 .order-btn:disabled {
@@ -1317,270 +1139,102 @@ const CUSTOM_STYLES = `
   cursor: not-allowed;
 }
 
-.task-move-section {
-  margin-left: auto;
-}
-
-.section-move-dropdown {
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 6px;
-  border: 1px solid var(--color-border, #dce1dc);
-  background: var(--color-surface, #ffffff);
-  font-size: 0.75rem;
-  color: var(--color-text-muted, #626862);
-  cursor: pointer;
-}
-
-.edit-task-btn, .delete-task-btn {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--color-border, #dce1dc);
-  cursor: pointer;
-  background: var(--color-surface, #ffffff);
-  transition: all 0.15s ease;
-}
-
-.edit-task-btn {
-  color: var(--color-text-muted, #626862);
-}
-
-.edit-task-btn:hover {
-  border-color: var(--color-accent-strong, #15803d);
-  color: var(--color-accent-strong, #15803d);
-  background: var(--color-accent-soft, #dcfce7);
-}
-
-.delete-task-btn {
-  color: var(--color-danger, #b42318);
-}
-
-.delete-task-btn:hover {
-  border-color: var(--color-danger, #b42318);
-  background: var(--color-danger-soft, #fef3f2);
-}
-
-.task-card-title {
-  font-size: 1.15rem;
-  font-weight: 800;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
-  color: var(--color-text, #151815);
-}
-
-.task-card-benefit {
-  font-size: 0.95rem;
-  line-height: 1.55;
-  color: var(--color-text-muted, #626862);
-  margin: 0 0 16px 0;
-}
-
-.subtasks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* SUBTASK ACCORDION */
-.subtask-acc {
-  border: 1px solid var(--color-border, #dce1dc);
-  border-radius: 10px;
-  background: var(--color-surface-subtle, #f2f4f1);
-  overflow: hidden;
-  transition: border-color 0.15s ease;
-}
-
-.subtask-acc.is-open {
-  border-color: var(--color-accent-strong, #15803d);
-  background: var(--color-surface, #ffffff);
-}
-
-.subtask-acc-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--color-text, #151815);
-  transition: background 0.15s ease;
-}
-
-.subtask-acc-head:hover {
-  background: rgba(0,0,0, 0.02);
-}
-
-.subtask-chevron {
-  flex: none;
-  display: flex;
-  color: var(--color-text-muted, #626862);
-  transition: transform 0.2s ease;
-}
-
-.subtask-chevron svg {
-  width: 16px;
-  height: 16px;
-}
-
-.subtask-acc.is-open .subtask-chevron {
-  transform: rotate(90deg);
-  color: var(--color-accent-strong, #15803d);
-}
-
-.subtask-acc-title {
-  flex: 1;
-  min-width: 0;
-  line-height: 1.4;
-}
-
-.subtask-acc-tags {
-  flex: none;
-  display: flex;
-  gap: 6px;
-}
-
-.subtask-tag-badge {
-  font-size: 0.68rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2.5px 8px;
-  border-radius: 20px;
-  border: 1px solid;
-}
-
-.subtask-tag-badge.tag-front {
-  color: #0369a1;
-  background: #f0f9ff;
-  border-color: #bae6fd;
-}
-
-.subtask-tag-badge.tag-back {
-  color: #6d28d9;
-  background: #f5f3ff;
-  border-color: #ddd6fe;
-}
-
-.subtask-tag-badge.tag-desktop {
-  color: #b45309;
-  background: #fffbeb;
-  border-color: #fde68a;
-}
-
-.subtask-acc-body {
-  padding: 4px 18px 18px 44px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  border-top: 1px solid var(--color-border, #dce1dc);
-}
-
-.subtask-body-section {
-  border-left: 3px solid var(--color-border-strong, #c8cec8);
-  padding-left: 14px;
-}
-
-.subtask-body-section.border-choice {
-  border-left-color: #0284c7;
-}
-
-.subtask-body-section.border-action {
-  border-left-color: var(--color-accent-strong, #15803d);
-}
-
-.subtask-section-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted, #626862);
-  margin-bottom: 0.25rem;
-}
-
-.subtask-section-label.label-action {
-  color: var(--color-accent-strong, #15803d);
-}
-
-.subtask-section-text {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: #2b302b;
-}
-
-.subtask-milestone-list {
+/* STATIC SUBTASKS PREVIEW INSIDE 4:5 CARD */
+.task-subtasks-preview {
   list-style: none;
-  margin: 0;
+  margin: 0 0 12px 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  max-height: 110px;
+  overflow-y: auto;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  padding-top: 10px;
 }
 
-.subtask-milestone-list li {
+.task-subtask-item {
+  font-size: 0.76rem;
+  color: #a1a1aa;
   display: flex;
-  gap: 10px;
   align-items: flex-start;
-  font-size: 0.9rem;
-  color: #2b302b;
+  gap: 6px;
+  line-height: 1.35;
 }
 
-.check-icon {
-  flex: none;
+.task-subtask-item .bullet {
+  color: var(--color-accent, #22c55e);
+}
+
+.task-subtask-item .subtask-title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.subtask-mini-tag {
+  font-size: 8px;
   font-weight: 800;
-  color: var(--color-accent-strong, #15803d);
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
-/* ADD TASK TRIGGER & CARDS */
-.add-task-trigger {
-  width: 100%;
-  height: 52px;
-  border-style: dashed;
-  border-width: 1.5px;
-  font-weight: 800;
-  font-size: 0.95rem;
+.subtask-mini-tag.tag-front {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
 }
 
+.subtask-mini-tag.tag-back {
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+.subtask-mini-tag.tag-desktop {
+  color: #f5a742;
+  background: rgba(245, 167, 66, 0.1);
+  border-color: rgba(245, 167, 66, 0.3);
+}
+
+/* CUSTOM FORM IN THE GRID CELL (FLEXIBLE HEIGHT) */
 .task-form-card {
   background: var(--color-surface, #ffffff);
   border: 1.5px solid var(--color-border-strong, #c8cec8);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .task-form-card h3 {
-  margin: 0 0 4px 0;
-  font-size: 1.2rem;
+  margin: 0;
+  font-size: 1.1rem;
   font-weight: 800;
 }
 
 .task-form-card label {
   font-size: 0.72rem;
   font-weight: 800;
+  color: var(--color-text-muted, #626862);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .task-form-card input, .task-form-card textarea, .task-form-card select {
   width: 100%;
-  margin-top: 6px;
+  margin-top: 4px;
   border: 1px solid var(--color-border-strong, #c8cec8);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--color-text, #151815);
   background: var(--color-surface, #ffffff);
 }
@@ -1591,10 +1245,10 @@ const CUSTOM_STYLES = `
 
 .subtasks-editor {
   border-top: 1px solid var(--color-border, #dce1dc);
-  padding-top: 16px;
+  padding-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .subtasks-editor-header {
@@ -1605,45 +1259,46 @@ const CUSTOM_STYLES = `
 
 .subtasks-editor-header h4 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 800;
 }
 
 .subtask-editor-row {
   border: 1px solid var(--color-border, #dce1dc);
   background: var(--color-surface-subtle, #f2f4f1);
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border-radius: 8px;
+  padding: 8px;
 }
 
 .subtask-editor-top {
   display: grid;
-  grid-template-columns: 1fr 120px 30px;
-  gap: 8px;
+  grid-template-columns: 1fr 90px 24px;
+  gap: 6px;
   align-items: center;
 }
 
 .subtask-editor-top input {
   margin-top: 0;
-  height: 36px;
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
 }
 
 .subtask-editor-top select {
   margin-top: 0;
-  height: 36px;
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
 }
 
 .delete-sub-btn {
   background: var(--color-danger-soft, #fef3f2);
   border: 1px solid var(--color-danger, #b42318);
   color: var(--color-danger, #b42318);
-  width: 30px;
-  height: 36px;
+  width: 24px;
+  height: 30px;
   border-radius: 6px;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
   display: grid;
@@ -1651,24 +1306,56 @@ const CUSTOM_STYLES = `
   padding: 0;
 }
 
+.card-section-move-select {
+  padding: 5px 8px;
+  font-size: 11px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #edf3ee;
+  max-width: 100px;
+  cursor: pointer;
+}
+
+.card-section-move-select:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.card-section-move-select option {
+  background: #111613;
+  color: #edf3ee;
+}
+
 .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .btn-sm {
-  min-height: 40px !important;
-  height: 40px !important;
-  font-size: 0.85rem !important;
-  padding: 0 16px !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  font-size: 0.8rem !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
 }
 
 .btn-xs {
-  height: 28px !important;
-  font-size: 0.75rem !important;
-  padding: 0 10px !important;
+  height: 24px !important;
+  font-size: 0.72rem !important;
+  padding: 0 8px !important;
   border-radius: 6px !important;
+}
+
+/* ADD TASK TRIGGER */
+.add-task-trigger {
+  width: 100%;
+  height: 48px;
+  border-style: dashed;
+  border-width: 1.5px;
+  font-weight: 800;
+  font-size: 0.9rem;
 }
 
 /* RESPONSIVE LAYOUT */
@@ -1697,9 +1384,6 @@ const CUSTOM_STYLES = `
     margin-top: 0;
     padding-top: 10px;
     border-top: 0;
-  }
-  .subtask-acc-body {
-    padding-left: 18px;
   }
 }
 `;
