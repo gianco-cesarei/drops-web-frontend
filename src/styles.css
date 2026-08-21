@@ -769,7 +769,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .private-header { width: min(100%, 1208px); min-height: 72px; margin: auto; padding-inline: clamp(14px, 3vw, 24px); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: clamp(14px, 2.5vw, 28px); }
 .private-header .logo { margin-right: 10px; color: var(--chrome-ink); text-decoration: none; }
 .private-header .logo span { color: var(--color-accent); }
-.private-header nav { min-width: 0; display: flex; gap: 18px; overflow-x: auto; font-size: var(--font-size-2xs); font-weight: var(--weight-bold); letter-spacing: .05em; text-transform: uppercase; }
+.private-header nav { min-width: 0; display: flex; gap: 22px; overflow-x: auto; font-size: var(--font-size-sm); font-weight: var(--weight-bold); letter-spacing: .05em; text-transform: uppercase; }
 .private-header nav, .private-header .account { max-width: 100%; }
 .private-header nav a { color: var(--chrome-ink-dim); text-decoration: none; transition: color 0.15s ease; }
 .private-header nav a:hover { color: var(--chrome-ink); }
