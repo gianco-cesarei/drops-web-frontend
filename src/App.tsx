@@ -56,7 +56,7 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   }, [])
 
   useEffect(() => {
-    if (!checking && !user && section !== 'login' && !logoutRedirecting) {
+    if (!checking && !user && section !== 'login' && section !== 'developer' && !logoutRedirecting) {
       const next = encodeURIComponent(`/app/${section}`)
       navigate(`/app/login?next=${next}`)
     }
@@ -79,13 +79,16 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
 
   if (checking) return <Loading />
   if (logoutRedirecting) return <Loading />
+  if (section === 'developer') {
+    const devUser = user || { username: 'local_dev', name: 'Sviluppatore Locale' }
+    return <PrivateFrame section={section} user={devUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><DeveloperRoadmap /></PrivateFrame>
+  }
   if (!user) return <Login onLogin={completeLogin} error={error} setError={setError} />
   if (section === 'download') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Download user={user} onError={handleError} error={error} setError={setError} /></PrivateFrame>
   if (section === 'spotify') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><SpotifyLibrary onError={handleError} error={error} /></PrivateFrame>
   if (section === 'radar') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
   if (section === 'content') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Content /></PrivateFrame>
-  if (section === 'developer') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><DeveloperRoadmap /></PrivateFrame>
   return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PrivatePlaceholder section={section} /></PrivateFrame>
 }
 
