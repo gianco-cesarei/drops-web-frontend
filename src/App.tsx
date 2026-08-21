@@ -798,23 +798,719 @@ function Brain() {
 function Content() {
   const [state, setState] = usePrototypeState()
   
+  // Stato locale degli articoli per riflettere immediatamente le modifiche CRUD nel browser
+  const [articles, setArticles] = useState<any[]>([])
+  const [editingArticle, setEditingArticle] = useState<any | null>(null)
+  
+  // Stato per l'estrazione copertina
+  const [extractingUrl, setExtractingUrl] = useState<string>('')
+  const [extractedImage, setExtractedImage] = useState<string | null>(null)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [extractError, setExtractError] = useState<string | null>(null)
+
+  // Inizializza gli articoli da publishedContentItems
+  useEffect(() => {
+    setArticles(publishedContentItems)
+  }, [])
+
+  // Filtra bozze e pubblicati basandosi sulla lista in-memory e sulla pipeline manager
   const drafts = useMemo(() => {
-    return publishedContentItems.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Draft')
-  }, [state.contentStatus])
+    return articles.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Draft')
+  }, [articles, state.contentStatus])
 
   const published = useMemo(() => {
-    return publishedContentItems.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Published')
-  }, [state.contentStatus])
+    return articles.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Published')
+  }, [articles, state.contentStatus])
 
+  // Chiamata backend per estrarre la copertina tramite og:image
+  const handleExtractCover = async (url: string) => {
+    if (!url) return
+    setIsExtracting(true)
+    setExtractError(null)
+    setExtractedImage(null)
+    try {
+      const res = await fetch(`/api/v1/content/extract-cover?url=${encodeURIComponent(url)}`)
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Impossibile estrarre la copertina')
+      }
+      const data = await res.json()
+      setExtractedImage(data.image_url)
+    } catch (e: any) {
+      setExtractError(e.message)
+    } finally {
+      setIsExtracting(false)
+    }
+  }
+
+  // Chiamata backend per salvare l'articolo in locale
+  const handleSaveArticle = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingArticle) return
+
+    // Sanitizzazione conforme allo schema Zod (rimozione campi non consentiti)
+    const sanitized = { ...editingArticle }
+    if (sanitized.type !== 'party') {
+      delete sanitized.partyKind
+    }
+    
+    // Pulisci tag da stringa separata da virgole
+    if (typeof sanitized.tags === 'string') {
+      sanitized.tags = sanitized.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+    }
+
+    // Converti coordinate se presenti
+    if (sanitized.primaryLocation.kind === 'geographic') {
+      if (sanitized.primaryLocation.latitude !== undefined && sanitized.primaryLocation.latitude !== '') {
+        sanitized.primaryLocation.latitude = parseFloat(sanitized.primaryLocation.latitude as any)
+      } else {
+        delete sanitized.primaryLocation.latitude
+      }
+      if (sanitized.primaryLocation.longitude !== undefined && sanitized.primaryLocation.longitude !== '') {
+        sanitized.primaryLocation.longitude = parseFloat(sanitized.primaryLocation.longitude as any)
+      } else {
+        delete sanitized.primaryLocation.longitude
+      }
+    } else {
+      delete sanitized.primaryLocation.countryCode
+      delete sanitized.primaryLocation.latitude
+      delete sanitized.primaryLocation.longitude
+      sanitized.mapEligible = false
+    }
+
+    // Pulisci fonti vuote
+    sanitized.sources = sanitized.sources.filter((s: any) => s.url.trim() !== '')
+
+    // Pulisci relazioni vuote
+    sanitized.relations = sanitized.relations.filter((r: any) => r.id.trim() !== '')
+
+    // Pulisci blocchi di testo vuoti
+    sanitized.body = sanitized.body.filter((b: any) => b.html.trim() !== '')
+
+    try {
+      const res = await fetch('/api/v1/content/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sanitized)
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Errore durante il salvataggio')
+      }
+      
+      // Aggiorna lo stato in-memory locale
+      setArticles(prev => {
+        const found = prev.some(a => a.id === sanitized.id)
+        if (found) {
+          return prev.map(a => a.id === sanitized.id ? sanitized : a)
+        } else {
+          return [...prev, sanitized]
+        }
+      })
+      
+      setEditingArticle(null)
+      alert('Articolo salvato con successo nel file content.json locale!')
+    } catch (e: any) {
+      alert(`Errore di salvataggio: ${e.message}`)
+    }
+  }
+
+  // Chiamata backend per eliminare l'articolo
+  const handleDeleteArticle = async (articleId: string) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare definitivamente l'articolo "${articleId}"?`)) return
+    try {
+      const res = await fetch(`/api/v1/content/delete/${articleId}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || "Errore durante l'eliminazione")
+      }
+      
+      // Aggiorna lo stato in-memory locale
+      setArticles(prev => prev.filter(a => a.id !== articleId))
+      alert('Articolo eliminato con successo dal file content.json locale!')
+    } catch (e: any) {
+      alert(`Errore di eliminazione: ${e.message}`)
+    }
+  }
+
+  const startNewArticle = () => {
+    setEditingArticle({
+      id: '',
+      slug: '',
+      type: 'party',
+      partyKind: 'festival',
+      kicker: '',
+      coverUrl: '',
+      title: '',
+      summary: '',
+      publishedAt: new Date().toISOString(),
+      originalPublishedAt: new Date().toISOString(),
+      primaryLocation: {
+        kind: 'geographic',
+        name: '',
+        countryCode: '',
+        latitude: 45.4642,
+        longitude: 9.19
+      },
+      mapEligible: false,
+      tags: [],
+      sources: [{ url: '', label: '', kind: 'official' }],
+      relations: [],
+      body: [{ heading: '', html: '' }]
+    })
+    setExtractingUrl('')
+    setExtractedImage(null)
+    setExtractError(null)
+  }
+
+  const startEditingArticle = (item: any) => {
+    const formatted = {
+      ...item,
+      tags: Array.isArray(item.tags) ? item.tags.join(', ') : item.tags || '',
+      sources: item.sources || [{ url: '', label: '', kind: 'official' }],
+      relations: item.relations || [],
+      body: item.body || [{ heading: '', html: '' }]
+    }
+    setEditingArticle(formatted)
+    setExtractingUrl(formatted.sources[0]?.url || '')
+    setExtractedImage(null)
+    setExtractError(null)
+  }
+
+  const updateFormField = (path: string[], value: any) => {
+    setEditingArticle((prev: any) => {
+      const next = JSON.parse(JSON.stringify(prev))
+      let current = next
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]]
+      }
+      current[path[path.length - 1]] = value
+      return next
+    })
+  }
+
+  // --- SE EDITING ATTIVO, MOSTRA IL FORM CMS ---
+  if (editingArticle) {
+    return (
+      <main className="private-workspace" style={{ maxWidth: '960px', margin: '0 auto', padding: '20px' }}>
+        <header className="workspace-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+          <div>
+            <span className="development-badge" style={{ background: 'var(--color-accent-strong)', color: '#000' }}>CMS Editor</span>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '4px 0 0' }}>
+              {editingArticle.id ? `Modifica: ${editingArticle.title}` : 'Crea Nuovo Articolo'}
+            </h1>
+          </div>
+          <button
+            type="button"
+            style={{ background: 'transparent', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+            onClick={() => setEditingArticle(null)}
+          >
+            Annulla ed Esci
+          </button>
+        </header>
+
+        <form onSubmit={handleSaveArticle} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+          {/* COLONNA SINISTRA: INFO BASE */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>Dati Identificativi</h3>
+              
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  ID Unico (es. festival-houghton-norfolk)
+                  <input
+                    type="text"
+                    required
+                    disabled={!!editingArticle.id}
+                    value={editingArticle.id}
+                    onChange={e => updateFormField(['id'], e.target.value)}
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  />
+                </label>
+
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  Slug URL (es. houghton-festival-norfolk)
+                  <input
+                    type="text"
+                    required
+                    value={editingArticle.slug}
+                    onChange={e => updateFormField(['slug'], e.target.value)}
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>Classificazione</h3>
+              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  Tipo Articolo
+                  <select
+                    value={editingArticle.type}
+                    onChange={e => updateFormField(['type'], e.target.value)}
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  >
+                    <option value="party">Festival / Party (party)</option>
+                    <option value="label">Etichette (label)</option>
+                    <option value="artist">Artisti (artist)</option>
+                    <option value="release">Radar Releases (release)</option>
+                    <option value="story">Guide & Scena (story)</option>
+                    <option value="playlist">Playlist (playlist)</option>
+                    <option value="set">Set (set)</option>
+                  </select>
+                </label>
+
+                {editingArticle.type === 'party' && (
+                  <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                    Tipologia Party
+                    <select
+                      value={editingArticle.partyKind || 'festival'}
+                      onChange={e => updateFormField(['partyKind'], e.target.value)}
+                      style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                    >
+                      <option value="festival">Festival</option>
+                      <option value="event">Evento singolo</option>
+                      <option value="series">Serie di eventi</option>
+                      <option value="collective">Collettivo</option>
+                      <option value="club-night">Serata in Club</option>
+                    </select>
+                  </label>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  Kicker (Etichetta sopra il titolo, es. "Radar")
+                  <input
+                    type="text"
+                    value={editingArticle.kicker || ''}
+                    onChange={e => updateFormField(['kicker'], e.target.value)}
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  />
+                </label>
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  Tag (Separati da virgola)
+                  <input
+                    type="text"
+                    value={editingArticle.tags}
+                    onChange={e => updateFormField(['tags'], e.target.value)}
+                    placeholder="es. festival, minimal, london"
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>Testi Principali</h3>
+              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px', marginBottom: '12px' }}>
+                Titolo Articolo
+                <input
+                  type="text"
+                  required
+                  value={editingArticle.title}
+                  onChange={e => {
+                    const title = e.target.value
+                    updateFormField(['title'], title)
+                    if (!editingArticle.id) {
+                      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+                      updateFormField(['slug'], slug)
+                    }
+                  }}
+                  style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                Riassunto Breve (Summary)
+                <textarea
+                  required
+                  rows={3}
+                  value={editingArticle.summary}
+                  onChange={e => updateFormField(['summary'], e.target.value)}
+                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)', fontFamily: 'inherit' }}
+                />
+              </label>
+            </div>
+
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>Immagine Copertina</h3>
+              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                URL Copertina
+                <input
+                  type="text"
+                  value={editingArticle.coverUrl || ''}
+                  onChange={e => updateFormField(['coverUrl'], e.target.value)}
+                  style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                />
+              </label>
+
+              {/* BOX DI SCRAPING COPERTINA */}
+              <div style={{ background: 'var(--color-surface-subtle)', padding: '12px', borderRadius: '8px', marginTop: '10px', border: '1px solid var(--color-border)' }}>
+                <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Recupera Copertina da URL di riferimento:</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    style={{ flex: 1, height: '32px', fontSize: '12px', borderRadius: '6px', padding: '4px' }}
+                    value={extractingUrl}
+                    onChange={e => setExtractingUrl(e.target.value)}
+                  >
+                    <option value="">Seleziona una fonte...</option>
+                    {editingArticle.sources.map((s: any, idx: number) => s.url && (
+                      <option key={idx} value={s.url}>{s.label || s.url}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '0 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    disabled={isExtracting || !extractingUrl}
+                    onClick={() => handleExtractCover(extractingUrl)}
+                  >
+                    {isExtracting ? 'Estrazione...' : 'Recupera'}
+                  </button>
+                </div>
+                
+                {extractedImage && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <img src={extractedImage} alt="Anteprima estratta" style={{ maxWidth: '100%', maxHeight: '120px', borderRadius: '6px', border: '1px solid var(--color-border)' }} />
+                    <button
+                      type="button"
+                      style={{ background: 'var(--color-accent)', color: '#05230f', border: 'none', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => {
+                        updateFormField(['coverUrl'], extractedImage)
+                        setExtractedImage(null)
+                      }}
+                    >
+                      Applica a Copertina
+                    </button>
+                  </div>
+                )}
+                {extractError && <p style={{ color: 'var(--color-danger, #b42318)', fontSize: '11px', margin: '6px 0 0' }}>{extractError}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* COLONNA DESTRA: LOCALIZZAZIONE, FONTI, CORPO, RELAZIONI */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* GEOLOCALIZZAZIONE */}
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>Posizione Geografica</h3>
+              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  Tipo Posizione
+                  <select
+                    value={editingArticle.primaryLocation.kind}
+                    onChange={e => updateFormField(['primaryLocation', 'kind'], e.target.value)}
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  >
+                    <option value="geographic">Geografica / Fisica (geographic)</option>
+                    <option value="online">Online / Digitale (online)</option>
+                  </select>
+                </label>
+
+                <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                  Nome Luogo (es. Berlino, Germania)
+                  <input
+                    type="text"
+                    required
+                    value={editingArticle.primaryLocation.name}
+                    onChange={e => updateFormField(['primaryLocation', 'name'], e.target.value)}
+                    style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                  />
+                </label>
+              </div>
+
+              {editingArticle.primaryLocation.kind === 'geographic' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                      Codice Nazione (2 lettere, es: IT, DE, GB)
+                      <input
+                        type="text"
+                        required
+                        maxLength={2}
+                        value={editingArticle.primaryLocation.countryCode || ''}
+                        onChange={e => updateFormField(['primaryLocation', 'countryCode'], e.target.value.toUpperCase())}
+                        style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                      />
+                    </label>
+                    <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                      Latitudine
+                      <input
+                        type="number"
+                        step="any"
+                        value={editingArticle.primaryLocation.latitude || ''}
+                        onChange={e => updateFormField(['primaryLocation', 'latitude'], e.target.value)}
+                        style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                      />
+                    </label>
+                    <label style={{ flex: 1, display: 'flex', flexDirection: 'column', fontSize: '11px', fontWeight: 'bold', gap: '4px' }}>
+                      Longitudine
+                      <input
+                        type="number"
+                        step="any"
+                        value={editingArticle.primaryLocation.longitude || ''}
+                        onChange={e => updateFormField(['primaryLocation', 'longitude'], e.target.value)}
+                        style={{ height: '36px', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border-strong)' }}
+                      />
+                    </label>
+                  </div>
+                  
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', marginTop: '6px' }}>
+                    <input
+                      type="checkbox"
+                      checked={editingArticle.mapEligible}
+                      onChange={e => updateFormField(['mapEligible'], e.target.checked)}
+                      style={{ width: '16px', height: '16px' }}
+                    />
+                    Mostra questo articolo sulla Mappa Interattiva (richiede coordinate)
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* FONTI (SOURCES) */}
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 12px 0', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>Link di Riferimento / Fonti</h3>
+                <button
+                  type="button"
+                  style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                  onClick={() => {
+                    const sources = [...editingArticle.sources, { url: '', label: '', kind: 'official' }]
+                    updateFormField(['sources'], sources)
+                  }}
+                >
+                  + Aggiungi Fonte
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                {editingArticle.sources.map((src: any, sIdx: number) => (
+                  <div key={sIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="URL (es. https://ra.co/...)"
+                      value={src.url}
+                      onChange={e => {
+                        const newSources = [...editingArticle.sources]
+                        newSources[sIdx] = { ...newSources[sIdx], url: e.target.value }
+                        updateFormField(['sources'], newSources)
+                      }}
+                      style={{ flex: 2, height: '30px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border-strong)', fontSize: '12px' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Etichetta (es. Resident Advisor)"
+                      value={src.label}
+                      onChange={e => {
+                        const newSources = [...editingArticle.sources]
+                        newSources[sIdx] = { ...newSources[sIdx], label: e.target.value }
+                        updateFormField(['sources'], newSources)
+                      }}
+                      style={{ flex: 1, height: '30px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border-strong)', fontSize: '12px' }}
+                    />
+                    <select
+                      value={src.kind}
+                      onChange={e => {
+                        const newSources = [...editingArticle.sources]
+                        newSources[sIdx] = { ...newSources[sIdx], kind: e.target.value }
+                        updateFormField(['sources'], newSources)
+                      }}
+                      style={{ width: '90px', height: '30px', fontSize: '11px', borderRadius: '4px' }}
+                    >
+                      <option value="official">Ufficiale</option>
+                      <option value="original">Originale</option>
+                      <option value="listen">Ascolta</option>
+                      <option value="reference">Info/Rif</option>
+                    </select>
+                    <button
+                      type="button"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'none', width: '24px', height: '30px', borderRadius: '4px', cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+                      onClick={() => {
+                        const newSources = editingArticle.sources.filter((_: any, i: number) => i !== sIdx)
+                        updateFormField(['sources'], newSources)
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CORPO DEGLI ARTICOLI (BODY HTML BLOCKS) */}
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 12px 0', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>Blocchi di Testo (HTML supportato)</h3>
+                <button
+                  type="button"
+                  style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                  onClick={() => {
+                    const body = [...editingArticle.body, { heading: '', html: '' }]
+                    updateFormField(['body'], body)
+                  }}
+                >
+                  + Aggiungi Blocco
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto' }}>
+                {editingArticle.body.map((blk: any, bIdx: number) => (
+                  <div key={bIdx} style={{ background: 'var(--color-surface-subtle)', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)', position: 'relative' }}>
+                    <button
+                      type="button"
+                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#f87171', fontSize: '16px', cursor: 'pointer' }}
+                      onClick={() => {
+                        const newBody = editingArticle.body.filter((_: any, i: number) => i !== bIdx)
+                        updateFormField(['body'], newBody)
+                      }}
+                    >
+                      &times;
+                    </button>
+                    
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', fontWeight: 'bold', gap: '2px', marginBottom: '6px' }}>
+                      Intestazione Sezione (opzionale)
+                      <input
+                        type="text"
+                        placeholder="es: La filosofia del suono"
+                        value={blk.heading || ''}
+                        onChange={e => {
+                          const newBody = [...editingArticle.body]
+                          newBody[bIdx] = { ...newBody[bIdx], heading: e.target.value }
+                          updateFormField(['body'], newBody)
+                        }}
+                        style={{ height: '28px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border-strong)', fontSize: '12px' }}
+                      />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', fontWeight: 'bold', gap: '2px' }}>
+                      Contenuto Paragrafo (HTML)
+                      <textarea
+                        required
+                        rows={3}
+                        value={blk.html}
+                        onChange={e => {
+                          const newBody = [...editingArticle.body]
+                          newBody[bIdx] = { ...newBody[bIdx], html: e.target.value }
+                          updateFormField(['body'], newBody)
+                        }}
+                        style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--color-border-strong)', fontSize: '12px', fontFamily: 'inherit' }}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* RELAZIONI CON ALTRI ELEMENTI */}
+            <div style={{ background: 'var(--color-surface)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 12px 0', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>Relazioni nel Brain Graph</h3>
+                <button
+                  type="button"
+                  style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                  onClick={() => {
+                    const rels = [...editingArticle.relations, { id: '', type: 'story', label: '', reason: '' }]
+                    updateFormField(['relations'], rels)
+                  }}
+                >
+                  + Aggiungi Relazione
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                {editingArticle.relations.map((rel: any, rIdx: number) => (
+                  <div key={rIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Target ID (es. radar-xexa...)"
+                      value={rel.id}
+                      onChange={e => {
+                        const newRels = [...editingArticle.relations]
+                        newRels[rIdx] = { ...newRels[rIdx], id: e.target.value }
+                        updateFormField(['relations'], newRels)
+                      }}
+                      style={{ flex: 1, height: '30px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border-strong)', fontSize: '11px' }}
+                    />
+                    <select
+                      value={rel.type}
+                      onChange={e => {
+                        const newRels = [...editingArticle.relations]
+                        newRels[rIdx] = { ...newRels[rIdx], type: e.target.value }
+                        updateFormField(['relations'], newRels)
+                      }}
+                      style={{ width: '85px', height: '30px', fontSize: '11px', borderRadius: '4px' }}
+                    >
+                      <option value="story">Guide/Story</option>
+                      <option value="party">Festival/Party</option>
+                      <option value="artist">Artista</option>
+                      <option value="label">Etichetta</option>
+                      <option value="release">Radar</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Etichetta"
+                      value={rel.label}
+                      onChange={e => {
+                        const newRels = [...editingArticle.relations]
+                        newRels[rIdx] = { ...newRels[rIdx], label: e.target.value }
+                        updateFormField(['relations'], newRels)
+                      }}
+                      style={{ flex: 1, height: '30px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--color-border-strong)', fontSize: '11px' }}
+                    />
+                    <button
+                      type="button"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'none', width: '24px', height: '30px', borderRadius: '4px', cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+                      onClick={() => {
+                        const newRels = editingArticle.relations.filter((_: any, i: number) => i !== rIdx)
+                        updateFormField(['relations'], newRels)
+                      }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginTop: '10px' }}
+            >
+              Salva e Scrivi nel File content.json
+            </button>
+          </div>
+        </form>
+      </main>
+    )
+  }
+
+  // --- SE EDITING NON ATTIVO, MOSTRA LA PIPELINE CON LISTA E PULSANTI MODIFICA ---
   return (
     <main className="private-workspace">
-      <header className="workspace-heading">
-        <span className="development-badge">Content · pipeline manager</span>
-        <h1 className="sr-only">Content</h1>
-        <p>Gestisci gli articoli da pubblicare su Drops Radar e in home.</p>
+      <header className="workspace-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span className="development-badge">Content · pipeline manager</span>
+          <h1 className="sr-only">Content</h1>
+          <p style={{ margin: '4px 0 0 0' }}>Gestisci gli articoli da pubblicare su Drops Radar e in home.</p>
+        </div>
+        <button
+          type="button"
+          style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+          onClick={startNewArticle}
+        >
+          + Crea Nuovo Articolo
+        </button>
       </header>
 
-      <section className="content-pipeline" aria-label="Pipeline contenuti" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <section className="content-pipeline" aria-label="Pipeline contenuti" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
+        {/* COLONNA SINISTRA: BOZZE */}
         <article style={{ background: 'var(--color-surface-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
           <h2 style={{ fontSize: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', margin: '0 0 16px' }}>
             Bozze / Backlog
@@ -830,19 +1526,36 @@ function Content() {
                     <div style={{ fontSize: '11px', color: 'var(--color-accent-strong)', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.type}</div>
                     <div style={{ fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
                   </div>
-                  <button
-                    type="button"
-                    style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                    onClick={() => setState(publishArticle(item.id))}
-                  >
-                    Pubblica
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => startEditingArticle(item)}
+                    >
+                      Modifica
+                    </button>
+                    <button
+                      type="button"
+                      style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => setState(publishArticle(item.id))}
+                    >
+                      Pubblica
+                    </button>
+                    <button
+                      type="button"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => handleDeleteArticle(item.id)}
+                    >
+                      Elimina
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
         </article>
 
+        {/* COLONNA DESTRA: PUBBLICATI */}
         <article style={{ background: 'var(--color-surface-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
           <h2 style={{ fontSize: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', margin: '0 0 16px' }}>
             Pubblicati
@@ -863,22 +1576,36 @@ function Content() {
                       </div>
                       <div style={{ fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        onClick={() => startEditingArticle(item)}
+                      >
+                        Modifica
+                      </button>
                       {!isFeatured && (
                         <button
                           type="button"
-                          style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent-strong)', border: '1px solid var(--color-accent-strong)', padding: '5px 11px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                          style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent-strong)', border: '1px solid var(--color-accent-strong)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                           onClick={() => setState(setFeaturedArticle(item.id))}
                         >
-                          Metti in evidenza
+                          Evidenzia
                         </button>
                       )}
                       <button
                         type="button"
-                        style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', padding: '5px 11px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                         onClick={() => setState(draftArticle(item.id))}
                       >
                         Nascondi
+                      </button>
+                      <button
+                        type="button"
+                        style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        onClick={() => handleDeleteArticle(item.id)}
+                      >
+                        Elimina
                       </button>
                     </div>
                   </div>
