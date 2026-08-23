@@ -1710,18 +1710,6 @@ function addQueueJob(job: QueueJob) {
 const makeKey = () =>
   (globalThis.crypto?.randomUUID?.() ?? `k${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`)
 
-function looksLikePlaylist(value: string): boolean {
-  try {
-    const u = new URL(value)
-    const host = u.hostname.toLowerCase()
-    if (host.includes('youtube.com') || host === 'youtu.be') return u.searchParams.has('list')
-    if (host.includes('soundcloud.com')) return u.pathname.includes('/sets/')
-  } catch {
-    return false
-  }
-  return false
-}
-
 function optimisticCap(status: string): number {
   if (readyStatuses.has(status)) return 100
   if (status === 'downloading' || status === 'enriching' || status === 'processing') return 92
@@ -1749,6 +1737,7 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
   const [busy, setBusy] = useState(false)
   const [preview, setPreview] = useState<{ data: PlaylistPreview; resolve: (urls: string[] | null) => void } | null>(null)
+  const [playlistChoice, setPlaylistChoice] = useState<{ data: Extract<PlaylistPreview, { url_type: 'track_in_playlist' }>; resolve: (urls: string[] | null) => void } | null>(null)
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => new Set())
 
   const queueRef = useRef<QueueJob[]>([])
@@ -1847,6 +1836,15 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
     return new Promise((resolve) => setPreview({ data, resolve }))
   }
 
+  function askTrackInPlaylistChoice(data: Extract<PlaylistPreview, { url_type: 'track_in_playlist' }>): Promise<string[] | null> {
+    return new Promise((resolve) => setPlaylistChoice({ data, resolve }))
+  }
+
+  function continueWithPlaylist(choice: NonNullable<typeof playlistChoice>) {
+    setPlaylistChoice(null)
+    askPlaylistSelection(choice.data).then(choice.resolve)
+  }
+
   async function handleAdd(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
@@ -1856,19 +1854,21 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
     const resolved: string[] = []
     const errors: string[] = []
     for (const link of links) {
-      if (!looksLikePlaylist(link)) { resolved.push(link); continue }
       try {
         const data = await api.resolvePlaylist(link)
-        if (data.count > 1) {
-          const chosen = await askPlaylistSelection(data)
-          if (chosen && chosen.length) resolved.push(...chosen)
-        } else if (data.entries && data.entries.length > 0) {
-          resolved.push(...data.entries.map((e) => e.url))
-        } else {
+        if (data.url_type === 'track') {
           resolved.push(link)
+        } else if (data.url_type === 'track_in_playlist') {
+          const chosen = await askTrackInPlaylistChoice(data)
+          if (chosen?.length) resolved.push(...chosen)
+        } else if (data.count > 1) {
+          const chosen = await askPlaylistSelection(data)
+          if (chosen?.length) resolved.push(...chosen)
+        } else if (data.entries.length > 0) {
+          resolved.push(...data.entries.map((entry) => entry.url))
         }
-      } catch {
-        resolved.push(link)
+      } catch (cause) {
+        errors.push(cause instanceof ApiError ? cause.message : 'Analisi link non riuscita')
       }
     }
     const unique = [...new Set(resolved)].slice(0, 100)
@@ -2088,6 +2088,7 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
   </aside>
   </div>
   {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
+  {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
   </main>
 }
 
@@ -2187,21 +2188,36 @@ function HistoryRow({
 
 function PlaylistDialog({ data, onConfirm, onCancel }: { data: PlaylistPreview; onConfirm: (urls: string[]) => void; onCancel: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set(data.entries.map((e) => e.url)))
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const allOn = selected.size === data.entries.length
   const toggle = (url: string) => setSelected((cur) => {
     const next = new Set(cur)
     if (next.has(url)) next.delete(url); else next.add(url)
     return next
   })
+  useEffect(() => {
+    closeButtonRef.current?.focus()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onCancel()
+      } else if (event.key === 'Tab') {
+        keepFocusInDialog(event, dialogRef.current)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
   return (
-    <div className="dl-overlay" role="dialog" aria-modal="true" aria-label="Anteprima playlist">
-      <div className="dl-dialog">
+    <div className="dl-overlay" role="dialog" aria-modal="true" aria-labelledby="playlist-preview-title">
+      <div ref={dialogRef} className="dl-dialog">
         <div className="dl-dialog-head">
-          <div><div className="dl-dialog-title">{data.title}</div><div className="dl-dialog-sub">{data.count} tracce{data.truncated ? ' (elenco troncato)' : ''} · {selected.size} selezionate</div></div>
-          <button className="secondary" onClick={onCancel}>Chiudi</button>
+          <div><h2 id="playlist-preview-title" className="dl-dialog-title">{data.title ?? 'Anteprima playlist'}</h2><div className="dl-dialog-sub">{data.count} tracce{data.truncated ? ' (elenco troncato)' : ''} · {selected.size} selezionate</div></div>
+          <button ref={closeButtonRef} type="button" className="secondary" onClick={onCancel}>Chiudi</button>
         </div>
         <div className="dl-dialog-tools">
-          <button className="secondary" onClick={() => setSelected(allOn ? new Set() : new Set(data.entries.map((e) => e.url)))}>{allOn ? 'Deseleziona tutti' : 'Seleziona tutti'}</button>
+          <button type="button" className="secondary" onClick={() => setSelected(allOn ? new Set() : new Set(data.entries.map((e) => e.url)))}>{allOn ? 'Deseleziona tutti' : 'Seleziona tutti'}</button>
         </div>
         <div className="dl-dialog-list">
           {data.entries.map((entry) => (
@@ -2212,7 +2228,82 @@ function PlaylistDialog({ data, onConfirm, onCancel }: { data: PlaylistPreview; 
           ))}
         </div>
         <div className="dl-dialog-actions">
-          <button className="primary" disabled={!selected.size} onClick={() => onConfirm(data.entries.filter((e) => selected.has(e.url)).map((e) => e.url))}>Aggiungi {selected.size} alla coda</button>
+          <button type="button" className="primary" disabled={!selected.size} onClick={() => onConfirm(data.entries.filter((e) => selected.has(e.url)).map((e) => e.url))}>Aggiungi {selected.size} alla coda</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function keepFocusInDialog(event: KeyboardEvent, dialog: HTMLElement | null) {
+  if (!dialog) return
+  const focusable = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])')]
+  if (!focusable.length) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+function TrackInPlaylistDialog({
+  data,
+  onTrack,
+  onPlaylist,
+  onCancel,
+}: {
+  data: Extract<PlaylistPreview, { url_type: 'track_in_playlist' }>
+  onTrack: () => void
+  onPlaylist: () => void
+  onCancel: () => void
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const trackButtonRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    trackButtonRef.current?.focus()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onCancel()
+      } else if (event.key === 'Tab') {
+        keepFocusInDialog(event, dialogRef.current)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      previousFocus?.focus()
+    }
+  }, [onCancel])
+
+  const selectedTitle = data.selected_track?.title?.trim() || 'Traccia selezionata'
+  return (
+    <div className="dl-overlay" role="dialog" aria-modal="true" aria-labelledby="track-playlist-choice-title">
+      <div ref={dialogRef} className="dl-dialog dl-choice-dialog">
+        <div>
+          <h2 id="track-playlist-choice-title" className="dl-dialog-title">Cosa vuoi scaricare?</h2>
+          <div className="dl-dialog-sub">{data.count} tracce{data.truncated ? ' (elenco troncato)' : ''}</div>
+        </div>
+        <div className="dl-choice-track">
+          <span className="eyebrow">Traccia selezionata</span>
+          <strong>{selectedTitle}</strong>
+        </div>
+        <div className="dl-dialog-list dl-choice-preview" aria-label="Anteprima playlist">
+          {data.entries.map((entry) => (
+            <div key={entry.url} className="dl-entry">
+              <span className="dl-entry-main"><span className="dl-entry-title">{entry.title}</span>{entry.uploader ? <span className="dl-entry-sub">{entry.uploader}</span> : null}</span>
+            </div>
+          ))}
+        </div>
+        <div className="dl-choice-actions">
+          <button ref={trackButtonRef} type="button" className="primary" onClick={onTrack} aria-label={`Scarica solo questa traccia: ${selectedTitle}`}>Solo questa traccia</button>
+          <button type="button" className="secondary" onClick={onPlaylist} aria-label={`Scarica tutta la playlist, ${data.count} tracce`}>Tutta la playlist</button>
+          <button type="button" className="secondary" onClick={onCancel} aria-label="Annulla scelta download">Annulla</button>
         </div>
       </div>
     </div>
