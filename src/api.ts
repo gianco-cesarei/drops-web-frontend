@@ -43,7 +43,18 @@ export type SpotifyTrack = {
 
 export type SpotifyPlaylist = { id: string; name: string; tracks_total: number }
 export type PlaylistEntry = { url: string; title: string; uploader?: string; duration?: number | null }
-export type PlaylistPreview = { title: string; entries: PlaylistEntry[]; count: number; truncated: boolean }
+type PlaylistResolveBase = { entries: PlaylistEntry[]; count: number; truncated: boolean; title?: string }
+export type PlaylistPreview = PlaylistResolveBase & (
+  | { url_type: 'track' }
+  | { url_type: 'playlist' }
+  | {
+      url_type: 'track_in_playlist'
+      playlist_id: string
+      selected_track_id: string
+      selected_track_url: string
+      selected_track: PlaylistEntry | null
+    }
+)
 export type DiscogsEnrichment = { label: string | null; year?: number | null; country?: string | null; styles?: string[]; artists?: string[]; catalog_no?: string | null; discogs_url?: string | null }
 
 export class ApiError extends Error {

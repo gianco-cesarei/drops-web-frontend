@@ -128,7 +128,10 @@ describe('autenticazione App', () => {
   })
 
   it('crea job e lo sposta tra gli scaricati quando pronto', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })).mockResolvedValueOnce(jsonResponse({ id: 'abc', status: 'ready', filename: 'set.mp3' })))
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({ url_type: 'track', entries: [], count: 1, truncated: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: 'abc', status: 'ready', filename: 'set.mp3' })))
     render(<App section="download" navigate={vi.fn()} />)
     const user = userEvent.setup()
     await user.type(await screen.findByLabelText('Link brano, playlist o set'), 'https://example.com/track')
@@ -140,6 +143,7 @@ describe('autenticazione App', () => {
   it('accoda il job e avanza da coda a pronto via polling', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({ url_type: 'track', entries: [], count: 1, truncated: false }))
       .mockResolvedValueOnce(jsonResponse({ id: 'job-1', status: 'queued', title: 'My Track', artist: 'DJ Someone' }))
       .mockResolvedValueOnce(jsonResponse({ id: 'job-1', status: 'downloading', progress: 40, title: 'My Track', artist: 'DJ Someone' }))
       .mockResolvedValueOnce(jsonResponse({ id: 'job-1', status: 'ready', title: 'My Track', artist: 'DJ Someone' }))
@@ -159,6 +163,7 @@ describe('autenticazione App', () => {
   it('mostra bpm e fonte tra gli scaricati', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({ url_type: 'track', entries: [], count: 1, truncated: false }))
       .mockResolvedValueOnce(jsonResponse({
         id: 'job-rich',
         status: 'ready',
@@ -180,6 +185,119 @@ describe('autenticazione App', () => {
     expect(screen.getByText('122 BPM')).toBeInTheDocument()
     expect(screen.getByText('fonte: soundcloud')).toBeInTheDocument()
   }, 15000)
+
+  it('url_type track continua download singolo senza dialogo', async () => {
+    const inputUrl = 'https://youtube.com/watch?v=track123'
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({ url_type: 'track', entries: [], count: 1, truncated: false }))
+      .mockResolvedValueOnce(jsonResponse({ id: 'track-job', status: 'queued' }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App section="download" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Link brano, playlist o set'), inputUrl)
+    await user.click(screen.getByRole('button', { name: 'Aggiungi alla coda' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(screen.queryByRole('dialog', { name: 'Cosa vuoi scaricare?' })).not.toBeInTheDocument()
+    expect(JSON.parse(String(fetchMock.mock.calls[2][1]?.body))).toEqual({ url: inputUrl })
+  })
+
+  it('url_type playlist usa anteprima e flusso playlist esistente senza dialogo scelta', async () => {
+    const entries = [
+      { url: 'https://youtube.com/watch?v=one', title: 'One' },
+      { url: 'https://youtube.com/watch?v=two', title: 'Two' },
+    ]
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({ url_type: 'playlist', title: 'Playlist test', entries, count: 2, truncated: false }))
+      .mockResolvedValue(jsonResponse({ id: 'playlist-job', status: 'queued' }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App section="download" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Link brano, playlist o set'), 'https://youtube.com/playlist?list=PL123')
+    await user.click(screen.getByRole('button', { name: 'Aggiungi alla coda' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Playlist test' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Cosa vuoi scaricare?' })).not.toBeInTheDocument()
+    expect(screen.getByText('2 tracce · 2 selezionate')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Aggiungi 2 alla coda' }))
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/v1/downloads'))).toHaveLength(2))
+  })
+
+  it('track_in_playlist scarica solo selected_track_url senza list', async () => {
+    const originalUrl = 'https://www.youtube.com/watch?v=JbySohLL3io&list=PL123'
+    const selectedTrackUrl = 'https://www.youtube.com/watch?v=JbySohLL3io'
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({
+        url_type: 'track_in_playlist', playlist_id: 'PL123', selected_track_id: 'JbySohLL3io',
+        selected_track_url: selectedTrackUrl, selected_track: { url: selectedTrackUrl, title: 'Selected tune' },
+        entries: [{ url: selectedTrackUrl, title: 'Selected tune' }, { url: 'https://www.youtube.com/watch?v=next', title: 'Next tune' }],
+        count: 2, truncated: false,
+      }))
+      .mockResolvedValueOnce(jsonResponse({ id: 'selected-job', status: 'queued' }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App section="download" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Link brano, playlist o set'), originalUrl)
+    await user.click(screen.getByRole('button', { name: 'Aggiungi alla coda' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Cosa vuoi scaricare?' })
+    expect(within(dialog).getByText('Selected tune', { selector: 'strong' })).toBeInTheDocument()
+    const trackButton = within(dialog).getByRole('button', { name: 'Scarica solo questa traccia: Selected tune' })
+    expect(trackButton).toHaveFocus()
+    await user.click(trackButton)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).toEqual({ url: originalUrl })
+    expect(JSON.parse(String(fetchMock.mock.calls[2][1]?.body))).toEqual({ url: selectedTrackUrl })
+    expect(String(fetchMock.mock.calls[2][1]?.body)).not.toContain('list')
+  })
+
+  it('track_in_playlist accoda tutta playlist usando entries', async () => {
+    const entries = [
+      { url: 'https://youtube.com/watch?v=one', title: 'One' },
+      { url: 'https://youtube.com/watch?v=two', title: 'Two' },
+    ]
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({ url_type: 'track_in_playlist', playlist_id: 'PL123', selected_track_id: 'one', selected_track_url: entries[0].url, selected_track: entries[0], entries, count: 2, truncated: false }))
+      .mockResolvedValue(jsonResponse({ id: 'playlist-job', status: 'queued' }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App section="download" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Link brano, playlist o set'), 'https://youtube.com/watch?v=one&list=PL123')
+    await user.click(screen.getByRole('button', { name: 'Aggiungi alla coda' }))
+    await user.click(await screen.findByRole('button', { name: 'Scarica tutta la playlist, 2 tracce' }))
+    const preview = await screen.findByRole('dialog', { name: 'Anteprima playlist' })
+    expect(within(preview).getByText('2 tracce · 2 selezionate')).toBeInTheDocument()
+    await user.click(within(preview).getByRole('button', { name: 'Aggiungi 2 alla coda' }))
+
+    await waitFor(() => expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/v1/downloads'))).toHaveLength(2))
+    const bodies = fetchMock.mock.calls.slice(2, 4).map(([, options]) => JSON.parse(String(options?.body)).url)
+    expect(bodies).toEqual(entries.map((entry) => entry.url))
+  })
+
+  it('track_in_playlist usa fallback e Escape annulla senza download', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ username: 'dj' }))
+      .mockResolvedValueOnce(jsonResponse({
+        url_type: 'track_in_playlist', playlist_id: 'PL123', selected_track_id: 'one',
+        selected_track_url: 'https://youtube.com/watch?v=one', selected_track: null,
+        entries: [{ url: 'https://youtube.com/watch?v=one', title: 'One' }], count: 1, truncated: false,
+      }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App section="download" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    const input = await screen.findByLabelText('Link brano, playlist o set')
+    await user.type(input, 'https://youtube.com/watch?v=one&list=PL123')
+    await user.click(screen.getByRole('button', { name: 'Aggiungi alla coda' }))
+
+    expect(await screen.findByText('Traccia selezionata', { selector: 'strong' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Cosa vuoi scaricare?' })).not.toBeInTheDocument())
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 
   it('espone navigazione privata approvata senza History o Graph', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })))
