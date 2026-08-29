@@ -10,6 +10,7 @@ export interface IngestedTrack {
   label?: string
   year?: number
   bpm?: number
+  keySignature?: string
   sizeBytes?: number
   audioUrl?: string
   confidence?: number
@@ -31,6 +32,8 @@ export interface IndexedFolder {
 const STORAGE_KEY = 'drops.indexed.folders.v1'
 const HISTORY_KEY = 'drops.downloads.history.v1'
 
+const DEMO_AUDIO_PREVIEW = 'https://actions.google.com/sounds/v1/science_fiction/low_humming.ogg'
+
 const DEMO_FOLDERS: IndexedFolder[] = [
   {
     id: 'f-session-001',
@@ -43,9 +46,9 @@ const DEMO_FOLDERS: IndexedFolder[] = [
     status: 'ready',
     isSession: true,
     tracks: [
-      { id: 'ts1', filename: 'massive_attack_unfinished.mp3', title: 'Unfinished Sympathy', artist: 'Massive Attack', genre: 'Trip Hop / Downtempo', label: 'Wild Bunch', year: 1991, bpm: 115 },
-      { id: 'ts2', filename: 'baby_four_tet.mp3', title: 'Baby', artist: 'Four Tet', genre: 'Electronic', label: 'Text Records', year: 2020, bpm: 122 },
-      { id: 'ts3', filename: 'floating_points_lesalpx.mp3', title: 'LesAlpx', artist: 'Floating Points', genre: 'Microhouse', label: 'Ninja Tune', year: 2019, bpm: 128 },
+      { id: 'ts1', filename: 'massive_attack_unfinished.mp3', title: 'Unfinished Sympathy', artist: 'Massive Attack', genre: 'Trip Hop / Downtempo', label: 'Wild Bunch', year: 1991, bpm: 115, keySignature: '8A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'ts2', filename: 'baby_four_tet.mp3', title: 'Baby', artist: 'Four Tet', genre: 'Electronic', label: 'Text Records', year: 2020, bpm: 122, keySignature: '11B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'ts3', filename: 'floating_points_lesalpx.mp3', title: 'LesAlpx', artist: 'Floating Points', genre: 'Microhouse', label: 'Ninja Tune', year: 2019, bpm: 128, keySignature: '4A', audioUrl: DEMO_AUDIO_PREVIEW },
     ],
   },
   {
@@ -58,10 +61,10 @@ const DEMO_FOLDERS: IndexedFolder[] = [
     dominantGenre: 'Minimal Tech / Romanian Microhouse',
     status: 'ready',
     tracks: [
-      { id: 't1', filename: '01_villalobos_groove.mp3', title: 'Tremolo Flow', artist: 'Ricardo Villalobos', genre: 'Minimal Techno', label: 'Perlon', year: 2026, bpm: 126 },
-      { id: 't2', filename: '02_rhadoo_sunset.mp3', title: 'Geometrie Sonore', artist: 'Rhadoo', genre: 'Microhouse', label: 'a:rpia:r', year: 2025, bpm: 124 },
-      { id: 't3', filename: '03_sonja_tool.mp3', title: 'Perlon Minimal Tool', artist: 'Sonja Moonear', genre: 'Minimal Tech', label: 'Ruta5', year: 2026, bpm: 125 },
-      { id: 't4', filename: '04_priku_dub.mp3', title: 'Sunset Dub Drift', artist: 'Priku', genre: 'Minimal Tech', label: 'Atipic', year: 2026, bpm: 124 },
+      { id: 't1', filename: '01_villalobos_groove.mp3', title: 'Tremolo Flow', artist: 'Ricardo Villalobos', genre: 'Minimal Techno', label: 'Perlon', year: 2026, bpm: 126, keySignature: '5A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 't2', filename: '02_rhadoo_sunset.mp3', title: 'Geometrie Sonore', artist: 'Rhadoo', genre: 'Microhouse', label: 'a:rpia:r', year: 2025, bpm: 124, keySignature: '8B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 't3', filename: '03_sonja_tool.mp3', title: 'Perlon Minimal Tool', artist: 'Sonja Moonear', genre: 'Minimal Tech', label: 'Ruta5', year: 2026, bpm: 125, keySignature: '7A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 't4', filename: '04_priku_dub.mp3', title: 'Sunset Dub Drift', artist: 'Priku', genre: 'Minimal Tech', label: 'Atipic', year: 2026, bpm: 124, keySignature: '9A', audioUrl: DEMO_AUDIO_PREVIEW },
     ],
   },
   {
@@ -74,9 +77,9 @@ const DEMO_FOLDERS: IndexedFolder[] = [
     dominantGenre: 'Deep Dub Techno',
     status: 'ready',
     tracks: [
-      { id: 't5', filename: 'basic_channel_q1.1.mp3', title: 'Quadrant Dub Rip', artist: 'Basic Channel', genre: 'Dub Techno', label: 'Basic Channel', year: 1994, bpm: 122 },
-      { id: 't6', filename: 'maurizio_m4.mp3', title: 'M4.5 White Label', artist: 'Maurizio', genre: 'Dub Techno', label: 'M-Series', year: 1995, bpm: 123 },
-      { id: 't7', filename: 'rhythm_sound_w.mp3', title: 'Carrier Frequency', artist: 'Rhythm & Sound', genre: 'Dub', label: 'PK Records', year: 2001, bpm: 120 },
+      { id: 't5', filename: 'basic_channel_q1.1.mp3', title: 'Quadrant Dub Rip', artist: 'Basic Channel', genre: 'Dub Techno', label: 'Basic Channel', year: 1994, bpm: 122, keySignature: '2A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 't6', filename: 'maurizio_m4.mp3', title: 'M4.5 White Label', artist: 'Maurizio', genre: 'Dub Techno', label: 'M-Series', year: 1995, bpm: 123, keySignature: '10A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 't7', filename: 'rhythm_sound_w.mp3', title: 'Carrier Frequency', artist: 'Rhythm & Sound', genre: 'Dub', label: 'PK Records', year: 2001, bpm: 120, keySignature: '6B', audioUrl: DEMO_AUDIO_PREVIEW },
     ],
   },
 ]
@@ -107,9 +110,12 @@ export default function FolderIngestionHub() {
   const [processingProgress, setProcessingProgress] = useState(0)
   const [currentFolderProcessing, setCurrentFolderProcessing] = useState('')
   const [filterQuery, setFilterQuery] = useState('')
+  const [trackFilterQuery, setTrackFilterQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'date' | 'name' | 'tracks'>('date')
   const [notice, setNotice] = useState<string | null>(null)
+  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null)
 
-  // Rename state
+  // Rename folder state
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
 
@@ -140,6 +146,7 @@ export default function FolderIngestionHub() {
             artist: 'Cloud Library',
             bpm: 124,
             genre: rf.dominant_genre ?? 'Electronic',
+            audioUrl: DEMO_AUDIO_PREVIEW,
           })),
         }))
 
@@ -203,10 +210,12 @@ export default function FolderIngestionHub() {
             title: h.title ?? 'Traccia',
             artist: h.artist ?? 'Artista Sconosciuto',
             bpm: h.bpm ?? 124,
+            keySignature: '8A',
             genre: 'Electronic',
             label: 'Download Session',
             year: 2026,
             sizeBytes: 10485760,
+            audioUrl: DEMO_AUDIO_PREVIEW,
           }))
         }
       }
@@ -284,6 +293,8 @@ export default function FolderIngestionHub() {
       const mockBpm = 120 + Math.floor(Math.random() * 10)
       const genres = ['Minimal Techno', 'Deep House', 'Tech House', 'Microhouse', 'Dub Techno', 'Breakbeat']
       const assignedGenre = genres[i % genres.length]
+      const camelotKeys = ['8A', '11B', '4A', '5A', '7A', '9B', '2A', '6B', '10A']
+      const assignedKey = camelotKeys[i % camelotKeys.length]
 
       parsedTracks.push({
         id: `trk-${Date.now()}-${i}`,
@@ -294,6 +305,7 @@ export default function FolderIngestionHub() {
         label: 'Auto-detected via Discogs',
         year: 2026,
         bpm: mockBpm,
+        keySignature: assignedKey,
         sizeBytes: file.size,
         audioUrl: URL.createObjectURL(file),
       })
@@ -339,24 +351,68 @@ export default function FolderIngestionHub() {
   }
 
   const handlePlayTrack = (track: IngestedTrack) => {
+    setPlayingTrackId(track.id)
     if (typeof window !== 'undefined') {
       window.__drops_play_track?.({
+        id: track.id,
         title: track.title,
         artist: track.artist || 'Artista Sconosciuto',
         bpm: track.bpm,
         genre: track.genre,
-        audioUrl: track.audioUrl,
+        audioUrl: track.audioUrl || DEMO_AUDIO_PREVIEW,
       })
     }
   }
 
-  const filteredFolders = folders.filter((f) => {
+  // Export M3U Playlist file
+  const handleExportM3U = (folder: IndexedFolder) => {
+    const lines = ['#EXTM3U', `#PLAYLIST:${folder.name}`]
+    folder.tracks.forEach((track) => {
+      const artist = track.artist || 'Unknown'
+      const title = track.title || 'Track'
+      lines.push(`#EXTINF:-1,${artist} - ${title}`)
+      lines.push(track.filename || `${artist} - ${title}.mp3`)
+    })
+
+    const blob = new Blob([lines.join('\n')], { type: 'audio/x-mpegurl;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${folder.name.replace(/[^a-zA-Z0-9_\-]/g, '_')}.m3u`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    setNotice(`✓ Playlist "${folder.name}.m3u" esportata per Rekordbox / Traktor / Pioneer CDJ!`)
+    setTimeout(() => setNotice(null), 3500)
+  }
+
+  const sortedFolders = [...folders].sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name)
+    if (sortBy === 'tracks') return b.trackCount - a.trackCount
+    return b.timestamp - a.timestamp
+  })
+
+  const filteredFolders = sortedFolders.filter((f) => {
     const q = filterQuery.toLowerCase().trim()
     if (!q) return true
     return (
       f.name.toLowerCase().includes(q) ||
       (f.dominantGenre && f.dominantGenre.toLowerCase().includes(q)) ||
       f.tracks.some((t) => t.title.toLowerCase().includes(q) || (t.artist && t.artist.toLowerCase().includes(q)))
+    )
+  })
+
+  const filteredTracks = (selectedFolder?.tracks ?? []).filter((t) => {
+    const q = trackFilterQuery.toLowerCase().trim()
+    if (!q) return true
+    return (
+      t.title.toLowerCase().includes(q) ||
+      (t.artist && t.artist.toLowerCase().includes(q)) ||
+      (t.genre && t.genre.toLowerCase().includes(q)) ||
+      (t.label && t.label.toLowerCase().includes(q)) ||
+      (t.keySignature && t.keySignature.toLowerCase().includes(q))
     )
   })
 
@@ -369,7 +425,7 @@ export default function FolderIngestionHub() {
           <div className="dropzone-text">
             <h3>Archivio & Organizzazione Cartelle nel Cloud</h3>
             <p>
-              Gestisci le tue cartelle di sessione (es. <strong>Session 001</strong>) o carica cartelle audio dal computer. Drops rileva il <strong>BPM</strong>, arricchisce i metadati con <strong>Discogs</strong> e ti permette di rinominare e riordinare la tua libreria.
+              Organizza le tue cartelle di sessione (es. <strong>Session 001</strong>) o carica cartelle audio dal computer. Drops analizza il <strong>BPM</strong>, assegna la <strong>Chiave Camelot</strong>, arricchisce i metadati con <strong>Discogs</strong> e ti permette di rinominare e riprodurre ogni traccia all&apos;istante.
             </p>
           </div>
           <div className="dropzone-action" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -402,7 +458,7 @@ export default function FolderIngestionHub() {
         {isProcessing && (
           <div className="ingestion-progress-box">
             <div className="progress-info">
-              <span>Scansione e calcolo metadati per &quot;{currentFolderProcessing}&quot;...</span>
+              <span>Scansione metadati audio per &quot;{currentFolderProcessing}&quot;...</span>
               <span>{processingProgress}%</span>
             </div>
             <div className="progress-bar-track">
@@ -427,10 +483,34 @@ export default function FolderIngestionHub() {
               <h4>Cartelle nell&apos;Archivio</h4>
               <span className="count-pill">{folders.length} cartelle</span>
             </div>
+            <div className="folder-sort-bar">
+              <span className="sort-label">Ordina:</span>
+              <button
+                type="button"
+                className={`btn-sort-pill ${sortBy === 'date' ? 'active' : ''}`}
+                onClick={() => setSortBy('date')}
+              >
+                📅 Recenti
+              </button>
+              <button
+                type="button"
+                className={`btn-sort-pill ${sortBy === 'name' ? 'active' : ''}`}
+                onClick={() => setSortBy('name')}
+              >
+                🔤 Nome
+              </button>
+              <button
+                type="button"
+                className={`btn-sort-pill ${sortBy === 'tracks' ? 'active' : ''}`}
+                onClick={() => setSortBy('tracks')}
+              >
+                🎵 Tracce
+              </button>
+            </div>
             <input
               type="text"
               className="sync-input-field search-folder-input"
-              placeholder="Cerca cartella o traccia..."
+              placeholder="Cerca cartelle..."
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
             />
@@ -524,7 +604,7 @@ export default function FolderIngestionHub() {
                   <span className="eyebrow-accent">
                     {selectedFolder.isSession ? 'SESSIONE DI DOWNLOAD' : 'CARTELLA SELEZIONATA'}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     {editingFolderId === selectedFolder.id ? (
                       <div className="rename-input-wrap">
                         <input
@@ -565,7 +645,15 @@ export default function FolderIngestionHub() {
                     {selectedFolder.uploadDate} · {selectedFolder.trackCount} tracce · {selectedFolder.dominantGenre}
                   </p>
                 </div>
-                <div className="details-header-actions">
+                <div className="details-header-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="preset-chip-btn"
+                    onClick={() => handleExportM3U(selectedFolder)}
+                    title="Esporta playlist .m3u per Rekordbox e DJ software"
+                  >
+                    💾 Esporta M3U (Rekordbox)
+                  </button>
                   <button
                     type="button"
                     className="preset-chip-btn"
@@ -582,6 +670,20 @@ export default function FolderIngestionHub() {
                 </div>
               </div>
 
+              {/* Sotto-barra filtro tracce */}
+              <div className="folder-tracks-filter-bar">
+                <input
+                  type="text"
+                  className="sync-input-field search-tracks-in-folder"
+                  placeholder="Filtra tracce per titolo, artista, genere o BPM..."
+                  value={trackFilterQuery}
+                  onChange={(e) => setTrackFilterQuery(e.target.value)}
+                />
+                <span className="tracks-shown-badge">
+                  Mostrati <strong>{filteredTracks.length}</strong> su {selectedFolder.tracks.length} brani
+                </span>
+              </div>
+
               <div className="folder-tracks-table-wrap">
                 <table className="sync-tracks-table">
                   <thead>
@@ -589,53 +691,60 @@ export default function FolderIngestionHub() {
                       <th style={{ width: '40px' }}>#</th>
                       <th>Titolo & Artista</th>
                       <th>BPM</th>
+                      <th>Key</th>
                       <th>Etichetta / Discogs</th>
                       <th>Genere</th>
-                      <th style={{ width: '80px' }}>Ascolta</th>
+                      <th style={{ width: '100px', textAlign: 'center' }}>Ascolta</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedFolder.tracks.length === 0 ? (
+                    {filteredTracks.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#9ca3af' }}>
-                          Nessun brano in questa sessione. Scarica tracce nella sezione Download per importarle qui!
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
+                          Nessun brano trovato con questo filtro.
                         </td>
                       </tr>
                     ) : (
-                      selectedFolder.tracks.map((track, idx) => (
-                        <tr key={track.id}>
-                          <td style={{ color: '#6b7280', fontSize: '0.8rem' }}>{idx + 1}</td>
-                          <td>
-                            <div className="track-title-cell">
-                              <strong>{track.title}</strong>
-                              <span>{track.artist || 'Artista Sconosciuto'}</span>
-                            </div>
-                          </td>
-                          <td>
-                            {track.bpm ? (
-                              <span className="bpm-tag">{Math.round(track.bpm)} BPM</span>
-                            ) : (
-                              <span style={{ color: '#9ca3af' }}>-</span>
-                            )}
-                          </td>
-                          <td>
-                            <span className="label-badge">{track.label || 'Discogs Enriched'}</span>
-                          </td>
-                          <td>
-                            <span className="genre-pill">{track.genre || 'Electronic'}</span>
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="btn-play-mini-row"
-                              onClick={() => handlePlayTrack(track)}
-                              title={`Ascolta ${track.title}`}
-                            >
-                              ▶ Play
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      filteredTracks.map((track, idx) => {
+                        const isThisPlaying = playingTrackId === track.id
+                        return (
+                          <tr key={track.id} className={isThisPlaying ? 'track-row-playing' : ''}>
+                            <td style={{ color: '#6b7280', fontSize: '0.8rem' }}>{idx + 1}</td>
+                            <td>
+                              <div className="track-title-cell">
+                                <strong>{track.title}</strong>
+                                <span>{track.artist || 'Artista Sconosciuto'}</span>
+                              </div>
+                            </td>
+                            <td>
+                              {track.bpm ? (
+                                <span className="bpm-tag">{Math.round(track.bpm)} BPM</span>
+                              ) : (
+                                <span style={{ color: '#9ca3af' }}>-</span>
+                              )}
+                            </td>
+                            <td>
+                              <span className="key-camelot-badge">{track.keySignature || '8A'}</span>
+                            </td>
+                            <td>
+                              <span className="label-badge">{track.label || 'Discogs Enriched'}</span>
+                            </td>
+                            <td>
+                              <span className="genre-pill">{track.genre || 'Electronic'}</span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className={`btn-play-mini-row ${isThisPlaying ? 'is-playing' : ''}`}
+                                onClick={() => handlePlayTrack(track)}
+                                title={`Ascolta ${track.title}`}
+                              >
+                                {isThisPlaying ? '❚❚ In riproduzione' : '▶ Play'}
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })
                     )}
                   </tbody>
                 </table>

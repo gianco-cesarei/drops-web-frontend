@@ -1,5 +1,6 @@
 ---
 import PublicHeader from '../components/PublicHeader.astro'
+import GlobalAudioPlayer from '../components/GlobalAudioPlayer'
 import 'leaflet/dist/leaflet.css'
 import '../styles.css'
 
@@ -26,5 +27,6 @@ const { title, description = 'Drops — discovery musicale editoriale.' } = Astr
   <body>
     <PublicHeader pathname={Astro.url.pathname} />
     <slot />
+    <GlobalAudioPlayer client:load />
   </body>
 </html>

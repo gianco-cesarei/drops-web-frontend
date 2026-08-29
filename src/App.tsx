@@ -243,10 +243,10 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
             type="button"
             className="global-search-trigger-btn"
             onClick={() => setSearchOpen(true)}
-            aria-label="Apri ricerca globale"
-            title="Cerca (⌘K)"
+            aria-label="Cerca tutte le canzoni"
+            title="Cerca tutte le canzoni (⌘K)"
           >
-            <span>🔍 Cerca</span>
+            <span>🔍 Cerca tutte le canzoni...</span>
             <kbd className="header-cmd-k">⌘K</kbd>
           </button>
           <span className="account-name">{user.name ?? user.username ?? user.email ?? 'Account'}</span>

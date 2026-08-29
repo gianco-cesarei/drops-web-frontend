@@ -23,7 +23,7 @@ describe('FolderIngestionHub', () => {
 
   it('filtra le cartelle tramite la barra di ricerca', async () => {
     render(<FolderIngestionHub />)
-    const searchInput = screen.getByPlaceholderText(/Cerca cartella o traccia/i)
+    const searchInput = screen.getByPlaceholderText(/Cerca cartelle/i)
     await userEvent.type(searchInput, 'Vinyl')
 
     expect(screen.getByText('Underground Vinyl Rips 2026')).toBeInTheDocument()

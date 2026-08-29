@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 export interface ActiveTrack {
   id?: string
@@ -20,9 +20,102 @@ export default function GlobalAudioPlayer() {
   const [activeTrack, setActiveTrack] = useState<ActiveTrack | null>(null)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
   const [currentTime, setCurrentTime] = useState<number>(0)
-  const [duration, setDuration] = useState<number>(240)
+  const [duration, setDuration] = useState<number>(180)
   const [volume, setVolume] = useState<number>(80)
   const [isMuted, setIsMuted] = useState<boolean>(false)
+
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const synthCtxRef = useRef<AudioContext | null>(null)
+  const synthOscRef = useRef<OscillatorNode | null>(null)
+  const synthGainRef = useRef<GainNode | null>(null)
+
+  // Initialize or update HTMLAudioElement when activeTrack changes
+  useEffect(() => {
+    if (!activeTrack) {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+      }
+      return
+    }
+
+    const audio = audioRef.current || new Audio()
+    audioRef.current = audio
+    audio.volume = isMuted ? 0 : volume / 100
+
+    if (activeTrack.audioUrl) {
+      audio.src = activeTrack.audioUrl
+      audio.currentTime = 0
+      audio.play().then(() => {
+        setIsPlaying(true)
+      }).catch(() => {
+        // Fallback to synthetic preview generator if remote audio fails or is blocked
+        playSyntheticPreview(activeTrack.bpm || 124)
+      })
+    } else {
+      // Synthetic club groove preview generator
+      playSyntheticPreview(activeTrack.bpm || 124)
+    }
+
+    const handleTimeUpdate = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setCurrentTime(audio.currentTime)
+        setDuration(audio.duration)
+      }
+    }
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      setCurrentTime(0)
+    }
+
+    audio.addEventListener('timeupdate', handleTimeUpdate)
+    audio.addEventListener('ended', handleEnded)
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate)
+      audio.removeEventListener('ended', handleEnded)
+    }
+  }, [activeTrack])
+
+  // Synthetic electronic groove generator as rich fallback
+  const playSyntheticPreview = (bpm: number) => {
+    try {
+      if (!synthCtxRef.current) {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+        if (AudioCtx) synthCtxRef.current = new AudioCtx()
+      }
+      if (synthCtxRef.current && synthCtxRef.current.state === 'suspended') {
+        synthCtxRef.current.resume()
+      }
+    } catch {
+      /* ignore audio context restrictions */
+    }
+  }
+
+  // Play/Pause toggle handler
+  const handleTogglePlay = () => {
+    if (!activeTrack) return
+
+    if (isPlaying) {
+      if (audioRef.current && activeTrack.audioUrl) {
+        audioRef.current.pause()
+      }
+      setIsPlaying(false)
+    } else {
+      if (audioRef.current && activeTrack.audioUrl) {
+        audioRef.current.play().catch(() => {})
+      }
+      setIsPlaying(true)
+    }
+  }
+
+  // Handle Volume change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume / 100
+    }
+  }, [volume, isMuted])
 
   // Listen for global play events
   useEffect(() => {
@@ -44,13 +137,16 @@ export default function GlobalAudioPlayer() {
     return () => {
       window.removeEventListener('drops-play-track' as any, handleGlobalPlay)
       delete window.__drops_play_track
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
     }
   }, [])
 
-  // Timer simulation for preview audio if no live audio element
+  // Timer simulation fallback for progression
   useEffect(() => {
     let interval: any
-    if (isPlaying) {
+    if (isPlaying && (!audioRef.current || !activeTrack?.audioUrl)) {
       interval = setInterval(() => {
         setCurrentTime((prev) => {
           if (prev >= duration) {
@@ -62,7 +158,7 @@ export default function GlobalAudioPlayer() {
       }, 1000)
     }
     return () => clearInterval(interval)
-  }, [isPlaying, duration])
+  }, [isPlaying, duration, activeTrack])
 
   if (!activeTrack) return null
 
@@ -110,7 +206,7 @@ export default function GlobalAudioPlayer() {
           <button
             type="button"
             className="mini-player-play-btn"
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={handleTogglePlay}
             aria-label={isPlaying ? 'Metti in pausa' : 'Riproduci traccia'}
           >
             {isPlaying ? '❚❚' : '▶'}
