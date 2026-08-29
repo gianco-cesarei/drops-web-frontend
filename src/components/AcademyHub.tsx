@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { User } from '../api'
+import DJLab from './DJLab'
 
 interface Lesson {
   id: string
@@ -181,7 +182,7 @@ function getSavedLessons(): Set<string> {
 export default function AcademyHub({ user }: { user?: User | null }) {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(MODULES[0].lessons[0])
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(() => getSavedLessons())
-  const [tab, setTab] = useState<'lessons' | 'feedback' | 'resources'>('lessons')
+  const [tab, setTab] = useState<'lessons' | 'djlab' | 'feedback' | 'resources'>('lessons')
   const [openModuleId, setOpenModuleId] = useState(1)
 
   // Feedback form state
@@ -280,6 +281,12 @@ export default function AcademyHub({ user }: { user?: User | null }) {
           Lezioni {completedLessons.size}/12
         </button>
         <button
+          className={`academy-tab-btn ${tab === 'djlab' ? 'active' : ''}`} role="tab" aria-selected={tab === 'djlab'}
+          onClick={() => setTab('djlab')}
+        >
+          🎛️ DJ Lab (Beatmatching) <span className="badge-new-pill" style={{ marginLeft: '4px' }}>NEW</span>
+        </button>
+        <button
           className={`academy-tab-btn ${tab === 'feedback' ? 'active' : ''}`} role="tab" aria-selected={tab === 'feedback'}
           onClick={() => setTab('feedback')}
         >
@@ -293,6 +300,12 @@ export default function AcademyHub({ user }: { user?: User | null }) {
           Download Kit & Template DAW
         </button>
       </nav>
+
+      {tab === 'djlab' && (
+        <section className="academy-tab-panel" role="tabpanel" aria-label="DJ Lab Beatmatching">
+          <DJLab />
+        </section>
+      )}
 
       {tab === 'lessons' && (
         <div className="academy-grid-layout academy-tab-panel" role="tabpanel">

@@ -3024,4 +3024,538 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   .form-row {
     grid-template-columns: 1fr;
   }
+  .djlab-main-deck-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
+
+/* ==========================================================================
+   DROPS DJ LAB & BEATMATCHING STUDIO
+   ========================================================================== */
+.djlab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.djlab-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #dce1dc);
+  border-radius: 14px;
+}
+.djlab-title-group h2 {
+  font-size: 1.25rem;
+  font-weight: 850;
+  margin: 2px 0;
+}
+.djlab-subtitle {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #626862);
+}
+
+.djlab-routing-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.routing-mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.routing-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #626862);
+}
+.routing-chips {
+  display: flex;
+  gap: 6px;
+}
+.routing-chip-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 750;
+  background: #f4f5f4;
+  border: 1px solid #dce1dc;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.routing-chip-btn.active {
+  background: #eafaf0;
+  border-color: #86efac;
+  color: #15803d;
+}
+.device-pickers-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.device-select-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.device-select-label select {
+  font-size: 0.75rem;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+
+/* BPM PHASE BAR */
+.bpm-phase-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #18201a 0%, #0d120e 100%);
+  border: 1px solid #233327;
+  border-radius: 12px;
+  color: #ffffff;
+}
+.phase-indicator-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.phase-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.06em;
+}
+.phase-diff-value {
+  font-size: 0.88rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.phase-diff-value.matched {
+  background: rgba(34, 197, 94, 0.25);
+  color: #86efac;
+  border: 1px solid #22c55e;
+}
+.phase-diff-value.unmatched {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+}
+.deck-sync-actions {
+  display: flex;
+  gap: 8px;
+}
+.sync-pill-btn {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sync-pill-btn:hover {
+  background: var(--color-accent, #22c55e);
+  color: #05230f;
+  border-color: transparent;
+}
+
+/* MAIN DUAL DECK & MIXER GRID */
+.djlab-main-deck-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.dj-deck-unit {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px;
+  background: #0f1410;
+  border: 1px solid #233327;
+  border-radius: 14px;
+  color: #ffffff;
+}
+.deck-top-info {
+  margin-bottom: 8px;
+}
+.deck-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deck-letter-badge {
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.deck-letter-badge.a { background: #3b82f6; color: #ffffff; }
+.deck-letter-badge.b { background: #ec4899; color: #ffffff; }
+.deck-track-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.deck-artist-sub {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* WAVEFORM */
+.deck-waveform-container {
+  position: relative;
+  height: 48px;
+  background: #070a08;
+  border: 1px solid #1c261e;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.waveform-center-playhead {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ef4444;
+  z-index: 2;
+}
+.waveform-bars-visual {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  padding: 0 4px;
+}
+.wave-bar {
+  flex: 1;
+  background: #4ade80;
+  border-radius: 1px;
+}
+.wave-bar.beat-marker {
+  background: #ffffff;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+}
+.deck-b .wave-bar { background: #f472b6; }
+.deck-b .wave-bar.beat-marker { background: #ffffff; }
+
+/* CONTROLS ROW */
+.deck-controls-row {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.deck-transport-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.transport-main-btns {
+  display: flex;
+  gap: 8px;
+}
+.btn-transport {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.btn-transport.cue {
+  background: #eab308;
+  color: #000000;
+}
+.btn-transport.cue.active {
+  box-shadow: 0 0 10px #fde047;
+  transform: scale(0.97);
+}
+.btn-transport.play {
+  background: #22c55e;
+  color: #05230f;
+}
+.btn-transport.play.playing {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 0 10px #4ade80;
+}
+.pitch-bend-btns {
+  display: flex;
+  gap: 6px;
+}
+.btn-bend {
+  flex: 1;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.track-load-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.track-picker-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.track-chip-btn {
+  text-align: left;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #9ca3af;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.track-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* PITCH FADER COLUMN */
+.pitch-fader-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 76px;
+  padding: 6px;
+  background: #090c0a;
+  border: 1px solid #1c261e;
+  border-radius: 10px;
+}
+.pitch-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bpm-number {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+.pitch-percent-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #86efac;
+}
+.pitch-slider-track-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  height: 100px;
+}
+.pitch-limit-label {
+  font-size: 0.62rem;
+  color: #6b7280;
+  font-weight: 700;
+}
+.vertical-pitch-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 24px;
+  height: 70px;
+  accent-color: #22c55e;
+  cursor: pointer;
+}
+.btn-pitch-reset {
+  padding: 2px 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  color: #9ca3af;
+  cursor: pointer;
+}
+.btn-pitch-reset:hover {
+  color: #ffffff;
+}
+
+/* MIXER UNIT */
+.dj-mixer-unit {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  background: #090c0a;
+  border: 1px solid #233327;
+  border-radius: 14px;
+  color: #ffffff;
+}
+.mixer-header {
+  text-align: center;
+  margin-bottom: 6px;
+}
+.mixer-title-tag {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: var(--color-accent, #22c55e);
+}
+.mixer-channels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.channel-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ch-name {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #9ca3af;
+}
+.eq-knobs-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.knob-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #6b7280;
+}
+.eq-slider {
+  width: 100%;
+  accent-color: #22c55e;
+  height: 14px;
+}
+.knob-val {
+  font-size: 0.6rem;
+  color: #9ca3af;
+}
+.btn-ch-cue {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  cursor: pointer;
+  width: 100%;
+}
+.btn-ch-cue.active {
+  background: #eab308;
+  color: #000000;
+  border-color: transparent;
+}
+.ch-volume-fader-box {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+}
+.channel-volume-fader {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  height: 55px;
+  accent-color: #22c55e;
+  cursor: pointer;
+}
+
+/* CENTER COLUMN */
+.mixer-center-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cue-mix-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.cue-mix-slider {
+  width: 100%;
+  accent-color: #eab308;
+}
+.cue-mix-readout {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.62rem;
+  color: #9ca3af;
+  font-weight: 750;
+}
+.master-volume-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  width: 100%;
+}
+.master-volume-label input {
+  width: 100%;
+  accent-color: #22c55e;
+}
+
+/* CROSSFADER */
+.crossfader-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.crossfader-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #6b7280;
+}
+.crossfader-slider {
+  width: 100%;
+  accent-color: #22c55e;
+  cursor: pointer;
+}
+

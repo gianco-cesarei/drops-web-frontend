@@ -56,4 +56,15 @@ describe('producer features', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Annulla' }))
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
+
+  it('renderizza DJ Lab con Deck A, Deck B, pitch slider e sync', async () => {
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
+    await userEvent.click(screen.getByRole('tab', { name: /DJ Lab/i }))
+    expect(screen.getByText(/Beatmatching & Dual-Deck Studio/i)).toBeInTheDocument()
+    expect(screen.getAllByText('DECK A').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('DECK B').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByRole('slider', { name: 'Pitch fader Deck A' })).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: 'Crossfader' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Sync Deck B/i })).toBeInTheDocument()
+  })
 })
