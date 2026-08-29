@@ -13,6 +13,7 @@ import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import GlobalSearchModal from './components/GlobalSearchModal'
 import MultiSourceSync from './components/MultiSourceSync'
 import DownloadArchiveModal from './components/DownloadArchiveModal'
+import FolderIngestionHub from './components/FolderIngestionHub'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
@@ -1832,6 +1833,7 @@ function queueStatusLabel(status: string): string {
 }
 
 function Download({ user, onError, error, setError }: { user: User; onError: (error: unknown) => void; error: string; setError: (value: string) => void }) {
+  const [activeDownloadTab, setActiveDownloadTab] = useState<'links' | 'folders'>('links')
   const [input, setInput] = useState('')
   const [queue, setQueue] = useState<QueueJob[]>(() => loadQueue())
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
@@ -2130,144 +2132,167 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
 
   const savedInFolderItems = history.filter((h) => downloadedIds.has(h.id))
 
-  return <main className="shell"><div className="workspace download-workspace-grid">
-    {/* Left/Main Column: Input, Pronti/Scaricati prima, poi In Coda */}
-    <section className="card hero-card download-hero">
-      <div className="download-hero-header">
-        <span className="eyebrow">DOWNLOAD PRIVATO</span>
-        <p className="lead">Area personale di {who}. Incolla uno o più link e aggiungili alla coda.</p>
-      </div>
+  return <main className="shell">
+    <div className="platform-tabs-nav" style={{ marginBottom: '20px' }}>
+      <button
+        type="button"
+        className={`platform-tab-btn ${activeDownloadTab === 'links' ? 'active' : ''}`}
+        onClick={() => setActiveDownloadTab('links')}
+      >
+        ⬇️ Download Singoli & Playlist (YT / SoundCloud)
+      </button>
+      <button
+        type="button"
+        className={`platform-tab-btn ${activeDownloadTab === 'folders' ? 'active' : ''}`}
+        onClick={() => setActiveDownloadTab('folders')}
+      >
+        📁 Carica & Organizza Cartelle nel Cloud
+      </button>
+    </div>
 
-      <form onSubmit={handleAdd} className="download-form">
-        <label htmlFor="download-url">Link brano, playlist o set</label>
-        <textarea
-          id="download-url"
-          className="download-textarea"
-          placeholder={'Un link per riga · YouTube o SoundCloud\nLe playlist e i set chiedono conferma delle tracce'}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
-              e.preventDefault()
-              const form = e.currentTarget.form
-              if (form) form.requestSubmit()
-            }
-          }}
-          spellCheck={false}
-          rows={3}
-        />
-        <div className="download-actions">
-          <span className="download-hint">{linkCount ? `${linkCount} link rilevati` : 'Un link per riga · playlist supportate'}</span>
-          <button type="submit" className="primary" disabled={busy || !input.trim()}>{busy ? 'Analisi…' : 'Aggiungi alla coda'}</button>
-        </div>
-      </form>
-      {error && <div className="alert" role="alert">{error}</div>}
-
-      {/* Sotto l'input: 1. PRONTI / SCARICATI */}
-      <div className="dl-section-block">
-        <div className="dl-history-head">
-          <div className="dl-sec-title-wrap">
-            <span className="eyebrow">Pronti per il salvataggio</span>
-            <span className="dl-count">{history.length} tracce pronte</span>
+    {activeDownloadTab === 'folders' ? (
+      <FolderIngestionHub />
+    ) : (
+      <div className="workspace download-workspace-grid">
+        {/* Left/Main Column: Input, Pronti/Scaricati prima, poi In Coda */}
+        <section className="card hero-card download-hero">
+          <div className="download-hero-header">
+            <span className="eyebrow">DOWNLOAD PRIVATO</span>
+            <p className="lead">Area personale di {who}. Incolla uno o più link e aggiungili alla coda.</p>
           </div>
-          <div className="dl-history-actions">
-            <button
-              type="button"
-              className="preset-chip-btn"
-              onClick={handleOpenArchive}
-              title="Visualizza tutti i link e lo storico completo"
-            >
-              📋 Archivio Link & Export ({history.length})
-            </button>
-            {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
-          </div>
-        </div>
 
-        {history.length === 0
-          ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
-          : <div className="dl-history">{history.map((item) => (
-              <HistoryRow
-                key={item.id}
-                item={item}
-                playing={playingUrl === api.fileUrl(item.id)}
-                onToggleAudio={toggleAudio}
-                onDownloaded={() => markDownloaded(item.id)}
-                onRemove={() => handleRemoveHistory(item.id)}
-                onRequeue={requeueSingleUrl}
-                onError={setError}
-                isSaved={downloadedIds.has(item.id)}
-              />
-            ))}</div>}
-      </div>
-
-      {/* Sotto i pronti: 2. IN CODA / IN CORSO */}
-      {queue.length > 0 && (
-        <div className="dl-section-block dl-queue-block">
-          <div className="dl-queue-head">
-            <span className="eyebrow">In corso / Coda</span>
-            <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
-          </div>
-          <div className="dl-queue-list">
-            {queue.map((job) => (
-              <QueueRow
-                key={job.key}
-                job={job}
-                onRetry={() => handleRetryJob(job)}
-                onRemove={() => handleRemoveJob(job.key)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </section>
-
-    {/* Right Column: Download effettuati */}
-    <aside className="card dl-folder-destination-card">
-      <div className="dl-folder-contents-head">
-        <span className="eyebrow">Download effettuati</span>
-        <span className="dl-count">{savedInFolderItems.length} file</span>
-      </div>
-
-      {savedInFolderItems.length === 0 ? (
-        <div className="dl-folder-empty-state">
-          <div className="dl-folder-dash-box">
-            <span className="dl-folder-arrow">↓</span>
-            <p>Ancora nessun download</p>
-            <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
-          </div>
-        </div>
-      ) : (
-        <div className="dl-folder-file-list">
-          {savedInFolderItems.map((item) => (
-            <div key={`done-${item.id}`} className="dl-folder-file-item">
-              <span className="dl-file-icon">🎵</span>
-              <div className="dl-file-info">
-                <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
-                {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
-              </div>
-              <a
-                className="dl-redownload-btn"
-                href={api.fileUrl(item.id)}
-                download
-                title={`Riscarica ${item.title}`}
-                aria-label={`Riscarica ${item.title}`}
-              >
-                ↻ Riscarica
-              </a>
+          <form onSubmit={handleAdd} className="download-form">
+            <label htmlFor="download-url">Link brano, playlist o set</label>
+            <textarea
+              id="download-url"
+              className="download-textarea"
+              placeholder={'Un link per riga · YouTube o SoundCloud\nLe playlist e i set chiedono conferma delle tracce'}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
+                  e.preventDefault()
+                  const form = e.currentTarget.form
+                  if (form) form.requestSubmit()
+                }
+              }}
+              spellCheck={false}
+              rows={3}
+            />
+            <div className="download-actions">
+              <span className="download-hint">{linkCount ? `${linkCount} link rilevati` : 'Un link per riga · playlist supportate'}</span>
+              <button type="submit" className="primary" disabled={busy || !input.trim()}>{busy ? 'Analisi…' : 'Aggiungi alla coda'}</button>
             </div>
-          ))}
-        </div>
-      )}
-  </aside>
-  </div>
-  {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
-  {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
-  <DownloadArchiveModal
-    isOpen={isArchiveOpen}
-    onClose={() => setIsArchiveOpen(false)}
-    items={history}
-    onRequeue={requeueSingleUrl}
-  />
+          </form>
+          {error && <div className="alert" role="alert">{error}</div>}
+
+          {/* Sotto l'input: 1. PRONTI / SCARICATI */}
+          <div className="dl-section-block">
+            <div className="dl-history-head">
+              <div className="dl-sec-title-wrap">
+                <span className="eyebrow">Pronti per il salvataggio</span>
+                <span className="dl-count">{history.length} tracce pronte</span>
+              </div>
+              <div className="dl-history-actions">
+                <button
+                  type="button"
+                  className="preset-chip-btn"
+                  onClick={handleOpenArchive}
+                  title="Visualizza tutti i link e lo storico completo"
+                >
+                  📋 Archivio Link & Export ({history.length})
+                </button>
+                {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
+              </div>
+            </div>
+
+            {history.length === 0
+              ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
+              : <div className="dl-history">{history.map((item) => (
+                  <HistoryRow
+                    key={item.id}
+                    item={item}
+                    playing={playingUrl === api.fileUrl(item.id)}
+                    onToggleAudio={toggleAudio}
+                    onDownloaded={() => markDownloaded(item.id)}
+                    onRemove={() => handleRemoveHistory(item.id)}
+                    onRequeue={requeueSingleUrl}
+                    onError={setError}
+                    isSaved={downloadedIds.has(item.id)}
+                  />
+                ))}</div>}
+          </div>
+
+          {/* Sotto i pronti: 2. IN CODA / IN CORSO */}
+          {queue.length > 0 && (
+            <div className="dl-section-block dl-queue-block">
+              <div className="dl-queue-head">
+                <span className="eyebrow">In corso / Coda</span>
+                <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
+              </div>
+              <div className="dl-queue-list">
+                {queue.map((job) => (
+                  <QueueRow
+                    key={job.key}
+                    job={job}
+                    onRetry={() => handleRetryJob(job)}
+                    onRemove={() => handleRemoveJob(job.key)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Right Column: Download effettuati */}
+        <aside className="card dl-folder-destination-card">
+          <div className="dl-folder-contents-head">
+            <span className="eyebrow">Download effettuati</span>
+            <span className="dl-count">{savedInFolderItems.length} file</span>
+          </div>
+
+          {savedInFolderItems.length === 0 ? (
+            <div className="dl-folder-empty-state">
+              <div className="dl-folder-dash-box">
+                <span className="dl-folder-arrow">↓</span>
+                <p>Ancora nessun download</p>
+                <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
+              </div>
+            </div>
+          ) : (
+            <div className="dl-folder-file-list">
+              {savedInFolderItems.map((item) => (
+                <div key={`done-${item.id}`} className="dl-folder-file-item">
+                  <span className="dl-file-icon">🎵</span>
+                  <div className="dl-file-info">
+                    <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
+                    {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
+                  </div>
+                  <a
+                    className="dl-redownload-btn"
+                    href={api.fileUrl(item.id)}
+                    download
+                    title={`Riscarica ${item.title}`}
+                    aria-label={`Riscarica ${item.title}`}
+                  >
+                    ↻ Riscarica
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </aside>
+      </div>
+    )}
+
+    {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
+    {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
+    <DownloadArchiveModal
+      isOpen={isArchiveOpen}
+      onClose={() => setIsArchiveOpen(false)}
+      items={history}
+      onRequeue={requeueSingleUrl}
+    />
   </main>
 }
 

@@ -61,13 +61,12 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 
 ### Sezione 3: Cloud Storage & Libreria Utente
 * **Introduzione:** Spostamento del baricentro della libreria utente dal disco locale a una soluzione in cloud sicura, con streaming privato e organizzazione automatica.
-1. **Task 3.1: Salvataggio e organizzazione della propria musica in Cloud**
-   * *a) Configurazione dello Storage Personale (Cloudflare R2)* `[back]`
-     * **Scelte & Raccomandazioni:** Utilizzare Cloudflare R2 (Raccomandato per i costi di traffico in uscita a $0) creando una cartella per ciascun utente sincronizzata con le credenziali Supabase.
-     * **Azione:** Sviluppare la logica di upload asincrono su R2 al termine del download e salvare il percorso su database Supabase.
+1. **Task 3.1: Salvataggio e organizzazione della propria musica in Cloud [COMPLETATO]**
+   * *Miglioramento Utente:* Carica intere cartelle di file audio dal computer in Drops, analizza automaticamente metadati ID3, BPM e arricchimento Discogs, ed indicizza le cartelle caricate con nome e data di caricamento.
+   * *a) Configurazione dello Storage Personale (Cloudflare R2 + Supabase)* `[back]` `[front]`
+     * **Stato:** Implementato `FolderIngestionHub.tsx` con upload cartelle (`webkitdirectory`), estrazione automatica metadati/BPM/Discogs, persistenza Supabase Postgres e storage Cloudflare R2.
    * *b) Ricerca testuale e filtri nel catalogo cloud* `[front]`
-     * **Scelte & Raccomandazioni:** Implementare una ricerca rapida client-side sui metadati (Raccomandato per reattività) o delegare le query di ricerca interamente a Supabase.
-     * **Azione:** Disegnare la tabella di visualizzazione della libreria cloud con filtri di genere e barra di ricerca.
+     * **Stato:** Ricerca rapida integrata su cartelle e tracce, filtri di genere e visualizzazione metadati.
 2. **Task 3.2: Riproduttore Musicale Cloud e Streaming Privato**
    * *Miglioramento Utente:* Ascolta in streaming la musica salvata nel tuo archivio cloud privato direttamente dal browser, ovunque ti trovi e su qualsiasi dispositivo.
    * *a) Generazione di link sicuri per lo streaming (Presigned URLs)* `[back]`
