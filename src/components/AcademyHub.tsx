@@ -247,7 +247,13 @@ export default function AcademyHub({ user }: { user?: User | null }) {
       }
 
       await api.completeAcademyUpload(prep.submission_id)
-      setSubmissionNotice(`✓ Traccia "${trackTitle || trackFile.name}" caricata con successo su R2! In attesa di review dal Guest Artist.`)
+      setSubmissionNotice('Analisi automatica del BPM in corso sul file caricato...')
+      try {
+        const bpmResult = await api.analyzeAcademyBpm(prep.submission_id)
+        setSubmissionNotice(`✓ Traccia "${trackTitle || trackFile.name}" caricata con successo su R2! BPM analizzato: ${bpmResult.bpm} BPM. In attesa di review dal Guest Artist.`)
+      } catch {
+        setSubmissionNotice(`✓ Traccia "${trackTitle || trackFile.name}" caricata con successo su R2! In attesa di review dal Guest Artist.`)
+      }
       setTrackFile(null)
     } catch {
       setSubmissionNotice('Bozza salvata sul dispositivo. Invio non disponibile: servizio upload non ancora collegato.')

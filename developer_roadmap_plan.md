@@ -128,11 +128,10 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 
 ### Sezione 7: Analisi Audio & Preparazione DJ
 * **Introduzione:** Utility locali e cloud per arricchire i metadati e strutturare i file audio per la riproduzione su hardware professionale.
-1. **Task 7.1: Analizzatore di BPM automatico nel Cloud**
-   * *Miglioramento Utente:* Scopri all'istante il BPM esatto delle tracce scaricate grazie a un'analisi automatica che avviene sul server, senza dover installare motori di analisi pesanti sul tuo computer.
-   * *a) Algoritmo e posizionamento del calcolo del BPM* `[back]`
-     * **Scelte & Raccomandazioni:** Eseguire l'analisi del BPM sul backend FastAPI in modo asincrono usando librerie Python (NumPy + FFmpeg) per la massima precisione (Raccomandato), salvando il risultato su database.
-     * **Azione:** Configurare la coda di analisi in background e i relativi endpoint.
+1. **Task 7.1: Analizzatore di BPM automatico nel Cloud [COMPLETATO]**
+   * *Miglioramento Utente:* Scopri all'istante il BPM esatto delle tracce scaricate e inviate all'Academy grazie all'analisi automatica onset/tempo asincrona sul server.
+   * *a) Algoritmo e posizionamento del calcolo del BPM* `[back]` `[front]`
+     * **Stato:** Implementato modulo di calcolo BPM asincrono con endpoint `/api/v1/academy/submissions/{id}/analyze-bpm` e trigger automatico su frontend dopo upload su R2.
 2. **Task 7.2: Editor Tag ID3 ed Esportazione per DJ Hardware (Rekordbox) [COMPLETATO]**
    * *Miglioramento Utente:* Correggi i tag ID3 dei tuoi brani (artista, titolo, copertina, BPM, Camelot Key) ed esporta le tracce ordinate in cartelle su una chiavetta USB pronta all'uso per i lettori CDJ professionali.
    * *a) Gestione metadati e organizzazione cartelle USB* `[front]` `[desktop]`

@@ -177,6 +177,8 @@ export const api = {
     }),
   completeAcademyUpload: (submissionId: string) =>
     request<any>(`/api/v1/academy/submissions/${encodeURIComponent(submissionId)}/complete`, { method: 'POST' }),
+  analyzeAcademyBpm: (submissionId: string) =>
+    request<{ id: string; bpm: number; bpm_confidence?: number; bpm_source?: string }>(`/api/v1/academy/submissions/${encodeURIComponent(submissionId)}/analyze-bpm`, { method: 'POST' }),
   listAcademySubmissions: (limit = 50, offset = 0) =>
     request<{ submissions: any[] }>(`/api/v1/academy/submissions?limit=${limit}&offset=${offset}`),
   academyStreamUrl: (submissionId: string) => `${apiUrl()}/api/v1/academy/submissions/${encodeURIComponent(submissionId)}/stream`,
