@@ -170,4 +170,14 @@ export const api = {
   discogsEnrich: (track: Pick<SpotifyTrack, 'title' | 'artists' | 'isrc'>) => request<DiscogsEnrichment | null>('/api/v1/discogs/enrich', { method: 'POST', body: JSON.stringify({ artist: track.artists.join(', '), title: track.title, isrc: track.isrc }) }),
   bpmCompute: (track: Pick<SpotifyTrack, 'id' | 'title' | 'artists' | 'isrc'>, sourceUrl?: string) => request<{ job_id: string; status: string; bpm?: number; confidence?: number }>('/api/v1/bpm/compute', { method: 'POST', body: JSON.stringify({ track_key: track.id, artist: track.artists[0] ?? '', title: track.title, isrc: track.isrc, source_url: sourceUrl }) }),
   bpmJob: (jobId: string) => request<{ id: string; status: string; bpm?: number; confidence?: number; error?: string }>(`/api/v1/bpm/job/${encodeURIComponent(jobId)}`),
+  prepareAcademyUpload: (data: { title: string; bpm?: number; genre?: string; focus_area?: string; filename: string; content_type: string }) =>
+    request<{ submission_id: string; upload_url: string; upload_fields: Record<string, string>; key: string; max_bytes: number }>('/api/v1/academy/submissions/prepare-upload', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  completeAcademyUpload: (submissionId: string) =>
+    request<any>(`/api/v1/academy/submissions/${encodeURIComponent(submissionId)}/complete`, { method: 'POST' }),
+  listAcademySubmissions: (limit = 50, offset = 0) =>
+    request<{ submissions: any[] }>(`/api/v1/academy/submissions?limit=${limit}&offset=${offset}`),
+  academyStreamUrl: (submissionId: string) => `${apiUrl()}/api/v1/academy/submissions/${encodeURIComponent(submissionId)}/stream`,
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { api } from '../api'
 import type { User } from '../api'
 import DJLab from './DJLab'
 import StudioDirectory from './StudioDirectory'
@@ -211,13 +212,48 @@ export default function AcademyHub({ user }: { user?: User | null }) {
     try { window.localStorage.setItem(ACADEMY_PROGRESS_KEY, JSON.stringify([...completedLessons])) } catch {}
   }, [completedLessons])
 
-  const handleFeedbackSubmit = (e: FormEvent) => {
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleFeedbackSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!trackFile) {
       setFileError('Seleziona un file WAV o MP3 prima di continuare.')
       return
     }
-    setSubmissionNotice('Bozza pronta sul dispositivo. Invio non disponibile: servizio upload non ancora collegato.')
+    try {
+      setIsUploading(true)
+      setFileError('')
+      setSubmissionNotice('Preparazione upload su Cloudflare R2...')
+      const prep = await api.prepareAcademyUpload({
+        title: trackTitle || trackFile.name.replace(/\.[^/.]+$/, ''),
+        bpm: parseInt(trackBpm, 10) || undefined,
+        genre: trackGenre,
+        focus_area: focusArea,
+        filename: trackFile.name,
+        content_type: trackFile.type,
+      })
+
+      const formData = new FormData()
+      Object.entries(prep.upload_fields).forEach(([k, v]) => formData.append(k, v))
+      formData.append('file', trackFile)
+
+      setSubmissionNotice('Caricamento audio in corso su Cloudflare R2...')
+      const r2Res = await fetch(prep.upload_url, {
+        method: 'POST',
+        body: formData,
+      })
+      if (!r2Res.ok && r2Res.status !== 204 && r2Res.status !== 200) {
+        throw new Error('Errore durante il caricamento su storage R2')
+      }
+
+      await api.completeAcademyUpload(prep.submission_id)
+      setSubmissionNotice(`✓ Traccia "${trackTitle || trackFile.name}" caricata con successo su R2! In attesa di review dal Guest Artist.`)
+      setTrackFile(null)
+    } catch {
+      setSubmissionNotice('Bozza salvata sul dispositivo. Invio non disponibile: servizio upload non ancora collegato.')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const selectTrackFile = (file?: File) => {
@@ -523,8 +559,8 @@ export default function AcademyHub({ user }: { user?: User | null }) {
                     <span>DAW: <strong>Ableton Live 12</strong></span>
                   </div>
 
-                  <button type="submit" className="primary submit-feedback-btn">
-                    Prepara bozza Review
+                  <button type="submit" className="primary submit-feedback-btn" disabled={isUploading}>
+                    {isUploading ? 'Caricamento su R2 in corso...' : 'Invia Traccia per Review'}
                   </button>
                 </form>
             </div>

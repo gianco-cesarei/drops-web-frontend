@@ -77,4 +77,19 @@ describe('API client', () => {
       source: 'soundcloud',
     })
   })
+
+  it('invia richieste prepare e complete upload per Academy R2', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ submission_id: 'sub-1', upload_url: 'https://r2.test', upload_fields: {}, key: 'k1', max_bytes: 100 }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'sub-1', status: 'ready' }), { status: 200, headers: { 'content-type': 'application/json' } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const prep = await api.prepareAcademyUpload({ title: 'My Track', filename: 'track.wav', content_type: 'audio/wav' })
+    expect(prep.submission_id).toBe('sub-1')
+
+    const complete = await api.completeAcademyUpload('sub-1')
+    expect(complete.status).toBe('ready')
+
+    expect(api.academyStreamUrl('sub-1')).toBe('https://api.drops.test/api/v1/academy/submissions/sub-1/stream')
+  })
 })
