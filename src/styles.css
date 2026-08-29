@@ -5531,6 +5531,62 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   margin: 0;
 }
 
+.folder-title-with-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.btn-edit-folder-name {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+.btn-edit-folder-name:hover {
+  background: #1f2d21;
+  color: #86efac;
+}
+
+.rename-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rename-folder-input {
+  background: #090d0a;
+  border: 1px solid #22c55e;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  padding: 4px 8px;
+  font-weight: 700;
+  outline: none;
+}
+.btn-save-rename {
+  background: #22c55e;
+  color: #052e16;
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.private-admin-menu summary {
+  color: #a78bfa !important;
+}
+.private-admin-menu summary:hover,
+.private-admin-menu summary.active {
+  color: #c4b5fd !important;
+}
+
+
 
 
 

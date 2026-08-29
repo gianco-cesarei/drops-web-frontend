@@ -1,20 +1,20 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import FolderIngestionHub from './FolderIngestionHub'
 
 describe('FolderIngestionHub', () => {
-  it('renderizza il pannello di caricamento e la lista delle cartelle indicizzate', () => {
+  it('renderizza il pannello di archivio e la lista delle cartelle indicizzate con Session 001', () => {
     render(<FolderIngestionHub />)
-    expect(screen.getByText(/Carica e Organizza Cartelle nel Cloud/i)).toBeInTheDocument()
-    expect(screen.getByText('Houghton Morning Session 2026')).toBeInTheDocument()
-    expect(screen.getByText('Underground Vinyl Rips 2026')).toBeInTheDocument()
+    expect(screen.getByText(/Archivio & Organizzazione Cartelle nel Cloud/i)).toBeInTheDocument()
+    expect(screen.getAllByText('Session 001').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Houghton Morning Session 2026').length).toBeGreaterThan(0)
   })
 
   it('mostra le tracce e i metadati quando si clicca su una cartella', async () => {
     render(<FolderIngestionHub />)
-    const folderCard = screen.getByText('Houghton Morning Session 2026')
-    await userEvent.click(folderCard)
+    const folderCards = screen.getAllByText('Houghton Morning Session 2026')
+    await userEvent.click(folderCards[0])
 
     expect(screen.getByText('Tremolo Flow')).toBeInTheDocument()
     expect(screen.getByText('Ricardo Villalobos')).toBeInTheDocument()
@@ -28,5 +28,13 @@ describe('FolderIngestionHub', () => {
 
     expect(screen.getByText('Underground Vinyl Rips 2026')).toBeInTheDocument()
     expect(screen.queryByText('Houghton Morning Session 2026')).not.toBeInTheDocument()
+  })
+
+  it('permette di creare una nuova sessione di download (es. Session 002)', async () => {
+    render(<FolderIngestionHub />)
+    const newSessionBtn = screen.getByText(/Nuova Sessione/i)
+    await userEvent.click(newSessionBtn)
+
+    expect(screen.getAllByText('Session 002').length).toBeGreaterThan(0)
   })
 })

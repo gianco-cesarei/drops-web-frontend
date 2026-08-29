@@ -23,12 +23,30 @@ export interface IndexedFolder {
   totalSizeMb: number
   dominantGenre?: string
   status: 'indexed' | 'enriching' | 'ready'
+  isSession?: boolean
   tracks: IngestedTrack[]
 }
 
 const STORAGE_KEY = 'drops.indexed.folders.v1'
+const HISTORY_KEY = 'drops.downloads.history.v1'
 
 const DEMO_FOLDERS: IndexedFolder[] = [
+  {
+    id: 'f-session-001',
+    name: 'Session 001',
+    uploadDate: '29 Ago 2026, 16:10',
+    timestamp: Date.now() - 3600000,
+    trackCount: 3,
+    totalSizeMb: 32.4,
+    dominantGenre: 'Minimal Tech / Deep House',
+    status: 'ready',
+    isSession: true,
+    tracks: [
+      { id: 'ts1', filename: 'massive_attack_unfinished.mp3', title: 'Unfinished Sympathy', artist: 'Massive Attack', genre: 'Trip Hop / Downtempo', label: 'Wild Bunch', year: 1991, bpm: 115 },
+      { id: 'ts2', filename: 'baby_four_tet.mp3', title: 'Baby', artist: 'Four Tet', genre: 'Electronic', label: 'Text Records', year: 2020, bpm: 122 },
+      { id: 'ts3', filename: 'floating_points_lesalpx.mp3', title: 'LesAlpx', artist: 'Floating Points', genre: 'Microhouse', label: 'Ninja Tune', year: 2019, bpm: 128 },
+    ],
+  },
   {
     id: 'f-houghton-2026',
     name: 'Houghton Morning Session 2026',
@@ -83,12 +101,16 @@ function saveFolders(folders: IndexedFolder[]) {
 
 export default function FolderIngestionHub() {
   const [folders, setFolders] = useState<IndexedFolder[]>(() => loadFolders())
-  const [selectedFolder, setSelectedFolder] = useState<IndexedFolder | null>(null)
+  const [selectedFolder, setSelectedFolder] = useState<IndexedFolder | null>(() => folders[0] ?? null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingProgress, setProcessingProgress] = useState(0)
   const [currentFolderProcessing, setCurrentFolderProcessing] = useState('')
   const [filterQuery, setFilterQuery] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
+
+  // Rename state
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -96,11 +118,91 @@ export default function FolderIngestionHub() {
     saveFolders(folders)
   }, [folders])
 
+  const handleStartRename = (folder: IndexedFolder, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setEditingFolderId(folder.id)
+    setEditingName(folder.name)
+  }
+
+  const handleSaveRename = (folderId: string) => {
+    const trimmed = editingName.trim()
+    if (!trimmed) {
+      setEditingFolderId(null)
+      return
+    }
+    setFolders((prev) =>
+      prev.map((f) => (f.id === folderId ? { ...f, name: trimmed } : f))
+    )
+    if (selectedFolder?.id === folderId) {
+      setSelectedFolder((prev) => (prev ? { ...prev, name: trimmed } : null))
+    }
+    setEditingFolderId(null)
+    setNotice(`✓ Nome cartella aggiornato in "${trimmed}"!`)
+    setTimeout(() => setNotice(null), 2500)
+  }
+
+  const handleCreateNewSession = () => {
+    // Determine next session number strictly from "Session <number>"
+    const sessionNumbers = folders
+      .map((f) => {
+        const match = f.name.trim().match(/^Session\s*(\d+)$/i)
+        return match ? parseInt(match[1], 10) : 0
+      })
+      .filter((n) => !isNaN(n) && n > 0)
+
+    const nextNum = sessionNumbers.length > 0 ? Math.max(...sessionNumbers) + 1 : 1
+    const nextSessionName = `Session ${nextNum.toString().padStart(3, '0')}`
+
+    // Load available recent downloads from download history
+    let importedTracks: IngestedTrack[] = []
+    try {
+      const historyRaw = window.localStorage.getItem(HISTORY_KEY)
+      if (historyRaw) {
+        const parsed = JSON.parse(historyRaw)
+        if (Array.isArray(parsed)) {
+          importedTracks = parsed.slice(0, 10).map((h: any, idx) => ({
+            id: `trk-sess-${Date.now()}-${idx}`,
+            filename: `${h.artist ? `${h.artist} - ` : ''}${h.title}.mp3`,
+            title: h.title ?? 'Traccia',
+            artist: h.artist ?? 'Artista Sconosciuto',
+            bpm: h.bpm ?? 124,
+            genre: 'Electronic',
+            label: 'Download Session',
+            year: 2026,
+            sizeBytes: 10485760,
+          }))
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    const now = new Date()
+    const dateFormatted = `${now.getDate()} ${now.toLocaleString('it-IT', { month: 'short' })} ${now.getFullYear()}, ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+
+    const newSessionFolder: IndexedFolder = {
+      id: `folder-sess-${Date.now()}`,
+      name: nextSessionName,
+      uploadDate: dateFormatted,
+      timestamp: Date.now(),
+      trackCount: importedTracks.length,
+      totalSizeMb: Math.round(importedTracks.length * 10.5 * 10) / 10,
+      dominantGenre: 'Session Downloads',
+      status: 'ready',
+      isSession: true,
+      tracks: importedTracks,
+    }
+
+    setFolders((prev) => [newSessionFolder, ...prev])
+    setSelectedFolder(newSessionFolder)
+    setNotice(`✓ Creata nuova cartella "${nextSessionName}" collegata alla sessione di download!`)
+    setTimeout(() => setNotice(null), 3500)
+  }
+
   const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
-    // Extract folder name from the first file's webkitRelativePath
     const firstPath = files[0].webkitRelativePath || ''
     const folderName = firstPath.includes('/') ? firstPath.split('/')[0] : `Cartella ${new Date().toLocaleDateString('it-IT')}`
 
@@ -128,7 +230,6 @@ export default function FolderIngestionHub() {
       const file = audioFiles[i]
       totalBytes += file.size
 
-      // Clean file name to detect artist and title
       const cleanName = file.name.replace(audioExtensions, '')
       let artist = 'Artista Sconosciuto'
       let title = cleanName
@@ -143,7 +244,6 @@ export default function FolderIngestionHub() {
         title = parts.slice(1).join(' ').trim()
       }
 
-      // Generate realistic BPM estimation based on genre / audio heuristics
       const mockBpm = 120 + Math.floor(Math.random() * 10)
       const genres = ['Minimal Techno', 'Deep House', 'Tech House', 'Microhouse', 'Dub Techno', 'Breakbeat']
       const assignedGenre = genres[i % genres.length]
@@ -162,7 +262,6 @@ export default function FolderIngestionHub() {
       })
 
       setProcessingProgress(Math.round(((i + 1) / audioFiles.length) * 85) + 10)
-      // Small tick for smooth UI feel
       await new Promise((r) => setTimeout(r, 60))
     }
 
@@ -187,7 +286,6 @@ export default function FolderIngestionHub() {
     setProcessingProgress(100)
     setNotice(`✓ Cartella "${folderName}" indicizzata con successo! ${parsedTracks.length} tracce pronte e arricchite.`)
 
-    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -226,12 +324,20 @@ export default function FolderIngestionHub() {
         <div className="dropzone-content">
           <div className="dropzone-icon">📁</div>
           <div className="dropzone-text">
-            <h3>Carica e Organizza Cartelle nel Cloud</h3>
+            <h3>Archivio & Organizzazione Cartelle nel Cloud</h3>
             <p>
-              Trascina o seleziona una cartella di file audio dal computer. Drops legge i tag, rileva il <strong>BPM</strong>, arricchisce con <strong>Discogs</strong> e indicizza il nome della cartella e la data di caricamento.
+              Gestisci le tue cartelle di sessione (es. <strong>Session 001</strong>) o carica cartelle audio dal computer. Drops rileva il <strong>BPM</strong>, arricchisce i metadati con <strong>Discogs</strong> e ti permette di rinominare e riordinare la tua libreria.
             </p>
           </div>
-          <div className="dropzone-action">
+          <div className="dropzone-action" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="preset-chip-btn"
+              onClick={handleCreateNewSession}
+              title="Crea una cartella di sessione collegata ai download"
+            >
+              🏷️ + Nuova Sessione (es. Session 001)
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -245,7 +351,7 @@ export default function FolderIngestionHub() {
               id="folder-input-picker"
             />
             <label htmlFor="folder-input-picker" className="btn-primary-glow">
-              📂 Seleziona Cartella
+              📂 Carica Cartella dal PC
             </label>
           </div>
         </div>
@@ -275,7 +381,7 @@ export default function FolderIngestionHub() {
         <div className="folders-list-panel">
           <div className="panel-header">
             <div className="panel-title-wrap">
-              <h4>Cartelle Indicizzate</h4>
+              <h4>Cartelle nell&apos;Archivio</h4>
               <span className="count-pill">{folders.length} cartelle</span>
             </div>
             <input
@@ -291,11 +397,12 @@ export default function FolderIngestionHub() {
             {filteredFolders.length === 0 ? (
               <div className="empty-folders-state">
                 <p>Nessuna cartella trovata.</p>
-                <small>Carica una cartella per iniziare l&apos;organizzazione.</small>
+                <small>Carica una cartella o crea una sessione per iniziare l&apos;organizzazione.</small>
               </div>
             ) : (
               filteredFolders.map((folder) => {
                 const isSelected = selectedFolder?.id === folder.id
+                const isEditing = editingFolderId === folder.id
                 return (
                   <div
                     key={folder.id}
@@ -304,10 +411,43 @@ export default function FolderIngestionHub() {
                     role="button"
                     tabIndex={0}
                   >
-                    <div className="folder-card-icon">📁</div>
+                    <div className="folder-card-icon">{folder.isSession ? '🏷️' : '📁'}</div>
                     <div className="folder-card-info">
                       <div className="folder-name-row">
-                        <strong>{folder.name}</strong>
+                        {isEditing ? (
+                          <div className="rename-input-wrap" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              className="rename-folder-input"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveRename(folder.id)
+                                if (e.key === 'Escape') setEditingFolderId(null)
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              className="btn-save-rename"
+                              onClick={() => handleSaveRename(folder.id)}
+                            >
+                              ✓
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="folder-title-with-edit">
+                            <strong>{folder.name}</strong>
+                            <button
+                              type="button"
+                              className="btn-edit-folder-name"
+                              onClick={(e) => handleStartRename(folder, e)}
+                              title="Rinomina cartella"
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )}
                         <button
                           type="button"
                           className="btn-trash-folder"
@@ -338,10 +478,48 @@ export default function FolderIngestionHub() {
             <div className="folder-details-card">
               <div className="details-header">
                 <div>
-                  <span className="eyebrow-accent">CARTELLA SELEZIONATA</span>
-                  <h3>{selectedFolder.name}</h3>
+                  <span className="eyebrow-accent">
+                    {selectedFolder.isSession ? 'SESSIONE DI DOWNLOAD' : 'CARTELLA SELEZIONATA'}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {editingFolderId === selectedFolder.id ? (
+                      <div className="rename-input-wrap">
+                        <input
+                          type="text"
+                          className="rename-folder-input"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveRename(selectedFolder.id)
+                            if (e.key === 'Escape') setEditingFolderId(null)
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn-save-rename"
+                          onClick={() => handleSaveRename(selectedFolder.id)}
+                        >
+                          ✓ Salva
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3>{selectedFolder.name}</h3>
+                        <button
+                          type="button"
+                          className="btn-edit-folder-name"
+                          onClick={() => handleStartRename(selectedFolder)}
+                          title="Rinomina questa cartella"
+                        >
+                          ✏️ Rinomina
+                        </button>
+                      </>
+                    )}
+                  </div>
                   <p className="details-sub">
-                    Caricata il {selectedFolder.uploadDate} · {selectedFolder.trackCount} tracce · {selectedFolder.dominantGenre}
+                    {selectedFolder.isSession ? 'Sessione creata il ' : 'Caricata il '}
+                    {selectedFolder.uploadDate} · {selectedFolder.trackCount} tracce · {selectedFolder.dominantGenre}
                   </p>
                 </div>
                 <div className="details-header-actions">
@@ -374,40 +552,48 @@ export default function FolderIngestionHub() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedFolder.tracks.map((track, idx) => (
-                      <tr key={track.id}>
-                        <td style={{ color: '#6b7280', fontSize: '0.8rem' }}>{idx + 1}</td>
-                        <td>
-                          <div className="track-title-cell">
-                            <strong>{track.title}</strong>
-                            <span>{track.artist || 'Artista Sconosciuto'}</span>
-                          </div>
-                        </td>
-                        <td>
-                          {track.bpm ? (
-                            <span className="bpm-tag">{Math.round(track.bpm)} BPM</span>
-                          ) : (
-                            <span style={{ color: '#9ca3af' }}>-</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className="label-badge">{track.label || 'Discogs Enriched'}</span>
-                        </td>
-                        <td>
-                          <span className="genre-pill">{track.genre || 'Electronic'}</span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn-play-mini-row"
-                            onClick={() => handlePlayTrack(track)}
-                            title={`Ascolta ${track.title}`}
-                          >
-                            ▶ Play
-                          </button>
+                    {selectedFolder.tracks.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#9ca3af' }}>
+                          Nessun brano in questa sessione. Scarica tracce nella sezione Download per importarle qui!
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      selectedFolder.tracks.map((track, idx) => (
+                        <tr key={track.id}>
+                          <td style={{ color: '#6b7280', fontSize: '0.8rem' }}>{idx + 1}</td>
+                          <td>
+                            <div className="track-title-cell">
+                              <strong>{track.title}</strong>
+                              <span>{track.artist || 'Artista Sconosciuto'}</span>
+                            </div>
+                          </td>
+                          <td>
+                            {track.bpm ? (
+                              <span className="bpm-tag">{Math.round(track.bpm)} BPM</span>
+                            ) : (
+                              <span style={{ color: '#9ca3af' }}>-</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className="label-badge">{track.label || 'Discogs Enriched'}</span>
+                          </td>
+                          <td>
+                            <span className="genre-pill">{track.genre || 'Electronic'}</span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn-play-mini-row"
+                              onClick={() => handlePlayTrack(track)}
+                              title={`Ascolta ${track.title}`}
+                            >
+                              ▶ Play
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

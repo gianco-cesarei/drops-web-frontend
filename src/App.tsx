@@ -18,7 +18,7 @@ import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeStat
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
 
-export type PrivateSection = 'login' | 'download' | 'spotify' | 'radar' | 'brain' | 'academy' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
+export type PrivateSection = 'login' | 'download' | 'archive' | 'spotify' | 'radar' | 'brain' | 'academy' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
 
 const terminalStatuses = new Set(['completed', 'complete', 'ready', 'failed', 'error', 'cancelled'])
 const readyStatuses = new Set(['completed', 'complete', 'ready'])
@@ -98,6 +98,7 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   if (!effectiveUser) return <Login onLogin={completeLogin} onDemoLogin={completeDemoLogin} demoEnabled={demoModeEnabled} error={error} setError={setError} />
   const demoBanner = demoSession ? <div className="demo-mode-banner" role="status">Modalita demo — dati salvati solo su questo dispositivo.</div> : null
   if (section === 'download') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Download user={effectiveUser} onError={handleError} error={error} setError={setError} /></PrivateFrame>
+  if (section === 'archive') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><main className="shell"><div className="workspace"><FolderIngestionHub /></div></main></PrivateFrame>
   if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PlatformSyncHub onError={handleError} error={error} /></PrivateFrame>
   if (section === 'radar') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
@@ -193,11 +194,17 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
           <a href="/app/academy" className={`nav-link-with-badge ${section === 'academy' ? 'active' : ''}`}>
             Academy <span className="badge-new-pill">NEW</span>
           </a>
+          <a href="/app/download" className={section === 'download' ? 'active' : ''}>Download</a>
+          <a href="/app/archive" className={section === 'archive' ? 'active' : ''}>Archivio</a>
+          <a href="/app/spotify" className={section === 'spotify' ? 'active' : ''}>Crate Sync</a>
           <a href="/app/content" className={section === 'content' ? 'active' : ''}>Content</a>
-          <details className="private-tools-menu">
-            <summary className={['download', 'spotify', 'radar', 'brain', 'developer'].includes(section) ? 'active' : ''}>Strumenti</summary>
+          <details className="private-tools-menu private-admin-menu">
+            <summary className={['radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''}>Admin ▾</summary>
             <div className="private-tools-popover">
-              <a href="/app/download">Download</a><a href="/app/spotify">Spotify</a><a href="/app/radar">Radar</a><a href="/app/brain">Brain</a><a href="/app/developer">Developer</a>
+              <a href="/app/radar">Radar</a>
+              <a href="/app/brain">Brain Graph</a>
+              <a href="/app/developer">Developer Roadmap</a>
+              <a href="/app/editorial-suggestions">Suggerimenti Editoriali</a>
             </div>
           </details>
         </nav>
@@ -226,7 +233,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
 
 function PrivatePlaceholder({ section }: { section: PrivateSection }) {
   const labels: Record<PrivateSection, string> = {
-    login: 'Login', download: 'Download', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', academy: 'Academy', content: 'Content',
+    login: 'Login', download: 'Download', archive: 'Archivio', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', academy: 'Academy', content: 'Content',
     'editorial-suggestions': 'Editorial suggestions', settings: 'Settings', developer: 'Developer',
   }
   return <main className="private-placeholder"><span className="development-badge">Private development shell</span><h1 className="sr-only">{labels[section]}</h1><p>Strumento non implementato in questa milestone.</p></main>
@@ -2202,6 +2209,13 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
                 >
                   📋 Archivio Link & Export ({history.length})
                 </button>
+                <a
+                  href="/app/archive"
+                  className="preset-chip-btn"
+                  title="Vai all'Archivio per gestire le cartelle e le sessioni"
+                >
+                  📁 Gestione Cartelle Cloud
+                </a>
                 {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
               </div>
             </div>
