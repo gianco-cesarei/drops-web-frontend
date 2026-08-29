@@ -320,7 +320,7 @@ describe('autenticazione App', () => {
     render(<App section="brain" navigate={vi.fn()} />)
     const nav = await screen.findByRole('navigation', { name: 'Area privata' })
     const links = within(nav).getAllByRole('link')
-    expect(links.map((link) => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/', '/app/academy', '/app/download', '/app/archive', '/app/spotify', '/app/content', '/app/radar', '/app/brain', '/app/developer']))
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/', '/app/academy#lessons', '/app/download', '/app/archive', '/app/spotify', '/app/content', '/app/radar', '/app/brain', '/app/developer']))
     expect(screen.getByRole('link', { name: 'Impostazioni profilo' })).toHaveAttribute('href', '/app/settings')
     expect(within(nav).getByText('My Music')).toBeInTheDocument()
     expect(within(nav).getByText(/Beta/i)).toBeInTheDocument()

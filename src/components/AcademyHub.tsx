@@ -182,11 +182,37 @@ function getSavedLessons(): Set<string> {
   }
 }
 
-export default function AcademyHub({ user }: { user?: User | null }) {
+export default function AcademyHub({
+  user,
+  initialTab = 'lessons',
+}: {
+  user?: User | null
+  initialTab?: 'lessons' | 'djlab' | 'rekordbox' | 'studios' | 'feedback' | 'resources'
+}) {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(MODULES[0].lessons[0])
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(() => getSavedLessons())
-  const [tab, setTab] = useState<'lessons' | 'djlab' | 'rekordbox' | 'studios' | 'feedback' | 'resources'>('lessons')
+  const [tab, setTab] = useState<'lessons' | 'djlab' | 'rekordbox' | 'studios' | 'feedback' | 'resources'>(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.replace('#', '')
+      if (['lessons', 'djlab', 'rekordbox', 'studios', 'feedback', 'resources'].includes(hash)) {
+        return hash as any
+      }
+    }
+    return initialTab
+  })
   const [openModuleId, setOpenModuleId] = useState(1)
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '')
+      if (['lessons', 'djlab', 'rekordbox', 'studios', 'feedback', 'resources'].includes(hash)) {
+        setTab(hash as any)
+      }
+    }
+    handleHash()
+    window.addEventListener('hashchange', handleHash)
+    return () => window.removeEventListener('hashchange', handleHash)
+  }, [])
 
   // Feedback form state
   const [trackTitle, setTrackTitle] = useState('')
@@ -315,47 +341,6 @@ export default function AcademyHub({ user }: { user?: User | null }) {
           </div>
         </div>
       </section>
-
-      {/* NAVIGATION TABS */}
-      <nav className="academy-nav-tabs" aria-label="Sezioni Academy" role="tablist">
-        <button
-          className={`academy-tab-btn ${tab === 'lessons' ? 'active' : ''}`} role="tab" aria-selected={tab === 'lessons'}
-          onClick={() => setTab('lessons')}
-        >
-          Lezioni {completedLessons.size}/12
-        </button>
-        <button
-          className={`academy-tab-btn ${tab === 'djlab' ? 'active' : ''}`} role="tab" aria-selected={tab === 'djlab'}
-          onClick={() => setTab('djlab')}
-        >
-          🎛️ DJ Lab (Beatmatching) <span className="badge-new-pill" style={{ marginLeft: '4px' }}>NEW</span>
-        </button>
-        <button
-          className={`academy-tab-btn ${tab === 'rekordbox' ? 'active' : ''}`} role="tab" aria-selected={tab === 'rekordbox'}
-          onClick={() => setTab('rekordbox')}
-        >
-          💾 Rekordbox USB Prep
-        </button>
-        <button
-          className={`academy-tab-btn ${tab === 'studios' ? 'active' : ''}`} role="tab" aria-selected={tab === 'studios'}
-          onClick={() => setTab('studios')}
-        >
-          📍 Studi & Cabine DJ
-        </button>
-        <button
-          className={`academy-tab-btn ${tab === 'feedback' ? 'active' : ''}`} role="tab" aria-selected={tab === 'feedback'}
-          onClick={() => setTab('feedback')}
-        >
-          Track Review con Guest Artist
-          <span className="notification-dot"></span>
-        </button>
-        <button
-          className={`academy-tab-btn ${tab === 'resources' ? 'active' : ''}`} role="tab" aria-selected={tab === 'resources'}
-          onClick={() => setTab('resources')}
-        >
-          Download Kit & Template DAW
-        </button>
-      </nav>
 
       {tab === 'djlab' && (
         <section className="academy-tab-panel" role="tabpanel" aria-label="DJ Lab Beatmatching">

@@ -197,12 +197,14 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
             </summary>
             <div className="private-tools-popover academy-popover-menu">
               <div className="popover-section-title">Lessons</div>
-              <a href="/app/academy" className="popover-item">🎓 Tutti i Moduli & Video</a>
+              <a href="/app/academy#lessons" className="popover-item">🎓 Lezioni & Video Moduli</a>
+              <a href="/app/academy#feedback" className="popover-item">🎧 Track Review (Guest Artist)</a>
 
               <div className="popover-section-title">Tools</div>
               <a href="/app/academy#djlab" className="popover-item">🎛️ DJ Lab & Set Studio</a>
-              <a href="/app/academy#rekordbox" className="popover-item">💾 Rekordbox Exporter</a>
-              <a href="/app/academy#studios" className="popover-item">📍 Studio Directory</a>
+              <a href="/app/academy#rekordbox" className="popover-item">💾 Rekordbox USB Prep</a>
+              <a href="/app/academy#studios" className="popover-item">📍 Studi & Cabine DJ</a>
+              <a href="/app/academy#resources" className="popover-item">📦 Download Kit & Presets</a>
 
               <div className="popover-section-title">File & Guide</div>
               <a href="/item/guida-bordero-siae-spa-dj-diritto-autore" className="popover-item">📄 Guida Borderò SIAE / SPA</a>

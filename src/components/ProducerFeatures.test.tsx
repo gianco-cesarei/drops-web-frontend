@@ -32,8 +32,7 @@ describe('producer features', () => {
   })
 
   it('valida file review e non dichiara upload completato', async () => {
-    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Track Review/i }))
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} initialTab="feedback" />)
     const input = screen.getByLabelText(/Seleziona file dal computer/i)
     fireEvent.change(input, { target: { files: [new File(['text'], 'note.txt', { type: 'text/plain' })] } })
     expect(screen.getByRole('alert')).toHaveTextContent('Formato non supportato')
@@ -58,8 +57,7 @@ describe('producer features', () => {
   })
 
   it('renderizza DJ Lab con Deck A, Deck B, pitch slider e sync', async () => {
-    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
-    await userEvent.click(screen.getByRole('tab', { name: /DJ Lab/i }))
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} initialTab="djlab" />)
     expect(screen.getByText(/Beatmatching & Dual-Deck Studio/i)).toBeInTheDocument()
     expect(screen.getAllByText('DECK A').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('DECK B').length).toBeGreaterThanOrEqual(1)
@@ -69,16 +67,14 @@ describe('producer features', () => {
   })
 
   it('renderizza directory degli studi partner con filtri citta', async () => {
-    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Studi & Cabine DJ/i }))
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} initialTab="studios" />)
     expect(screen.getByText(/Studi di Registrazione & Cabine DJ Partner/i)).toBeInTheDocument()
     expect(screen.getByText('MANIA Sound Lab')).toBeInTheDocument()
     expect(screen.getByText('Lambrate Analog Hub')).toBeInTheDocument()
   })
 
   it('renderizza editor ID3 ed esportatore Rekordbox USB', async () => {
-    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
-    await userEvent.click(screen.getByRole('tab', { name: /Rekordbox USB Prep/i }))
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} initialTab="rekordbox" />)
     expect(screen.getByText(/Editor Tag ID3 & Esportatore Rekordbox USB/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Esporta su Chiavetta USB/i })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Esporta su Chiavetta USB/i }))
