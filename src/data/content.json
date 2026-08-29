@@ -1,5 +1,369 @@
 [
   {
+    "id": "artist-alex-rossi",
+    "slug": "alex-rossi",
+    "type": "artist",
+    "kicker": "Producer & DJ",
+    "title": "Alex Rossi",
+    "coverUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+    "summary": "Producer e resident DJ del collettivo MANIA a Roma. Esplora sonorità minimal house, microhouse ipnotica e bassline avvolgenti prodotte con Ableton Live 12 e outboard analogico.",
+    "publishedAt": "2026-08-28T18:00:00.000Z",
+    "primaryLocation": {
+      "kind": "geographic",
+      "name": "Roma, Italia",
+      "countryCode": "IT",
+      "latitude": 41.9028,
+      "longitude": 12.4964
+    },
+    "mapEligible": true,
+    "tags": [
+      "producer",
+      "minimal-house",
+      "microhouse",
+      "ableton",
+      "roma",
+      "mania-collective",
+      "club-ready"
+    ],
+    "sources": [
+      {
+        "url": "https://soundcloud.com/alex-rossi-music",
+        "label": "SoundCloud (Tracce & Set)",
+        "kind": "official"
+      },
+      {
+        "url": "https://instagram.com/alexrossi.dj",
+        "label": "Instagram",
+        "kind": "official"
+      },
+      {
+        "url": "https://ra.co/dj/alexrossi",
+        "label": "Resident Advisor",
+        "kind": "reference"
+      }
+    ],
+    "relations": [
+      {
+        "id": "festival-houghton-norfolk",
+        "type": "party",
+        "label": "MANIA Collective Roma",
+        "reason": "Resident producer & guest artist"
+      }
+    ],
+    "body": [
+      {
+        "heading": "Percorso artistico & Identità",
+        "html": "<p class=\"lead\">Alex Rossi si è affermato negli ultimi due anni nella scena clubbing romana, combinando un rigoroso approccio in studio su Ableton Live con una ricerca continua di vinili rari e groove microhouse minimali.</p><p>Formatosi tra Roma e Berlino, fa parte del collettivo MANIA e partecipa costantemente alle Monthly Producer Challenge di Drops, perfezionando arrangiamenti e sound design per impianti Funktion-One.</p>"
+      },
+      {
+        "heading": "Setup in studio & DAW Workflow",
+        "html": "<p>Il cuore del workflow è basato su <strong>Ableton Live 12 Suite</strong> combinato con drum machine analogiche e pedali di ritardo tape. La ricerca è orientata a bassline rotonde e percussioni micro-campionate con micro-timing non quantizzato.</p>"
+      },
+      {
+        "heading": "Partecipazione alla Community Drops",
+        "html": "<p>Attivo nel Learning Hub, ha raggiunto lo status di <strong>LEVEL 03 — CLUB READY</strong> vincendo la Monthly Challenge di Maggio con la traccia <em>Orbital Resonance</em>.</p>"
+      }
+    ],
+    "producerProfile": {
+      "level": "LEVEL 03 — CLUB READY",
+      "levelNumber": 3,
+      "xpCurrent": 740,
+      "xpNext": 1000,
+      "verified": true,
+      "daw": "Ableton Live 12 Suite",
+      "genres": [
+        "Minimal House",
+        "Microhouse",
+        "Rominimal"
+      ],
+      "city": "Roma, Italia",
+      "stats": {
+        "tracks": 4,
+        "votesReceived": 184,
+        "feedbackGiven": 47,
+        "challengesCompleted": 3
+      },
+      "achievements": [
+        "TOP 10 — MAY 2026",
+        "MONTHLY FINALIST",
+        "MANIA RESIDENT 2026",
+        "100+ COMMUNITY VOTES"
+      ],
+      "socialLinks": [
+        {
+          "platform": "instagram",
+          "label": "Instagram",
+          "url": "https://instagram.com/alexrossi.dj",
+          "connectedForVerification": true
+        },
+        {
+          "platform": "soundcloud",
+          "label": "SoundCloud",
+          "url": "https://soundcloud.com/alex-rossi-music",
+          "connectedForVerification": true
+        },
+        {
+          "platform": "tiktok",
+          "label": "TikTok",
+          "url": "https://tiktok.com/@alexrossi.sound",
+          "connectedForVerification": true
+        },
+        {
+          "platform": "spotify",
+          "label": "Spotify",
+          "url": "https://open.spotify.com/artist/alexrossi"
+        },
+        {
+          "platform": "resident_advisor",
+          "label": "Resident Advisor",
+          "url": "https://ra.co/dj/alexrossi"
+        }
+      ],
+      "tracks": [
+        {
+          "id": "trk-alex-1",
+          "title": "Orbital Resonance (Original Mix)",
+          "bpm": 126,
+          "genre": "Microhouse",
+          "duration": "07:14",
+          "votes": 84,
+          "feedbackCount": 18,
+          "audioUrl": "/api/audio-sample/1"
+        },
+        {
+          "id": "trk-alex-2",
+          "title": "Subtle Shift (Night Dub)",
+          "bpm": 124,
+          "genre": "Minimal",
+          "duration": "06:48",
+          "votes": 58,
+          "feedbackCount": 14,
+          "audioUrl": "/api/audio-sample/2"
+        },
+        {
+          "id": "trk-alex-3",
+          "title": "Rashomon Groove (Live Jam Cut)",
+          "bpm": 127,
+          "genre": "Rominimal",
+          "duration": "08:02",
+          "votes": 42,
+          "feedbackCount": 15,
+          "audioUrl": "/api/audio-sample/3"
+        }
+      ]
+    }
+  },
+  {
+    "id": "artist-marco-donati",
+    "slug": "marco-donati",
+    "type": "artist",
+    "kicker": "Producer",
+    "title": "Marco Donati",
+    "coverUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80",
+    "summary": "Producer emergente focalizzato su tech-house calda e ritmiche percussive dense, attivo tra Milano e Bologna.",
+    "publishedAt": "2026-08-25T12:00:00.000Z",
+    "primaryLocation": {
+      "kind": "geographic",
+      "name": "Milano, Italia",
+      "countryCode": "IT",
+      "latitude": 45.4642,
+      "longitude": 9.1900
+    },
+    "mapEligible": true,
+    "tags": [
+      "producer",
+      "tech-house",
+      "deep-tech",
+      "fl-studio",
+      "milano",
+      "emerging"
+    ],
+    "sources": [
+      {
+        "url": "https://soundcloud.com/marco-donati-sound",
+        "label": "SoundCloud",
+        "kind": "official"
+      },
+      {
+        "url": "https://instagram.com/marcodonati.wav",
+        "label": "Instagram",
+        "kind": "official"
+      }
+    ],
+    "relations": [],
+    "body": [
+      {
+        "heading": "Produzione in studio & Sound Design",
+        "html": "<p class=\"lead\">Marco Donati lavora con FL Studio e sintetizzatori digitali focalizzandosi sulla saturazione armonica del basso e sulla costruzione di percussioni ipnotiche adatte alla pista.</p>"
+      },
+      {
+        "heading": "Groove & Mixdown",
+        "html": "<p>La catena di mixdown predilige l'uso di clipper e saturatori a valvole su bus per dare corpo e spinta alle basse frequenze nei club.</p>"
+      },
+      {
+        "heading": "Obiettivi & Percorso",
+        "html": "<p>Attualmente a livello <strong>LEVEL 02 — EMERGING</strong>, si prepara alla submission di nuove tracce per le serate del collettivo.</p>"
+      }
+    ],
+    "producerProfile": {
+      "level": "LEVEL 02 — EMERGING",
+      "levelNumber": 2,
+      "xpCurrent": 380,
+      "xpNext": 500,
+      "verified": true,
+      "daw": "FL Studio 21",
+      "genres": [
+        "Tech House",
+        "Deep Tech"
+      ],
+      "city": "Milano, Italia",
+      "stats": {
+        "tracks": 2,
+        "votesReceived": 62,
+        "feedbackGiven": 15,
+        "challengesCompleted": 1
+      },
+      "achievements": [
+        "FIRST CHALLENGE COMPLETED",
+        "50+ COMMUNITY VOTES"
+      ],
+      "socialLinks": [
+        {
+          "platform": "instagram",
+          "label": "Instagram",
+          "url": "https://instagram.com/marcodonati.wav",
+          "connectedForVerification": true
+        },
+        {
+          "platform": "soundcloud",
+          "label": "SoundCloud",
+          "url": "https://soundcloud.com/marco-donati-sound",
+          "connectedForVerification": true
+        }
+      ],
+      "tracks": [
+        {
+          "id": "trk-marco-1",
+          "title": "Low Frequency Drive",
+          "bpm": 128,
+          "genre": "Tech House",
+          "duration": "05:52",
+          "votes": 41,
+          "feedbackCount": 9
+        },
+        {
+          "id": "trk-marco-2",
+          "title": "Breeze in Navigli",
+          "bpm": 125,
+          "genre": "Deep Tech",
+          "duration": "06:15",
+          "votes": 21,
+          "feedbackCount": 6
+        }
+      ]
+    }
+  },
+  {
+    "id": "artist-elena-valeri",
+    "slug": "elena-valeri",
+    "type": "artist",
+    "kicker": "Bedroom Producer",
+    "title": "Elena Valeri",
+    "coverUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    "summary": "Nuova produttrice e sound designer in formazione nell'Academy di Drops. Sperimenta con campionatori e sintetizzatori per techno ipnotica e ambient.",
+    "publishedAt": "2026-08-27T09:30:00.000Z",
+    "primaryLocation": {
+      "kind": "geographic",
+      "name": "Bologna, Italia",
+      "countryCode": "IT",
+      "latitude": 44.4949,
+      "longitude": 11.3426
+    },
+    "mapEligible": true,
+    "tags": [
+      "producer",
+      "hypnotic-techno",
+      "ambient",
+      "logic-pro",
+      "bologna",
+      "bedroom"
+    ],
+    "sources": [
+      {
+        "url": "https://soundcloud.com/elena-valeri-music",
+        "label": "SoundCloud",
+        "kind": "official"
+      },
+      {
+        "url": "https://instagram.com/elenavaleri.sound",
+        "label": "Instagram",
+        "kind": "official"
+      }
+    ],
+    "relations": [],
+    "body": [
+      {
+        "heading": "Studio & Ricerca Sonora",
+        "html": "<p class=\"lead\">Elena Valeri ha iniziato il proprio percorso musicale sperimentando con field recording e campionamenti vocali processati attraverso reverberi granulari e synth sottrattivi.</p>"
+      },
+      {
+        "heading": "DAW & Approccio Tecnico",
+        "html": "<p>Utilizza Logic Pro X con focus sulla sintesi FM e sulla manipolazione di texture ambientali per creare atmosfere profonde e ipnotiche.</p>"
+      },
+      {
+        "heading": "Formazione nell'Academy",
+        "html": "<p>Attualmente a <strong>LEVEL 01 — BEDROOM</strong>, sta completando i moduli sul low-end e la drum production.</p>"
+      }
+    ],
+    "producerProfile": {
+      "level": "LEVEL 01 — BEDROOM",
+      "levelNumber": 1,
+      "xpCurrent": 90,
+      "xpNext": 250,
+      "verified": false,
+      "daw": "Logic Pro X",
+      "genres": [
+        "Hypnotic Techno",
+        "Ambient"
+      ],
+      "city": "Bologna, Italia",
+      "stats": {
+        "tracks": 1,
+        "votesReceived": 14,
+        "feedbackGiven": 8,
+        "challengesCompleted": 0
+      },
+      "achievements": [
+        "NEW COMMUNITY PRODUCER"
+      ],
+      "socialLinks": [
+        {
+          "platform": "soundcloud",
+          "label": "SoundCloud",
+          "url": "https://soundcloud.com/elena-valeri-music",
+          "connectedForVerification": false
+        },
+        {
+          "platform": "instagram",
+          "label": "Instagram",
+          "url": "https://instagram.com/elenavaleri.sound",
+          "connectedForVerification": false
+        }
+      ],
+      "tracks": [
+        {
+          "id": "trk-elena-1",
+          "title": "Echoes of Silence (Demo)",
+          "bpm": 130,
+          "genre": "Hypnotic Techno",
+          "duration": "05:10",
+          "votes": 14,
+          "feedbackCount": 8
+        }
+      ]
+    }
+  },
+  {
     "id": "festival-houghton-norfolk",
     "slug": "houghton-festival-norfolk",
     "type": "party",

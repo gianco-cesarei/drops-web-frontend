@@ -7,30 +7,26 @@ import { contentFields, contentStages, radarDevelopmentFixtures, radarLockedFixt
 import type { RadarFixture } from './data/private.fixture'
 import BrainGraph from './components/BrainGraph'
 import DeveloperRoadmap from './components/DeveloperRoadmap'
+import AcademyHub from './components/AcademyHub'
+import ProducerSettings from './components/ProducerSettings'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
 
-export type PrivateSection = 'login' | 'download' | 'spotify' | 'radar' | 'brain' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
+export type PrivateSection = 'login' | 'download' | 'spotify' | 'radar' | 'brain' | 'academy' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
 
 const terminalStatuses = new Set(['completed', 'complete', 'ready', 'failed', 'error', 'cancelled'])
 const readyStatuses = new Set(['completed', 'complete', 'ready'])
 const failedStatuses = new Set(['failed', 'error', 'cancelled'])
 const browserNavigate = (to: string) => window.location.assign(to)
 const USER_CACHE_KEY = 'drops.user.v1'
-
-function getCachedUser(): User | null {
-  try {
-    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(USER_CACHE_KEY) : null
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
+const DEMO_SESSION_KEY = 'drops.demo-session.v1'
+const demoModeEnabled = import.meta.env.PUBLIC_ENABLE_DEMO_MODE === 'true'
 
 export default function App({ section = 'login', navigate = browserNavigate }: { section?: PrivateSection; navigate?: (to: string) => void }) {
-  const [user, setUser] = useState<User | null>(() => getCachedUser())
-  const [checking, setChecking] = useState(() => !getCachedUser())
+  const [user, setUser] = useState<User | null>(null)
+  const [demoSession, setDemoSession] = useState(() => demoModeEnabled && typeof window !== 'undefined' && window.localStorage.getItem(DEMO_SESSION_KEY) === 'active')
+  const [checking, setChecking] = useState(true)
   const [error, setError] = useState('')
   const [logoutRedirecting, setLogoutRedirecting] = useState(false)
 
@@ -56,26 +52,36 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   }, [])
 
   useEffect(() => {
-    if (!checking && !user && section !== 'login' && section !== 'developer' && !logoutRedirecting) {
+    if (!checking && !user && !demoSession && section !== 'login' && section !== 'developer' && !logoutRedirecting) {
       const next = encodeURIComponent(`/app/${section}`)
       navigate(`/app/login?next=${next}`)
     }
-  }, [checking, logoutRedirecting, navigate, section, user])
+  }, [checking, demoSession, logoutRedirecting, navigate, section, user])
 
   useEffect(() => {
-    if (!checking && user && section === 'login') navigate(postLoginRoute(window.location.search))
-  }, [checking, navigate, section, user])
+    if (!checking && (user || demoSession) && section === 'login') navigate(postLoginRoute(window.location.search))
+  }, [checking, demoSession, navigate, section, user])
 
   function completeLogin(loggedUser: User) {
+    try { window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(loggedUser)) } catch {}
     setUser(loggedUser)
   }
 
   function beginLogout() {
+    try { window.localStorage.removeItem(USER_CACHE_KEY) } catch {}
+    try { window.localStorage.removeItem(DEMO_SESSION_KEY) } catch {}
+    setDemoSession(false)
     setLogoutRedirecting(true)
     setUser(null)
   }
 
   function finishLogout() { navigate('/') }
+
+  function completeDemoLogin() {
+    if (!demoModeEnabled) return
+    try { window.localStorage.setItem(DEMO_SESSION_KEY, 'active') } catch {}
+    setDemoSession(true)
+  }
 
   if (checking) return <Loading />
   if (logoutRedirecting) return <Loading />
@@ -83,13 +89,17 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
     const devUser = user || { username: 'local_dev', name: 'Sviluppatore Locale' }
     return <PrivateFrame section={section} user={devUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><DeveloperRoadmap /></PrivateFrame>
   }
-  if (!user) return <Login onLogin={completeLogin} error={error} setError={setError} />
-  if (section === 'download') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Download user={user} onError={handleError} error={error} setError={setError} /></PrivateFrame>
-  if (section === 'spotify') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><SpotifyLibrary onError={handleError} error={error} /></PrivateFrame>
-  if (section === 'radar') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
-  if (section === 'brain') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
-  if (section === 'content') return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Content /></PrivateFrame>
-  return <PrivateFrame section={section} user={user} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PrivatePlaceholder section={section} /></PrivateFrame>
+  const effectiveUser = user || (demoSession ? { username: 'alex_rossi', name: 'Alex Rossi' } : null)
+  if (!effectiveUser) return <Login onLogin={completeLogin} onDemoLogin={completeDemoLogin} demoEnabled={demoModeEnabled} error={error} setError={setError} />
+  const demoBanner = demoSession ? <div className="demo-mode-banner" role="status">Modalita demo — dati salvati solo su questo dispositivo.</div> : null
+  if (section === 'download') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Download user={effectiveUser} onError={handleError} error={error} setError={setError} /></PrivateFrame>
+  if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><SpotifyLibrary onError={handleError} error={error} /></PrivateFrame>
+  if (section === 'radar') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
+  if (section === 'brain') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
+  if (section === 'academy') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<AcademyHub user={effectiveUser} /></PrivateFrame>
+  if (section === 'settings') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<ProducerSettings user={effectiveUser} /></PrivateFrame>
+  if (section === 'content') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Content /></PrivateFrame>
+  return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PrivatePlaceholder section={section} /></PrivateFrame>
 }
 
 function Brand() {
@@ -118,7 +128,7 @@ function Loading() {
   )
 }
 
-function Login({ onLogin, error, setError }: { onLogin: (user: User) => void; error: string; setError: (value: string) => void }) {
+function Login({ onLogin, onDemoLogin, demoEnabled, error, setError }: { onLogin: (user: User) => void; onDemoLogin: () => void; demoEnabled: boolean; error: string; setError: (value: string) => void }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -142,6 +152,11 @@ function Login({ onLogin, error, setError }: { onLogin: (user: User) => void; er
       <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
       {error && <div className="alert" role="alert">{error}</div>}
       <button className="primary" disabled={busy}>{busy ? 'Accesso…' : 'Accedi'}</button>
+      {demoEnabled && <div style={{ textAlign: 'center', marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px dashed #dce1dc' }}>
+        <button type="button" onClick={onDemoLogin} className="secondary" style={{ width: '100%', fontSize: '0.85rem', fontWeight: 700 }}>
+          Accesso demo producer locale
+        </button>
+      </div>}
     </form>
   </section></main>
 }
@@ -152,14 +167,36 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
     try { await api.logout() } catch { /* Local session remains invalidated. */ } finally { onLogoutEnd() }
   }
   return <div className={`private-layout private-layout-${section}`}>
-    <div className="private-header-bar"><header className="private-header"><a href="/" className="logo">Drops<span>.</span></a><nav aria-label="Area privata"><a href="/">Discovery</a><a href="/app/download">Download</a><a href="/app/spotify">Spotify</a><a href="/app/radar">Radar</a><a href="/app/brain">Brain</a><a href="/app/content">Content</a><a href="/app/developer">Developer</a></nav><div className="account"><span>{user.name ?? user.username ?? user.email ?? 'Account'}</span><button className="secondary" onClick={logout}>Esci</button></div></header></div>
+    <div className="private-header-bar">
+      <header className="private-header">
+        <a href="/" className="logo">Drops<span>.</span></a>
+        <nav aria-label="Area privata">
+          <a href="/">Discovery</a>
+          <a href="/app/academy" className={`nav-link-with-badge ${section === 'academy' ? 'active' : ''}`}>
+            Academy <span className="badge-new-pill">NEW</span>
+          </a>
+          <a href="/app/content" className={section === 'content' ? 'active' : ''}>Content</a>
+          <details className="private-tools-menu">
+            <summary className={['download', 'spotify', 'radar', 'brain', 'developer'].includes(section) ? 'active' : ''}>Strumenti</summary>
+            <div className="private-tools-popover">
+              <a href="/app/download">Download</a><a href="/app/spotify">Spotify</a><a href="/app/radar">Radar</a><a href="/app/brain">Brain</a><a href="/app/developer">Developer</a>
+            </div>
+          </details>
+        </nav>
+        <div className="account">
+          <span className="account-name">{user.name ?? user.username ?? user.email ?? 'Account'}</span>
+          <a href="/app/settings" className={`account-settings ${section === 'settings' ? 'active' : ''}`} aria-label="Impostazioni profilo" title="Impostazioni profilo">⚙</a>
+          <button className="secondary" onClick={logout}>Esci</button>
+        </div>
+      </header>
+    </div>
     {children}
   </div>
 }
 
 function PrivatePlaceholder({ section }: { section: PrivateSection }) {
   const labels: Record<PrivateSection, string> = {
-    login: 'Login', download: 'Download', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', content: 'Content',
+    login: 'Login', download: 'Download', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', academy: 'Academy', content: 'Content',
     'editorial-suggestions': 'Editorial suggestions', settings: 'Settings', developer: 'Developer',
   }
   return <main className="private-placeholder"><span className="development-badge">Private development shell</span><h1 className="sr-only">{labels[section]}</h1><p>Strumento non implementato in questa milestone.</p></main>

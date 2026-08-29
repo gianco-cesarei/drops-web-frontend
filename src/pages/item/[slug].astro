@@ -1,6 +1,6 @@
 ---
 import { publishedContentItems } from '../../data/content.data'
-import { categoryLabels } from '../../domain/discovery'
+import { categoryLabels, isProducerVerified } from '../../domain/discovery'
 import PublicLayout from '../../layouts/PublicLayout.astro'
 
 export function getStaticPaths() {
@@ -17,9 +17,13 @@ const primaryDirectSource = item.sources.find((source) => source.kind === 'origi
 const otherSources = item.sources.filter((source) => source !== primaryDirectSource)
 const kicker = item.kicker ?? (item.tags.includes('guida') ? 'Guida' : categoryLabels[item.type])
 const published = new Intl.DateTimeFormat('it', { dateStyle: 'long' }).format(new Date(item.publishedAt))
+const producer = item.producerProfile
+const isProducer = Boolean(producer)
+const producerVerified = isProducerVerified(producer)
+const xpPercent = producer ? Math.min(100, Math.round((producer.xpCurrent / (producer.xpNext || 1000)) * 100)) : 0
 ---
 
-<PublicLayout title={`${item.title} — Drops`} description={item.summary}>
+<PublicLayout title={`${item.title} ${producerVerified ? '✓' : ''} — Drops`} description={item.summary}>
   <main class="public-main article-page-container">
     <div class="article-layout-grid">
       <!-- COLONNA SINISTRA: STICKY (Cover + CTA Primaria + Piattaforme + Metadati) -->
@@ -37,13 +41,36 @@ const published = new Intl.DateTimeFormat('it', { dateStyle: 'long' }).format(ne
           )}
         </div>
 
+        {isProducer && producerVerified && (
+          <div class="sidebar-verified-pill">
+            <span class="v-icon">✓</span>
+            <span>Profilo Esterno Connesso</span>
+          </div>
+        )}
+
         <!-- PULSANTE PRINCIPALE DIRETTO SUBITO SOTTO L'IMMAGINE -->
         <a class="primary-direct-cta" href={primaryDirectSource.url} target="_blank" rel="noreferrer">
           <span class="cta-label">{primaryDirectSource.label}</span>
           <span class="cta-arrow">↗</span>
         </a>
 
-        {otherSources.length > 0 && (
+        {/* SOCIAL & MUSIC LINKS */}
+        {producer?.socialLinks && producer.socialLinks.length > 0 && (
+          <div class="sidebar-box platforms-box">
+            <span class="box-title">Profili & Piattaforme:</span>
+            <div class="platforms-list">
+              {producer.socialLinks.map((s) => (
+                <a class={`source-chip ${s.connectedForVerification ? 'chip-verified' : ''}`} href={s.url} target="_blank" rel="noreferrer">
+                  <span>{s.label}</span>
+                  {s.connectedForVerification && <span class="v-tick">✓</span>}
+                  <span class="chip-arrow">↗</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {otherSources.length > 0 && !producer && (
           <div class="sidebar-box platforms-box">
             <span class="box-title">Altre piattaforme & fonti:</span>
             <div class="platforms-list">
@@ -58,17 +85,29 @@ const published = new Intl.DateTimeFormat('it', { dateStyle: 'long' }).format(ne
 
         <div class="sidebar-box meta-box">
           <dl class="meta-list">
-            <div>
-              <dt>Pubblicato</dt>
-              <dd>{published}</dd>
-            </div>
+            {isProducer && producer?.daw && (
+              <div>
+                <dt>DAW in Studio</dt>
+                <dd class="daw-tag">🎹 {producer.daw}</dd>
+              </div>
+            )}
             <div>
               <dt>Luogo</dt>
               <dd>📍 {item.primaryLocation.name}</dd>
             </div>
+            {isProducer && producer?.genres && producer.genres.length > 0 && (
+              <div>
+                <dt>Generi</dt>
+                <dd class="tags-row">{producer.genres.join(' · ')}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Su Drops da</dt>
+              <dd>{published}</dd>
+            </div>
             {item.tags && item.tags.length > 0 && (
               <div>
-                <dt>Temi & Tag</dt>
+                <dt>Tag</dt>
                 <dd class="tags-row">{item.tags.join(' · ')}</dd>
               </div>
             )}
@@ -78,9 +117,125 @@ const published = new Intl.DateTimeFormat('it', { dateStyle: 'long' }).format(ne
 
       <!-- COLONNA DESTRA: SCROLLABILE (Kicker + Titolo + Standfirst + Corpo Articolo) -->
       <section class="article-content-scrollable">
-        <span class="article-kicker">{kicker}</span>
-        <h1 class="article-headline">{item.title}</h1>
+        <div class="kicker-badge-row">
+          <span class="article-kicker">{kicker}</span>
+          {isProducer && <span class="badge-new-pill">NEW PRODUCER</span>}
+        </div>
+
+        <h1 class="article-headline artist-headline">
+          {item.title}
+          {isProducer && producerVerified && (
+            <span class="verified-badge-large" title="Profilo Verificato: almeno un account esterno connesso">✓</span>
+          )}
+        </h1>
+
+        {/* PRODUCER LEVEL CARD */}
+        {isProducer && producer && (
+          <div class="producer-level-hero-card">
+            <div class="level-top-row">
+              <div class="level-badge-visual">
+                <span class="lvl-num">0{producer.levelNumber}</span>
+                <span class="lvl-name">{producer.level}</span>
+              </div>
+              <div class="xp-numeric-badge">
+                <strong>{producer.xpCurrent.toLocaleString('it')}</strong> / {producer.xpNext.toLocaleString('it')} XP
+              </div>
+            </div>
+            <div class="xp-hero-bar">
+              <div class="xp-hero-fill" style={`width: ${xpPercent}%`}></div>
+            </div>
+            <div class="xp-hero-footer">
+              <span>Progresso Livello: {xpPercent}%</span>
+              <span>{(producer.xpNext - producer.xpCurrent).toLocaleString('it')} XP al prossimo status</span>
+            </div>
+          </div>
+        )}
+
         <p class="article-standfirst">{item.summary}</p>
+
+        {/* PRODUCER STATS EDITORIALI (GRANDI NUMERI) */}
+        {isProducer && producer?.stats && (
+          <div class="producer-editorial-stats">
+            <div class="stat-editorial-item">
+              <span class="stat-number">{String(producer.stats.tracks).padStart(2, '0')}</span>
+              <span class="stat-label">TRACCE PUBBLICATE</span>
+            </div>
+            <div class="stat-editorial-item">
+              <span class="stat-number">{String(producer.stats.votesReceived).padStart(2, '0')}</span>
+              <span class="stat-label">VOTI RICEVUTI</span>
+            </div>
+            <div class="stat-editorial-item">
+              <span class="stat-number">{String(producer.stats.feedbackGiven).padStart(2, '0')}</span>
+              <span class="stat-label">FEEDBACK FORNITI</span>
+            </div>
+            <div class="stat-editorial-item">
+              <span class="stat-number">{String(producer.stats.challengesCompleted).padStart(2, '0')}</span>
+              <span class="stat-label">CHALLENGE COMPLETATE</span>
+            </div>
+          </div>
+        )}
+
+        {/* USER TRACK HISTORY */}
+        {isProducer && producer?.tracks && producer.tracks.length > 0 && (
+          <div class="producer-tracks-section">
+            <div class="section-title-row">
+              <h2 class="tracks-title">Tracce & Produzioni</h2>
+              <span class="tracks-count">{producer.tracks.length} brani</span>
+            </div>
+            <div class="producer-track-list">
+              {producer.tracks.map((trk) => (
+                <div class="producer-track-card">
+                  {trk.audioUrl ? (
+                    <audio class="track-audio-player" controls preload="none" src={trk.audioUrl} aria-label={`Ascolta ${trk.title}`} />
+                  ) : (
+                    <button class="track-play-btn" type="button" disabled aria-label={`Anteprima non disponibile per ${trk.title}`} title="Anteprima non disponibile">
+                      ▶
+                    </button>
+                  )}
+                  <div class="track-info-col">
+                    <span class="track-title-text">{trk.title}</span>
+                    <span class="track-meta-text">
+                      {trk.bpm && <strong>{trk.bpm} BPM</strong>}
+                      {trk.genre && <span> • {trk.genre}</span>}
+                      {trk.duration && <span> • {trk.duration}</span>}
+                    </span>
+                  </div>
+                  <div class="waveform-mockup-bars" aria-hidden="true">
+                    <span style="height: 40%"></span>
+                    <span style="height: 75%"></span>
+                    <span style="height: 55%"></span>
+                    <span style="height: 90%"></span>
+                    <span style="height: 65%"></span>
+                    <span style="height: 100%"></span>
+                    <span style="height: 70%"></span>
+                    <span style="height: 85%"></span>
+                    <span style="height: 45%"></span>
+                    <span style="height: 60%"></span>
+                  </div>
+                  <div class="track-votes-box">
+                    <span class="vote-icon">▲</span>
+                    <span class="vote-count">{trk.votes}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ACHIEVEMENTS / RICONOSCIMENTI */}
+        {isProducer && producer?.achievements && producer.achievements.length > 0 && (
+          <div class="producer-achievements-section">
+            <span class="achievements-title">Riconoscimenti & Milestone:</span>
+            <div class="achievements-grid">
+              {producer.achievements.map((ach) => (
+                <div class="achievement-pill">
+                  <span class="ach-icon">★</span>
+                  <span>{ach}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div class="article-separator"></div>
 
@@ -112,12 +267,28 @@ const published = new Intl.DateTimeFormat('it', { dateStyle: 'long' }).format(ne
             </ul>
           </div>
         )}
+
+        {/* CALL TO ACTION HUB PER VISITATORI */}
+        <div class="producer-academy-footer-cta">
+          <div class="cta-left">
+            <span class="badge-new-pill">DROPS ACADEMY</span>
+            <h3>Fai musica anche tu?</h3>
+            <p>Crea il tuo profilo producer, impara con i 4 moduli video e partecipa alle Monthly Challenge con i Guest Artist di Drops.</p>
+          </div>
+          <a href="/app/academy" class="primary-direct-cta" style="width: auto; padding: 0 1.5rem;">
+            Entra nell'Academy ↗
+          </a>
+        </div>
       </section>
     </div>
   </main>
 </PublicLayout>
 
 <style>
+  .track-audio-player {
+    width: min(260px, 36vw);
+    height: 36px;
+  }
   .article-page-container {
     width: min(100%, 1240px);
     margin: 0 auto;

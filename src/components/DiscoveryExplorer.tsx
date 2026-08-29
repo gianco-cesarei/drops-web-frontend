@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 import { categoryLabels, DiscoveryType } from '../domain/discovery'
-import type { DiscoveryItem } from '../domain/discovery'
+import { isProducerVerified, type DiscoveryItem } from '../domain/discovery'
 import { parseArchiveQuery, serializeArchiveQuery } from '../lib/discovery-query'
 import { MinusIcon, PanIcon, PlusIcon, SearchIcon } from './icons'
 import { usePrototypeState, getArticleStatus, getFeaturedId } from '../data/brainStore'
@@ -200,9 +200,11 @@ function DiscoveryCard({ item, isFeatured = false }: { item: DiscoveryItem; isFe
   const source = item.sources.find((entry) => entry.kind === 'original') ?? item.sources[0]
   const kicker = item.kicker ?? (item.tags.includes('guida') ? 'Guida' : categoryLabels[item.type])
   const locationShort = item.primaryLocation.name.split(',')[0]
+  const producer = item.producerProfile
+  const isProducer = Boolean(producer)
 
   return (
-    <article className={`discovery-card poster-card ${isFeatured ? 'is-featured' : ''}`}>
+    <article className={`discovery-card poster-card ${isFeatured ? 'is-featured' : ''} ${isProducer ? 'is-producer-card' : ''}`}>
       <div className="card-bg-wrap">
         {item.coverUrl ? (
           <img src={item.coverUrl} alt={item.title} className="card-bg-image" loading="lazy" />
@@ -216,10 +218,18 @@ function DiscoveryCard({ item, isFeatured = false }: { item: DiscoveryItem; isFe
 
       <div className="card-poster-content">
         <div className="card-top-row">
-          <span className="content-badge">{kicker}</span>
-          {item.primaryLocation.kind === 'geographic' && (
-            <span className="card-location-pill">📍 {locationShort}</span>
-          )}
+          <div className="badge-row-left">
+            <span className="content-badge">{kicker}</span>
+            {isProducer && <span className="badge-new-pill">NEW</span>}
+          </div>
+          <div className="badge-row-right">
+            {isProducer && producer && (
+              <span className="card-level-pill">LVL 0{producer.levelNumber}</span>
+            )}
+            {item.primaryLocation.kind === 'geographic' && (
+              <span className="card-location-pill">📍 {locationShort}</span>
+            )}
+          </div>
         </div>
 
         <div className="card-bottom-content">
@@ -227,12 +237,15 @@ function DiscoveryCard({ item, isFeatured = false }: { item: DiscoveryItem; isFe
             {new Intl.DateTimeFormat('it', { dateStyle: 'medium' }).format(new Date(item.publishedAt))}
           </time>
           <h2 className="card-title">
-            <a href={`/item/${item.slug}`}>{item.title}</a>
+            <a href={`/item/${item.slug}`}>
+              {item.title}
+              {isProducerVerified(producer) && <span className="verified-badge-inline" title="Profilo esterno collegato">✓</span>}
+            </a>
           </h2>
           <p className="card-summary">{item.summary}</p>
           <div className="card-actions">
             <a className="card-read-btn" href={`/item/${item.slug}`}>
-              Leggi articolo →
+              {isProducer ? 'Apri profilo →' : 'Leggi articolo →'}
             </a>
             <a className="card-source-link" href={source.url} target="_blank" rel="noreferrer" title={`Apri ${source.label}`}>
               {source.label} ↗

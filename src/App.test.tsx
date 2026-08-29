@@ -93,6 +93,22 @@ describe('autenticazione App', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it.each(['academy', 'settings'] as const)('protegge anche route privata %s', async (section) => {
+    const navigate = vi.fn()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({}, 401)))
+    render(<App section={section} navigate={navigate} />)
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(`/app/login?next=%2Fapp%2F${section}`))
+  })
+
+  it('non usa cache utente come autorizzazione quando API è offline', async () => {
+    window.localStorage.setItem('drops.user.v1', JSON.stringify({ username: 'stale' }))
+    const navigate = vi.fn()
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('offline')))
+    render(<App section="academy" navigate={navigate} />)
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/app/login?next=%2Fapp%2Facademy'))
+    expect(window.localStorage.getItem('drops.user.v1')).toBeNull()
+  })
+
   it('logout invalida subito stato locale e torna a Discovery', async () => {
     const navigate = vi.fn()
     const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ user: { username: 'dj' } })).mockResolvedValueOnce(new Response(null, { status: 204 }))
@@ -304,10 +320,28 @@ describe('autenticazione App', () => {
     render(<App section="brain" navigate={vi.fn()} />)
     const nav = await screen.findByRole('navigation', { name: 'Area privata' })
     const links = within(nav).getAllByRole('link')
-    expect(links.map((link) => link.textContent)).toEqual(['Discovery', 'Download', 'Spotify', 'Radar', 'Brain', 'Content', 'Developer'])
-    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/', '/app/download', '/app/spotify', '/app/radar', '/app/brain', '/app/content', '/app/developer'])
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/', '/app/academy', '/app/content', '/app/download', '/app/spotify', '/app/radar', '/app/brain', '/app/developer']))
+    expect(screen.getByRole('link', { name: 'Impostazioni profilo' })).toHaveAttribute('href', '/app/settings')
+    expect(within(nav).getByText('Strumenti')).toBeInTheDocument()
     expect(within(nav).queryByText('History')).not.toBeInTheDocument()
     expect(within(nav).queryByText('Graph')).not.toBeInTheDocument()
+  })
+
+  it('mostra portale didattico Academy con moduli, video e feedback box', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'alex', name: 'Alex Rossi' })))
+    render(<App section="academy" navigate={vi.fn()} />)
+    expect(await screen.findByText(/PRODUCER ACADEMY & HUB/i)).toBeInTheDocument()
+    expect(screen.getByText(/LEVEL 03/i)).toBeInTheDocument()
+    expect(screen.getByText(/CLUB READY/i)).toBeInTheDocument()
+    expect(screen.getByText(/MODULO 01 — IDENTITY & WORKFLOW IN STUDIO/i)).toBeInTheDocument()
+  })
+
+  it('mostra impostazioni profilo producer con verifica account social in tempo reale', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'alex', name: 'Alex Rossi' })))
+    render(<App section="settings" navigate={vi.fn()} />)
+    expect(await screen.findByText(/PRODUCER PROFILE & ACCOUNTS/i)).toBeInTheDocument()
+    expect(screen.getByText(/Verifica il tuo Profilo/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ableton Live 12 Suite/i)).toBeInTheDocument()
   })
 
   it('mostra Spotify collegato con Recenti, ricerca e selezione multipla per BPM/Download', async () => {

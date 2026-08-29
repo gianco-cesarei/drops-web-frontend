@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DiscoveryType, PartyKind, discoveryItemSchema } from './discovery'
+import { DiscoveryType, PartyKind, discoveryItemSchema, isProducerVerified } from './discovery'
 import { developmentDiscoveryItems } from '../data/discovery.fixture'
 
 const base = {
@@ -42,5 +42,48 @@ describe('DiscoveryItem schema', () => {
     expect(() => discoveryItemSchema.parse({ ...base, mapEligible: true, primaryLocation: { kind: 'online', name: 'Online' }, sources: [{ url: 'https://example.com', label: 'Source', kind: 'original' }] })).toThrow()
     expect(() => discoveryItemSchema.parse({ ...base, primaryLocation: { kind: 'online', name: 'Online', countryCode: 'IT' }, sources: [{ url: 'https://example.com', label: 'Source', kind: 'original' }] })).toThrow()
     expect(discoveryItemSchema.parse({ ...base, primaryLocation: { kind: 'online', name: 'Online' }, sources: [{ url: 'https://example.com', label: 'Source', kind: 'original' }] }).mapEligible).toBe(false)
+  })
+
+  it('valida profilo producer con livelli, tracce e badge', () => {
+    const itemWithProducer = discoveryItemSchema.parse({
+      ...base,
+      type: DiscoveryType.Artist,
+      sources: [{ url: 'https://soundcloud.com/alex-rossi', label: 'SoundCloud', kind: 'official' }],
+      producerProfile: {
+        level: 'LEVEL 03 — CLUB READY',
+        levelNumber: 3,
+        xpCurrent: 740,
+        xpNext: 1000,
+        verified: true,
+        daw: 'Ableton Live 12',
+        genres: ['Minimal', 'Microhouse'],
+        city: 'Roma, IT',
+        stats: { tracks: 4, votesReceived: 184, feedbackGiven: 47, challengesCompleted: 3 },
+        achievements: ['TOP 10 — MAY 2026', 'CHALLENGE WINNER'],
+        socialLinks: [
+          { platform: 'instagram', label: 'Instagram', url: 'https://instagram.com/alexrossi', connectedForVerification: true },
+        ],
+        tracks: [
+          { id: 'trk-1', title: 'Orbital Resonance', bpm: 126, genre: 'Microhouse', votes: 84, feedbackCount: 12 },
+        ],
+      },
+    })
+    expect(itemWithProducer.producerProfile?.verified).toBe(true)
+    expect(itemWithProducer.producerProfile?.level).toBe('LEVEL 03 — CLUB READY')
+    expect(itemWithProducer.producerProfile?.tracks).toHaveLength(1)
+  })
+
+  it('deriva verifica solo da presenza esterna collegata', () => {
+    const profile = discoveryItemSchema.parse({
+      ...base,
+      type: DiscoveryType.Artist,
+      sources: [{ url: 'https://example.com/artist', label: 'Artist', kind: 'official' }],
+      producerProfile: {
+        level: 'LEVEL 01 — BEDROOM', levelNumber: 1, xpCurrent: 0, xpNext: 100, verified: true,
+        socialLinks: [{ platform: 'instagram', label: 'Instagram', url: 'https://instagram.com/test', connectedForVerification: false }],
+      },
+    }).producerProfile
+    expect(isProducerVerified(profile)).toBe(false)
+    expect(isProducerVerified({ ...profile!, socialLinks: [{ platform: 'instagram', label: 'Instagram', url: 'https://instagram.com/test', connectedForVerification: true }] })).toBe(true)
   })
 })

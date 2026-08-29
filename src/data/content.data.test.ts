@@ -3,8 +3,8 @@ import { publishedContentItems } from './content.data'
 import { DiscoveryType, PartyKind } from '../domain/discovery'
 
 describe('contenuti editoriali pubblicati', () => {
-  it('contiene tutti i 26 contenuti editoriali (radar, release, festival 2026, scene, etichette e guide DJ)', () => {
-    expect(publishedContentItems.length).toBe(26)
+  it('contiene tutti i 29 contenuti editoriali (radar, release, festival 2026, scene, etichette, profili producer e guide DJ)', () => {
+    expect(publishedContentItems.length).toBe(29)
   })
 
   it('tutti i contenuti hanno slug unici e id univoci', () => {
@@ -131,5 +131,24 @@ describe('contenuti editoriali pubblicati', () => {
     expect(slugs).toContain('xl-recordings-da-rave-a-potenza-indipendente')
     expect(slugs).toContain('warp-records-artificial-intelligence-avanguardia')
   })
-})
 
+  it('verifica i profili producer della community (Alex Rossi, Marco Donati, Elena Valeri)', () => {
+    const alex = publishedContentItems.find((i) => i.slug === 'alex-rossi')
+    expect(alex).toBeTruthy()
+    expect(alex?.producerProfile?.verified).toBe(true)
+    expect(alex?.producerProfile?.level).toBe('LEVEL 03 — CLUB READY')
+    expect(alex?.producerProfile?.daw).toBe('Ableton Live 12 Suite')
+    expect(alex?.producerProfile?.tracks?.length).toBe(3)
+
+    const marco = publishedContentItems.find((i) => i.slug === 'marco-donati')
+    expect(marco).toBeTruthy()
+    expect(marco?.producerProfile?.verified).toBe(true)
+    expect(marco?.producerProfile?.level).toBe('LEVEL 02 — EMERGING')
+    expect(marco?.producerProfile?.daw).toBe('FL Studio 21')
+
+    const elena = publishedContentItems.find((i) => i.slug === 'elena-valeri')
+    expect(elena).toBeTruthy()
+    expect(elena?.producerProfile?.verified).toBe(false)
+    expect(elena?.producerProfile?.level).toBe('LEVEL 01 — BEDROOM')
+  })
+})

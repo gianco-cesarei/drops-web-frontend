@@ -66,6 +66,61 @@ const bodyBlockSchema = z.object({
   html: z.string().min(1),
 })
 
+export const producerTrackSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  bpm: z.number().optional(),
+  genre: z.string().optional(),
+  duration: z.string().optional(),
+  votes: z.number().default(0),
+  feedbackCount: z.number().default(0),
+  audioUrl: z.string().optional(),
+  waveform: z.array(z.number()).optional(),
+})
+
+export const producerSocialLinkSchema = z.object({
+  platform: z.enum(['instagram', 'soundcloud', 'tiktok', 'spotify', 'bandcamp', 'youtube', 'resident_advisor']),
+  label: z.string().min(1),
+  url: z.string().url(),
+  connectedForVerification: z.boolean().optional(),
+})
+
+export const producerStatsSchema = z.object({
+  tracks: z.number().default(0),
+  votesReceived: z.number().default(0),
+  feedbackGiven: z.number().default(0),
+  challengesCompleted: z.number().default(0),
+})
+
+export const producerProfileSchema = z.object({
+  level: z.enum([
+    'LEVEL 01 — BEDROOM',
+    'LEVEL 02 — EMERGING',
+    'LEVEL 03 — CLUB READY',
+    'LEVEL 04 — BREAKTHROUGH',
+  ]),
+  levelNumber: z.number().min(1).max(4),
+  xpCurrent: z.number().min(0),
+  xpNext: z.number().min(0),
+  verified: z.boolean().default(false),
+  daw: z.string().optional(),
+  genres: z.array(z.string()).optional(),
+  city: z.string().optional(),
+  stats: producerStatsSchema.optional(),
+  achievements: z.array(z.string()).optional(),
+  socialLinks: z.array(producerSocialLinkSchema).optional(),
+  tracks: z.array(producerTrackSchema).optional(),
+})
+
+export type ProducerTrack = z.infer<typeof producerTrackSchema>
+export type ProducerSocialLink = z.infer<typeof producerSocialLinkSchema>
+export type ProducerStats = z.infer<typeof producerStatsSchema>
+export type ProducerProfile = z.infer<typeof producerProfileSchema>
+
+export function isProducerVerified(profile: ProducerProfile | null | undefined): boolean {
+  return profile?.socialLinks?.some((link) => link.connectedForVerification === true) ?? false
+}
+
 const baseSchema = z.object({
   id: z.string().min(1),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
@@ -81,6 +136,7 @@ const baseSchema = z.object({
   relations: z.array(relationSchema),
   mapEligible: z.boolean(),
   body: z.array(bodyBlockSchema).optional(),
+  producerProfile: producerProfileSchema.optional(),
 })
 
 const standardItemSchema = baseSchema.extend({
