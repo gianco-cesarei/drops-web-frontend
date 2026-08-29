@@ -11,6 +11,7 @@ import AcademyHub from './components/AcademyHub'
 import ProducerSettings from './components/ProducerSettings'
 import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import GlobalSearchModal from './components/GlobalSearchModal'
+import MultiSourceSync from './components/MultiSourceSync'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
@@ -95,7 +96,7 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   if (!effectiveUser) return <Login onLogin={completeLogin} onDemoLogin={completeDemoLogin} demoEnabled={demoModeEnabled} error={error} setError={setError} />
   const demoBanner = demoSession ? <div className="demo-mode-banner" role="status">Modalita demo — dati salvati solo su questo dispositivo.</div> : null
   if (section === 'download') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Download user={effectiveUser} onError={handleError} error={error} setError={setError} /></PrivateFrame>
-  if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><SpotifyLibrary onError={handleError} error={error} /></PrivateFrame>
+  if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PlatformSyncHub onError={handleError} error={error} /></PrivateFrame>
   if (section === 'radar') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
   if (section === 'academy') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<AcademyHub user={effectiveUser} /></PrivateFrame>
@@ -269,6 +270,39 @@ function exportCrate(items: (HistoryItem | SpotifyTrack)[], name = 'drops-crate'
   a.download = `${name}-${new Date().toISOString().slice(0, 10)}.m3u8`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function PlatformSyncHub({ onError, error }: { onError: (error: unknown) => void; error: string }) {
+  const [activeSyncTab, setActiveSyncTab] = useState<'spotify' | 'multisource'>('spotify')
+
+  return (
+    <div className="platform-sync-hub-page">
+      <div className="platform-sync-top-tabs">
+        <button
+          type="button"
+          className={`sync-main-tab-btn ${activeSyncTab === 'spotify' ? 'active' : ''}`}
+          onClick={() => setActiveSyncTab('spotify')}
+        >
+          🟢 Spotify Library Sync
+        </button>
+        <button
+          type="button"
+          className={`sync-main-tab-btn ${activeSyncTab === 'multisource' ? 'active' : ''}`}
+          onClick={() => setActiveSyncTab('multisource')}
+        >
+          🟠 SoundCloud & YouTube Crate Sync <span className="badge-new-pill" style={{ marginLeft: '4px' }}>NEW</span>
+        </button>
+      </div>
+
+      {activeSyncTab === 'spotify' ? (
+        <SpotifyLibrary onError={onError} error={error} />
+      ) : (
+        <div style={{ padding: '0 24px 24px' }}>
+          <MultiSourceSync />
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SpotifyLibrary({ onError, error }: { onError: (error: unknown) => void; error: string }) {
