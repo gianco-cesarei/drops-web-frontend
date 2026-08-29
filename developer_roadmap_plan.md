@@ -81,19 +81,14 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 
 ### Sezione 4: Integrazione Streaming & Sync Preferiti
 * **Introduzione:** Connessione alle piattaforme esterne per importare le selezioni e i metadati accumulati dall'utente.
-1. **Task 4.1: Sincronizzazione automatica e download dei preferiti di Spotify**
+1. **Task 4.1: Sincronizzazione automatica e download dei preferiti di Spotify [COMPLETATO]**
    * *Miglioramento Utente:* Collega il tuo account Spotify e importa in Drops i tuoi brani "Mi Piace" per verificare quali sono scaricabili o già in tuo possesso ed estrarne i metadati.
-   * *a) Algoritmo di matching tra metadati Spotify e sorgenti audio* `[back]`
-     * **Scelte & Raccomandazioni:** Eseguire una ricerca su YouTube cercando combinazioni di Titolo + Artista + "Audio" per trovare la corrispondenza migliore (Raccomandato) ed escludere i video non musicali.
-     * **Azione:** Creare il motore di matching automatico e l'endpoint di associazione tracce.
-   * *b) Interfaccia di gestione dei preferiti importati* `[front]`
-     * **Scelte & Raccomandazioni:** Mostrare i brani importati evidenziando lo stato (es. "Scaricabile", "Già scaricato", "Incertezza sulla fonte") con pulsante singolo e multiplo di download (Raccomandato).
-     * **Azione:** Sviluppare la dashboard Spotify-to-Cloud con griglia interattiva dei brani.
-2. **Task 4.2: Importazione automatica dei "Likes" da SoundCloud e YouTube**
-   * *Miglioramento Utente:* Tieni traccia dei brani a cui metti "Like" su SoundCloud e YouTube e importali in blocco per aggiungerli alla tua coda di download.
-   * *a) Connessione e recupero dei preferiti senza API proprietarie* `[back]`
-     * **Scelte & Raccomandazioni:** Per SoundCloud, chiedere semplicemente all'utente l'URL del proprio profilo pubblico e scansionare i like pubblici (Raccomandato per facilità d'uso) o, in alternativa, far incollare un file JSON esportato.
-     * **Azione:** Configurare l'estrattore di metadati per i Mi Piace di SoundCloud e YouTube (via OAuth limitato).
+   * *a) Integrazione Spotify Web API e matching metadati* `[front]` `[back]`
+     * **Stato:** Connessione OAuth Spotify, estrazione brani piaciuti, integrazione Discogs e calcolo BPM in libreria.
+2. **Task 4.2: Importazione automatica da SoundCloud e YouTube [COMPLETATO]**
+   * *Miglioramento Utente:* Tieni traccia dei brani e dei set a cui metti "Like" su SoundCloud e YouTube e importali in blocco per aggiungerli alla tua libreria e al DJ Lab.
+   * *a) Risoluzione multi-sorgente e Crate Sync* `[front]` `[back]`
+     * **Stato:** Implementato `MultiSourceSync.tsx` integrato in `PlatformSyncHub` con risoluzione link SoundCloud/YouTube, preset di set underground (Houghton, Timedance) e importazione nel Crate per DJ Lab.
 
 ---
 
