@@ -152,6 +152,7 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *a) Rilascio Drops Hub, Producer Academy & DJ Lab (Agosto 2026)* `[front]`
      * Portale Didattico Academy LMS con 4 Moduli e 12 Lezioni.
      * DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%), Hot Cue pads, Auto Beat Loops, Color FX e routing audio separato (Cassa Master + AirPods Cue via `setSinkId`).
+     * Ricerca Globale Spotlight (`Cmd+K` / `Ctrl+K`) con indicizzazione istantanea e risultati categorizzati (Tracce, Artisti, Etichette, Academy, Guide).
      * Editor Tag ID3 ed Esportatore USB Rekordbox (`RekordboxExporter.tsx`).
      * Grafo Discovery Brain con Drawer Suggest Underground e anteprima audio live.
      * Mini-Player Audio Globale persistente a fondo pagina.
