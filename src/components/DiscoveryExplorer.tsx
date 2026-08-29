@@ -121,6 +121,24 @@ const filterItems = (items: DiscoveryItem[], types: DiscoveryType[], query = '')
     })
 }
 
+export function ViewModeSwitcher({ current = 'grid' }: { current: 'grid' | 'timeline' | 'map' }) {
+  return (
+    <div className="view-mode-switcher-container">
+      <nav className="view-mode-switcher-white" aria-label="Ambienti di esplorazione">
+        <a href="/" className={`view-mode-pill ${current === 'grid' ? 'active' : ''}`}>
+          Grid
+        </a>
+        <a href="/timeline" className={`view-mode-pill ${current === 'timeline' ? 'active' : ''}`}>
+          Timeline
+        </a>
+        <a href="/map" className={`view-mode-pill ${current === 'map' ? 'active' : ''}`}>
+          Map
+        </a>
+      </nav>
+    </div>
+  )
+}
+
 export function DiscoveryHeroBanner() {
   return (
     <section className="discovery-hero-campaign" aria-label="Campagna Drops">
@@ -135,19 +153,18 @@ export function DiscoveryHeroBanner() {
           />
         </picture>
 
-        {/* Claim Pubblicitario */}
-        <div className="discovery-hero-headline-wrap">
-          <span className="discovery-hero-pill-tag">CLOUD LIBRARY & WORKFLOW</span>
-          <h1 className="discovery-hero-claim">
+        {/* Claim Pubblicitario pulito senza box */}
+        <div className="discovery-hero-headline-clean">
+          <h1 className="discovery-hero-claim-clean">
             Manage your<br />
             music world<br />
             in cloud.
           </h1>
         </div>
 
-        {/* Logo Drops in basso a destra */}
-        <div className="discovery-hero-logo-badge" aria-label="Logo Drops">
-          <span className="discovery-hero-logo-text">Drops<span className="hero-logo-dot">.</span></span>
+        {/* Logo Drops pulito senza riquadro */}
+        <div className="discovery-hero-brand-clean" aria-label="Logo Drops">
+          Drops<span className="hero-logo-dot">.</span>
         </div>
 
         {/* Gradient fade in basso per far intravedere il catalogo sottostante */}
@@ -190,6 +207,7 @@ export function DiscoveryEnvironment({ items }: { items: DiscoveryItem[] }) {
   return (
     <div className="discovery-page-container">
       <DiscoveryHeroBanner />
+      <ViewModeSwitcher current="grid" />
       <div className="environment-layout">
       <aside className="environment-rail">
         <span className="rail-label">Categorie</span>
@@ -318,7 +336,9 @@ export function TimelineEnvironment({ items }: { items: DiscoveryItem[] }) {
   }, [visible])
 
   return (
-    <div className="environment-layout">
+    <div className="discovery-page-container">
+      <ViewModeSwitcher current="timeline" />
+      <div className="environment-layout">
       <aside className="environment-rail">
         <span className="rail-label">Categorie</span>
         <Categories types={state.types} onChange={(types) => state.update(types)} label="Categorie Timeline" items={publishedItems} />
@@ -375,6 +395,7 @@ export function TimelineEnvironment({ items }: { items: DiscoveryItem[] }) {
         </section>
       </div>
     </div>
+  </div>
   )
 }
 
@@ -623,7 +644,9 @@ export function MapEnvironment({ items }: { items: DiscoveryItem[] }) {
   }, [mapElement, allCities])
 
   return (
-    <div className="environment-layout">
+    <div className="discovery-page-container">
+      <ViewModeSwitcher current="map" />
+      <div className="environment-layout">
       <aside className="environment-rail">
         <span className="rail-label">Continenti</span>
         <button className="rail-choice active" title="Navigabile">
@@ -699,6 +722,7 @@ export function MapEnvironment({ items }: { items: DiscoveryItem[] }) {
         </section>
       </div>
     </div>
+  </div>
   )
 }
 

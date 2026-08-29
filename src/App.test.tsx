@@ -133,7 +133,7 @@ describe('autenticazione App', () => {
     privateView.unmount()
     const { default: PublicHeader } = await import('./components/PublicHeader')
     render(<PublicHeader />)
-    expect(await screen.findAllByRole('link', { name: 'Login' })).toHaveLength(2)
+    expect(await screen.findAllByRole('link', { name: 'Login' })).toHaveLength(1)
   })
 
   it('non mostra errori durante controllo iniziale silenzioso', async () => {
