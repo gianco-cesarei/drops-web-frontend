@@ -211,6 +211,18 @@ const DEFAULT_SECTIONS: Section[] = [
           },
         ],
       },
+      {
+        id: '5.4',
+        title: 'Gamification Producer, Livelli XP e Badge Verified ✓',
+        benefit:
+          'Scala i 4 livelli producer da Bedroom a Breakthrough, accumula XP e ottieni la spunta di verifica collegando i tuoi account social ufficiali.',
+        subtasks: [
+          {
+            title: 'Gestione profilo e verifica social reattiva con calcolo XP',
+            tags: ['front'],
+          },
+        ],
+      },
     ],
   },
   {
@@ -313,8 +325,32 @@ const DEFAULT_SECTIONS: Section[] = [
           "Tieni traccia dell'affidabilità generale dell'app verificando le milestone superate e i bug fix applicati nel tempo.",
         subtasks: [
           {
-            title: 'Milestone storiche già completate',
+            title: 'Rilascio Drops Hub & Producer Academy LMS (4 Moduli, 12 Lezioni, Video Player)',
             tags: ['front'],
+          },
+          {
+            title: 'DJ Lab Dual-Deck con Pitch Control continuo (±8%, step 0.05%) e routing audio Master/Cue',
+            tags: ['front'],
+          },
+          {
+            title: 'Mini-Player Audio Globale persistente a fondo pagina',
+            tags: ['front'],
+          },
+          {
+            title: 'Directory Partner Studi di Registrazione & Cabine DJ (Roma, Milano, Berlino, Londra)',
+            tags: ['front'],
+          },
+          {
+            title: 'Schede Artista Pubbliche con statistiche editoriali e badge ✓ Verified',
+            tags: ['front'],
+          },
+          {
+            title: 'Producer Settings con connessione social live e selezione generi',
+            tags: ['front'],
+          },
+          {
+            title: 'Split dei 3 monorepo, rate limit fix Discogs/Cloudflare e Spotify OAuth',
+            tags: ['front', 'back'],
           },
         ],
       },

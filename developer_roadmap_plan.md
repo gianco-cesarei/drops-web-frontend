@@ -99,24 +99,22 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 
 ### Sezione 5: Corso DJ & Producing Online (Learning Hub)
 * **Introduzione:** Portale didattico privato volto a formare l'utente nell'arte del DJing e della produzione con strumenti interattivi.
-1. **Task 5.1: Portale di Formazione per DJ e Produttori (Lezioni e Dispense)**
+1. **Task 5.1: Portale di Formazione per DJ e Produttori (Lezioni e Dispense) [COMPLETATO]**
    * *Miglioramento Utente:* Impara le tecniche di mixaggio e produzione musicale in un'area riservata organizzata in moduli didattici, video-lezioni, schede tecniche e test di autovalutazione.
    * *a) Struttura dell'area didattica e hosting dei video delle lezioni* `[front]` `[back]`
-     * **Scelte & Raccomandazioni:** Integrare un lettore video per lezioni ospitate su Vimeo/YouTube non in elenco (Raccomandato per ridurre i costi di hosting e banda) invece di caricare video grezzi su R2.
-     * **Azione:** Progettare la griglia delle lezioni organizzate per moduli e salvare i progressi dell'utente nel database.
-2. **Task 5.2: Mappa Interattiva delle Scuole di Musica e Cabine DJ**
-   * *Miglioramento Utente:* Trova accademie musicali fisiche, sale prove, studi di registrazione e cabine DJ a noleggio vicino a te visualizzandoli su una mappa geografica interattiva.
-   * *a) Integrazione della mappa geografica dei punti d'interesse* `[front]`
-     * **Scelte & Raccomandazioni:** Usare Leaflet con OpenStreetMap (Raccomandato perché open-source e gratuito al 100%) invece di Mapbox/Google Maps che richiedono chiavi API e piani a pagamento.
-     * **Azione:** Creare il componente Mappa con marker interattivi che mostrano prezzi, attrezzatura e contatti delle scuole o studi.
-3. **Task 5.3: Crate Didattici di Tracce e Player di Beatmatching**
-   * *Miglioramento Utente:* Esercitati sul beatmatching (mettere a tempo) direttamente dal browser usando un player speciale con regolatore di velocità (Pitch Control) su pacchetti di tracce selezionate per difficoltà.
-   * *a) Regolatore di velocità audio (Pitch Control) via Web Audio API* `[front]`
-     * **Scelte & Raccomandazioni:** Fornire un Pitch Slider (da -8% a +8%) con l'opzione "Key Lock" per mantenere o variare l'intonazione originale a seconda dell'esercizio (Raccomandato per simulare i giradischi reali).
-     * **Azione:** Sviluppare la logica Web Audio API per regolare il tempo di riproduzione.
-   * *b) Selezione e catalogazione dei pacchetti didattici (Crate)* `[back]`
-     * **Scelte & Raccomandazioni:** Suddividere le tracce didattiche in base alla difficoltà di beatmatching (es. Crate Facile: intro con cassa pulita; Crate Difficile: intro sincopate o corte).
-     * **Azione:** Popolare il database con i brani seed consigliati per l'apprendimento.
+     * **Stato:** Implementata la piattaforma Academy con 4 moduli (12 lezioni), player video immersivo, layout compatto no-scroll e tab per invio tracce e download risorse.
+2. **Task 5.2: Directory & Mappa delle Scuole di Musica e Cabine DJ Partner [COMPLETATO]**
+   * *Miglioramento Utente:* Trova accademie musicali fisiche, sale prove, studi di registrazione e cabine DJ a noleggio vicino a te visualizzandoli su una mappa e directory geografica interattiva.
+   * *a) Integrazione directory spazi e punti d'interesse* `[front]`
+     * **Stato:** Implementata la directory partner con filtri per città (Roma, Milano, Berlino, Londra), tipologia di studio, schede attrezzatura e tariffe orarie convenzionate.
+3. **Task 5.3: DJ Lab con Beatmatching & Pitch Control Continuo [COMPLETATO]**
+   * *Miglioramento Utente:* Esercitati sul beatmatching direttamente dal browser con un player dual-deck dotato di Pitch Slider continuo (±8%, step 0.05%), calcolo BPM live, Sync, EQ a 3 bande, Crossfader e routing audio separato per Master (Casse) e Cue (AirPods/Cuffie via Web Audio `setSinkId`).
+   * *a) Motore audio e controlli di trasporto* `[front]`
+     * **Stato:** Implementato il componente `DJLab.tsx` con Web Audio API, cue mix virtuale e supporto multi-output.
+4. **Task 5.4: Gamification Producer, Livelli XP (01–04) & Badge Verified ✓ [COMPLETATO]**
+   * *Miglioramento Utente:* Scala i 4 livelli producer da Bedroom a Breakthrough, accumula XP e ottieni la spunta di verifica collegando i tuoi account social ufficiali.
+   * *a) Gestione profilo e verifica social reattiva* `[front]`
+     * **Stato:** Implementato `ProducerSettings.tsx` con anteprima live del badge, selezione generi musicali fino a 4 massimi e regole XP anti-spam.
 
 ---
 
@@ -157,10 +155,16 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 * **Introduzione:** Registro delle funzionalità storiche e strutturali già testate e in produzione.
 1. **Task 8.1: Raccolta storica degli obiettivi completati**
    * *Miglioramento Utente:* Tieni traccia dell'affidabilità generale dell'app verificando le milestone superate e i bug fix applicati nel tempo.
-   * *a) Spostamento visivo dei vecchi obiettivi in questa sezione* `[front]`
-     * **Azione:** Raccogliere in un contenitore a comparsa (accordion) le attività storiche già completate:
-       * Split dei 3 monorepo e pulizia del codice morto.
-       * Risoluzione dello schermo nero sul mini-player (blocco delle dimensioni dell'artwork a 56x56).
-       * Gestione rate limit di Discogs (coda pacizzata con sleep di 300ms e thread pool securizzata).
-       * Estrazione IP reale del client Cloudflare per superare il blocco di rate limit globale.
-       * Spotify OAuth iniziale con reindirizzamenti dinamici.
+   * *a) Rilascio Drops Hub, Producer Academy & DJ Lab (Agosto 2026)* `[front]`
+     * Portale Didattico Academy LMS con 4 Moduli e 12 Lezioni.
+     * DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%) e routing audio separato (Cassa Master + AirPods Cue via `setSinkId`).
+     * Mini-Player Audio Globale persistente a fondo pagina.
+     * Directory Partner Studi di Registrazione e Cabine DJ (Roma, Milano, Berlino, Londra).
+     * Schede Artista Pubbliche con statistiche editoriali, waveform, tracce e badge `✓ Verified`.
+     * Producer Settings con connessione social interattiva e selezione generi musicali fino a 4.
+   * *b) Funzionalità di base consolidate* `[front]` `[back]`
+     * Split dei 3 monorepo e pulizia del codice morto.
+     * Risoluzione dello schermo nero sul mini-player (blocco delle dimensioni dell'artwork a 56x56).
+     * Gestione rate limit di Discogs (coda pacizzata con sleep di 300ms e thread pool securizzata).
+     * Estrazione IP reale del client Cloudflare per superare il blocco di rate limit globale.
+     * Spotify OAuth iniziale con reindirizzamenti dinamici.
