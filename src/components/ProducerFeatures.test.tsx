@@ -75,4 +75,13 @@ describe('producer features', () => {
     expect(screen.getByText('MANIA Sound Lab')).toBeInTheDocument()
     expect(screen.getByText('Lambrate Analog Hub')).toBeInTheDocument()
   })
+
+  it('renderizza editor ID3 ed esportatore Rekordbox USB', async () => {
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
+    await userEvent.click(screen.getByRole('tab', { name: /Rekordbox USB Prep/i }))
+    expect(screen.getByText(/Editor Tag ID3 & Esportatore Rekordbox USB/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Esporta su Chiavetta USB/i })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Esporta su Chiavetta USB/i }))
+    expect(screen.getByRole('status')).toHaveTextContent(/Pacchetto Rekordbox USB generato/i)
+  })
 })

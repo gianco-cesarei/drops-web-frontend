@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import type { User } from '../api'
 import DJLab from './DJLab'
 import StudioDirectory from './StudioDirectory'
+import RekordboxExporter from './RekordboxExporter'
 
 interface Lesson {
   id: string
@@ -183,7 +184,7 @@ function getSavedLessons(): Set<string> {
 export default function AcademyHub({ user }: { user?: User | null }) {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(MODULES[0].lessons[0])
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(() => getSavedLessons())
-  const [tab, setTab] = useState<'lessons' | 'djlab' | 'studios' | 'feedback' | 'resources'>('lessons')
+  const [tab, setTab] = useState<'lessons' | 'djlab' | 'rekordbox' | 'studios' | 'feedback' | 'resources'>('lessons')
   const [openModuleId, setOpenModuleId] = useState(1)
 
   // Feedback form state
@@ -288,6 +289,12 @@ export default function AcademyHub({ user }: { user?: User | null }) {
           🎛️ DJ Lab (Beatmatching) <span className="badge-new-pill" style={{ marginLeft: '4px' }}>NEW</span>
         </button>
         <button
+          className={`academy-tab-btn ${tab === 'rekordbox' ? 'active' : ''}`} role="tab" aria-selected={tab === 'rekordbox'}
+          onClick={() => setTab('rekordbox')}
+        >
+          💾 Rekordbox USB Prep
+        </button>
+        <button
           className={`academy-tab-btn ${tab === 'studios' ? 'active' : ''}`} role="tab" aria-selected={tab === 'studios'}
           onClick={() => setTab('studios')}
         >
@@ -311,6 +318,12 @@ export default function AcademyHub({ user }: { user?: User | null }) {
       {tab === 'djlab' && (
         <section className="academy-tab-panel" role="tabpanel" aria-label="DJ Lab Beatmatching">
           <DJLab />
+        </section>
+      )}
+
+      {tab === 'rekordbox' && (
+        <section className="academy-tab-panel" role="tabpanel" aria-label="Rekordbox USB Prep">
+          <RekordboxExporter />
         </section>
       )}
 
