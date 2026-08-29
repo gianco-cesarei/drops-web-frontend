@@ -787,8 +787,11 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .private-header nav a.active,
 .private-tools-menu summary.active { color: #22c55e !important; }
 .private-tools-popover { position:absolute; top:calc(100% + 14px); left:50%; transform:translateX(-50%); width:180px; padding:8px; display:grid; gap:2px; border:1px solid var(--chrome-border); border-radius:12px; background:var(--chrome-bg); box-shadow:0 16px 36px rgba(0,0,0,.25); z-index:50; }
-.private-tools-popover a { padding:10px 12px; border-radius:8px; }
-.private-tools-popover a:hover { background:rgba(255,255,255,.07); }
+.academy-popover-menu { width: 270px; max-height: 80vh; overflow-y: auto; }
+.popover-section-title { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #22c55e; padding: 6px 10px 2px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.06); }
+.popover-section-title:first-child { margin-top: 0; border-top: none; }
+.private-tools-popover a { padding:8px 10px; border-radius:6px; font-size: 0.82rem; text-decoration: none; color: var(--chrome-ink-dim); transition: all 0.15s ease; }
+.private-tools-popover a:hover { background:rgba(34,197,94,0.12); color: #ffffff; }
 .private-header .secondary { border-color: var(--chrome-border); background: transparent; color: var(--chrome-ink-dim); }
 .private-header .secondary:hover { border-color: var(--color-accent); color: var(--chrome-ink); }
 .private-layout .shell { width: min(100%, 1208px); min-height: calc(100dvh - 72px); padding: clamp(16px, 2.5vw, 24px); }

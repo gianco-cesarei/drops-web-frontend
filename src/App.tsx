@@ -191,16 +191,35 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
         <a href="/" className="logo">Drops<span>.</span></a>
         <nav aria-label="Area privata">
           <a href="/">Discovery</a>
-          <a href="/app/academy" className={`nav-link-with-badge ${section === 'academy' ? 'active' : ''}`}>
-            Academy <span className="badge-new-pill">NEW</span>
-          </a>
+          <details className="private-tools-menu">
+            <summary className={section === 'academy' ? 'active' : ''}>
+              Academy
+            </summary>
+            <div className="private-tools-popover academy-popover-menu">
+              <div className="popover-section-title">Lessons</div>
+              <a href="/app/academy" className="popover-item">🎓 Tutti i Moduli & Video</a>
+
+              <div className="popover-section-title">Tools</div>
+              <a href="/app/academy#djlab" className="popover-item">🎛️ DJ Lab & Set Studio</a>
+              <a href="/app/academy#rekordbox" className="popover-item">💾 Rekordbox Exporter</a>
+              <a href="/app/academy#studios" className="popover-item">📍 Studio Directory</a>
+
+              <div className="popover-section-title">File & Guide</div>
+              <a href="/item/guida-bordero-siae-spa-dj-diritto-autore" className="popover-item">📄 Guida Borderò SIAE / SPA</a>
+              <a href="/item/guida-rekordbox-usb-cdj-3000-workflow-professionale" className="popover-item">📄 Workflow CDJ-3000 & USB</a>
+              <a href="/item/come-si-pubblica-la-musica-oggi" className="popover-item">📄 Come si pubblica la musica</a>
+              <a href="/item/beatport-spiegato-classifiche-generi" className="popover-item">📄 Beatport Spiegato</a>
+              <a href="/item/isrc-upc-codici-royalty" className="popover-item">📄 ISRC & UPC Royalty</a>
+              <a href="/item/vinile-2026-stampa-tempi-costi" className="popover-item">📄 Vinile 2026: Stampa & Costi</a>
+            </div>
+          </details>
           <details className="private-tools-menu">
             <summary className={['mymusic', 'download', 'archive', 'spotify'].includes(section) ? 'active' : ''}>
               My Music
             </summary>
             <div className="private-tools-popover">
-              <a href="/app/download" className={['mymusic', 'download'].includes(section) ? 'active' : ''}>Downloader</a>
               <a href="/app/archive" className={section === 'archive' ? 'active' : ''}>Archivio</a>
+              <a href="/app/download" className={['mymusic', 'download'].includes(section) ? 'active' : ''}>Downloader</a>
               <a href="/app/spotify" className={section === 'spotify' ? 'active' : ''}>Sync Playlist</a>
             </div>
           </details>
