@@ -67,4 +67,12 @@ describe('producer features', () => {
     expect(screen.getByRole('slider', { name: 'Crossfader' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Sync Deck B/i })).toBeInTheDocument()
   })
+
+  it('renderizza directory degli studi partner con filtri citta', async () => {
+    render(<AcademyHub user={{ username: 'alex', name: 'Alex Rossi' }} />)
+    await userEvent.click(screen.getByRole('tab', { name: /Studi & Cabine DJ/i }))
+    expect(screen.getByText(/Studi di Registrazione & Cabine DJ Partner/i)).toBeInTheDocument()
+    expect(screen.getByText('MANIA Sound Lab')).toBeInTheDocument()
+    expect(screen.getByText('Lambrate Analog Hub')).toBeInTheDocument()
+  })
 })
