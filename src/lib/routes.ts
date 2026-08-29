@@ -7,7 +7,7 @@ export const publicNavigation = {
   download: '/app/download',
 } as const
 
-export const privateSections = ['download', 'archive', 'spotify', 'radar', 'brain', 'academy', 'content', 'editorial-suggestions', 'settings', 'developer'] as const
+export const privateSections = ['download', 'mymusic', 'archive', 'spotify', 'radar', 'brain', 'academy', 'content', 'editorial-suggestions', 'settings', 'developer'] as const
 export type RoutedPrivateSection = typeof privateSections[number]
 
 export function privateRoute(section: RoutedPrivateSection): `/app/${RoutedPrivateSection}` {

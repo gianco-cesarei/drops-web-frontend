@@ -18,7 +18,7 @@ import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeStat
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
 
-export type PrivateSection = 'login' | 'download' | 'archive' | 'spotify' | 'radar' | 'brain' | 'academy' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
+export type PrivateSection = 'login' | 'mymusic' | 'download' | 'archive' | 'spotify' | 'radar' | 'brain' | 'academy' | 'content' | 'editorial-suggestions' | 'settings' | 'developer'
 
 const terminalStatuses = new Set(['completed', 'complete', 'ready', 'failed', 'error', 'cancelled'])
 const readyStatuses = new Set(['completed', 'complete', 'ready'])
@@ -97,9 +97,15 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   const effectiveUser = user || (demoSession ? { username: 'alex_rossi', name: 'Alex Rossi' } : null)
   if (!effectiveUser) return <Login onLogin={completeLogin} onDemoLogin={completeDemoLogin} demoEnabled={demoModeEnabled} error={error} setError={setError} />
   const demoBanner = demoSession ? <div className="demo-mode-banner" role="status">Modalita demo — dati salvati solo su questo dispositivo.</div> : null
-  if (section === 'download') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Download user={effectiveUser} onError={handleError} error={error} setError={setError} /></PrivateFrame>
-  if (section === 'archive') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><main className="shell"><div className="workspace"><FolderIngestionHub /></div></main></PrivateFrame>
-  if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><PlatformSyncHub onError={handleError} error={error} /></PrivateFrame>
+  if (['mymusic', 'download', 'archive', 'spotify'].includes(section)) {
+    const initialTab = section === 'archive' ? 'archive' : section === 'spotify' ? 'spotify' : 'download'
+    return (
+      <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>
+        {demoBanner}
+        <MyMusicHub initialTab={initialTab} user={effectiveUser} onError={handleError} error={error} setError={setError} />
+      </PrivateFrame>
+    )
+  }
   if (section === 'radar') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
   if (section === 'academy') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<AcademyHub user={effectiveUser} /></PrivateFrame>
@@ -194,13 +200,13 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
           <a href="/app/academy" className={`nav-link-with-badge ${section === 'academy' ? 'active' : ''}`}>
             Academy <span className="badge-new-pill">NEW</span>
           </a>
-          <a href="/app/download" className={section === 'download' ? 'active' : ''}>Download</a>
-          <a href="/app/archive" className={section === 'archive' ? 'active' : ''}>Archivio</a>
-          <a href="/app/spotify" className={section === 'spotify' ? 'active' : ''}>Crate Sync</a>
-          <a href="/app/content" className={section === 'content' ? 'active' : ''}>Content</a>
+          <a href="/app/mymusic" className={['mymusic', 'download', 'archive', 'spotify'].includes(section) ? 'active' : ''}>
+            My Music
+          </a>
           <details className="private-tools-menu private-admin-menu">
-            <summary className={['radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''}>Admin ▾</summary>
+            <summary className={['content', 'radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''}>Admin ▾</summary>
             <div className="private-tools-popover">
+              <a href="/app/content">Content</a>
               <a href="/app/radar">Radar</a>
               <a href="/app/brain">Brain Graph</a>
               <a href="/app/developer">Developer Roadmap</a>
@@ -231,9 +237,69 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
   </div>
 }
 
+function MyMusicHub({
+  initialTab = 'download',
+  user,
+  onError,
+  error,
+  setError,
+}: {
+  initialTab?: 'download' | 'archive' | 'spotify'
+  user: User
+  onError: (err: unknown) => void
+  error: string
+  setError: (val: string) => void
+}) {
+  const [activeTab, setActiveTab] = useState<'download' | 'archive' | 'spotify'>(initialTab)
+
+  useEffect(() => {
+    setActiveTab(initialTab)
+  }, [initialTab])
+
+  return (
+    <main className="shell">
+      <div className="platform-tabs-nav" style={{ marginBottom: '24px' }}>
+        <button
+          type="button"
+          className={`platform-tab-btn ${activeTab === 'download' ? 'active' : ''}`}
+          onClick={() => setActiveTab('download')}
+        >
+          ⬇️ Downloader (Link YouTube / SoundCloud)
+        </button>
+        <button
+          type="button"
+          className={`platform-tab-btn ${activeTab === 'archive' ? 'active' : ''}`}
+          onClick={() => setActiveTab('archive')}
+        >
+          📁 Archivio & Cartelle Cloud
+        </button>
+        <button
+          type="button"
+          className={`platform-tab-btn ${activeTab === 'spotify' ? 'active' : ''}`}
+          onClick={() => setActiveTab('spotify')}
+        >
+          🔄 Sync Playlist (Spotify & SoundCloud)
+        </button>
+      </div>
+
+      {activeTab === 'download' && (
+        <Download
+          user={user}
+          onError={onError}
+          error={error}
+          setError={setError}
+          onSwitchToArchive={() => setActiveTab('archive')}
+        />
+      )}
+      {activeTab === 'archive' && <FolderIngestionHub />}
+      {activeTab === 'spotify' && <PlatformSyncHub onError={onError} error={error} />}
+    </main>
+  )
+}
+
 function PrivatePlaceholder({ section }: { section: PrivateSection }) {
   const labels: Record<PrivateSection, string> = {
-    login: 'Login', download: 'Download', archive: 'Archivio', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', academy: 'Academy', content: 'Content',
+    login: 'Login', mymusic: 'My Music', download: 'Download', archive: 'Archivio', spotify: 'Spotify', radar: 'Radar', brain: 'Brain', academy: 'Academy', content: 'Content',
     'editorial-suggestions': 'Editorial suggestions', settings: 'Settings', developer: 'Developer',
   }
   return <main className="private-placeholder"><span className="development-badge">Private development shell</span><h1 className="sr-only">{labels[section]}</h1><p>Strumento non implementato in questa milestone.</p></main>
@@ -1839,8 +1905,7 @@ function queueStatusLabel(status: string): string {
   return map[status] ?? 'Elaborazione…'
 }
 
-function Download({ user, onError, error, setError }: { user: User; onError: (error: unknown) => void; error: string; setError: (value: string) => void }) {
-  const [activeDownloadTab, setActiveDownloadTab] = useState<'links' | 'folders'>('links')
+function Download({ user, onError, error, setError, onSwitchToArchive }: { user: User; onError: (error: unknown) => void; error: string; setError: (value: string) => void; onSwitchToArchive?: () => void }) {
   const [input, setInput] = useState('')
   const [queue, setQueue] = useState<QueueJob[]>(() => loadQueue())
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
@@ -2139,175 +2204,157 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
 
   const savedInFolderItems = history.filter((h) => downloadedIds.has(h.id))
 
-  return <main className="shell">
-    <div className="platform-tabs-nav" style={{ marginBottom: '20px' }}>
-      <button
-        type="button"
-        className={`platform-tab-btn ${activeDownloadTab === 'links' ? 'active' : ''}`}
-        onClick={() => setActiveDownloadTab('links')}
-      >
-        ⬇️ Download Singoli & Playlist (YT / SoundCloud)
-      </button>
-      <button
-        type="button"
-        className={`platform-tab-btn ${activeDownloadTab === 'folders' ? 'active' : ''}`}
-        onClick={() => setActiveDownloadTab('folders')}
-      >
-        📁 Carica & Organizza Cartelle nel Cloud
-      </button>
-    </div>
+  return (
+    <div className="workspace download-workspace-grid">
+      {/* Left/Main Column: Input, Pronti/Scaricati prima, poi In Coda */}
+      <section className="card hero-card download-hero">
+        <div className="download-hero-header">
+          <span className="eyebrow">DOWNLOAD PRIVATO</span>
+          <p className="lead">Area personale di {who}. Incolla uno o più link e aggiungili alla coda.</p>
+        </div>
 
-    {activeDownloadTab === 'folders' ? (
-      <FolderIngestionHub />
-    ) : (
-      <div className="workspace download-workspace-grid">
-        {/* Left/Main Column: Input, Pronti/Scaricati prima, poi In Coda */}
-        <section className="card hero-card download-hero">
-          <div className="download-hero-header">
-            <span className="eyebrow">DOWNLOAD PRIVATO</span>
-            <p className="lead">Area personale di {who}. Incolla uno o più link e aggiungili alla coda.</p>
+        <form onSubmit={handleAdd} className="download-form">
+          <label htmlFor="download-url">Link brano, playlist o set</label>
+          <textarea
+            id="download-url"
+            className="download-textarea"
+            placeholder={'Un link per riga · YouTube o SoundCloud\nLe playlist e i set chiedono conferma delle tracce'}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
+                e.preventDefault()
+                const form = e.currentTarget.form
+                if (form) form.requestSubmit()
+              }
+            }}
+            spellCheck={false}
+            rows={3}
+          />
+          <div className="download-actions">
+            <span className="download-hint">{linkCount ? `${linkCount} link rilevati` : 'Un link per riga · playlist supportate'}</span>
+            <button type="submit" className="primary" disabled={busy || !input.trim()}>{busy ? 'Analisi…' : 'Aggiungi alla coda'}</button>
           </div>
+        </form>
+        {error && <div className="alert" role="alert">{error}</div>}
 
-          <form onSubmit={handleAdd} className="download-form">
-            <label htmlFor="download-url">Link brano, playlist o set</label>
-            <textarea
-              id="download-url"
-              className="download-textarea"
-              placeholder={'Un link per riga · YouTube o SoundCloud\nLe playlist e i set chiedono conferma delle tracce'}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
-                  e.preventDefault()
-                  const form = e.currentTarget.form
-                  if (form) form.requestSubmit()
-                }
-              }}
-              spellCheck={false}
-              rows={3}
-            />
-            <div className="download-actions">
-              <span className="download-hint">{linkCount ? `${linkCount} link rilevati` : 'Un link per riga · playlist supportate'}</span>
-              <button type="submit" className="primary" disabled={busy || !input.trim()}>{busy ? 'Analisi…' : 'Aggiungi alla coda'}</button>
+        {/* Sotto l'input: 1. PRONTI / SCARICATI */}
+        <div className="dl-section-block">
+          <div className="dl-history-head">
+            <div className="dl-sec-title-wrap">
+              <span className="eyebrow">Pronti per il salvataggio</span>
+              <span className="dl-count">{history.length} tracce pronte</span>
             </div>
-          </form>
-          {error && <div className="alert" role="alert">{error}</div>}
-
-          {/* Sotto l'input: 1. PRONTI / SCARICATI */}
-          <div className="dl-section-block">
-            <div className="dl-history-head">
-              <div className="dl-sec-title-wrap">
-                <span className="eyebrow">Pronti per il salvataggio</span>
-                <span className="dl-count">{history.length} tracce pronte</span>
-              </div>
-              <div className="dl-history-actions">
+            <div className="dl-history-actions">
+              <button
+                type="button"
+                className="preset-chip-btn"
+                onClick={handleOpenArchive}
+                title="Visualizza tutti i link e lo storico completo"
+              >
+                📋 Archivio Link & Export ({history.length})
+              </button>
+              {onSwitchToArchive && (
                 <button
                   type="button"
                   className="preset-chip-btn"
-                  onClick={handleOpenArchive}
-                  title="Visualizza tutti i link e lo storico completo"
-                >
-                  📋 Archivio Link & Export ({history.length})
-                </button>
-                <a
-                  href="/app/archive"
-                  className="preset-chip-btn"
+                  onClick={onSwitchToArchive}
                   title="Vai all'Archivio per gestire le cartelle e le sessioni"
                 >
                   📁 Gestione Cartelle Cloud
-                </a>
-                {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
-              </div>
+                </button>
+              )}
+              {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
             </div>
-
-            {history.length === 0
-              ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
-              : <div className="dl-history">{history.map((item) => (
-                  <HistoryRow
-                    key={item.id}
-                    item={item}
-                    playing={playingUrl === api.fileUrl(item.id)}
-                    onToggleAudio={toggleAudio}
-                    onDownloaded={() => markDownloaded(item.id)}
-                    onRemove={() => handleRemoveHistory(item.id)}
-                    onRequeue={requeueSingleUrl}
-                    onError={setError}
-                    isSaved={downloadedIds.has(item.id)}
-                  />
-                ))}</div>}
           </div>
 
-          {/* Sotto i pronti: 2. IN CODA / IN CORSO */}
-          {queue.length > 0 && (
-            <div className="dl-section-block dl-queue-block">
-              <div className="dl-queue-head">
-                <span className="eyebrow">In corso / Coda</span>
-                <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
-              </div>
-              <div className="dl-queue-list">
-                {queue.map((job) => (
-                  <QueueRow
-                    key={job.key}
-                    job={job}
-                    onRetry={() => handleRetryJob(job)}
-                    onRemove={() => handleRemoveJob(job.key)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
+          {history.length === 0
+            ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
+            : <div className="dl-history">{history.map((item) => (
+                <HistoryRow
+                  key={item.id}
+                  item={item}
+                  playing={playingUrl === api.fileUrl(item.id)}
+                  onToggleAudio={toggleAudio}
+                  onDownloaded={() => markDownloaded(item.id)}
+                  onRemove={() => handleRemoveHistory(item.id)}
+                  onRequeue={requeueSingleUrl}
+                  onError={setError}
+                  isSaved={downloadedIds.has(item.id)}
+                />
+              ))}</div>}
+        </div>
 
-        {/* Right Column: Download effettuati */}
-        <aside className="card dl-folder-destination-card">
-          <div className="dl-folder-contents-head">
-            <span className="eyebrow">Download effettuati</span>
-            <span className="dl-count">{savedInFolderItems.length} file</span>
-          </div>
-
-          {savedInFolderItems.length === 0 ? (
-            <div className="dl-folder-empty-state">
-              <div className="dl-folder-dash-box">
-                <span className="dl-folder-arrow">↓</span>
-                <p>Ancora nessun download</p>
-                <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
-              </div>
+        {/* Sotto i pronti: 2. IN CODA / IN CORSO */}
+        {queue.length > 0 && (
+          <div className="dl-section-block dl-queue-block">
+            <div className="dl-queue-head">
+              <span className="eyebrow">In corso / Coda</span>
+              <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
             </div>
-          ) : (
-            <div className="dl-folder-file-list">
-              {savedInFolderItems.map((item) => (
-                <div key={`done-${item.id}`} className="dl-folder-file-item">
-                  <span className="dl-file-icon">🎵</span>
-                  <div className="dl-file-info">
-                    <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
-                    {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
-                  </div>
-                  <a
-                    className="dl-redownload-btn"
-                    href={api.fileUrl(item.id)}
-                    download
-                    title={`Riscarica ${item.title}`}
-                    aria-label={`Riscarica ${item.title}`}
-                  >
-                    ↻ Riscarica
-                  </a>
-                </div>
+            <div className="dl-queue-list">
+              {queue.map((job) => (
+                <QueueRow
+                  key={job.key}
+                  job={job}
+                  onRetry={() => handleRetryJob(job)}
+                  onRemove={() => handleRemoveJob(job.key)}
+                />
               ))}
             </div>
-          )}
-        </aside>
-      </div>
-    )}
+          </div>
+        )}
+      </section>
 
-    {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
-    {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
-    <DownloadArchiveModal
-      isOpen={isArchiveOpen}
-      onClose={() => setIsArchiveOpen(false)}
-      items={history}
-      onRequeue={requeueSingleUrl}
-    />
-  </main>
+      {/* Right Column: Download effettuati */}
+      <aside className="card dl-folder-destination-card">
+        <div className="dl-folder-contents-head">
+          <span className="eyebrow">Download effettuati</span>
+          <span className="dl-count">{savedInFolderItems.length} file</span>
+        </div>
+
+        {savedInFolderItems.length === 0 ? (
+          <div className="dl-folder-empty-state">
+            <div className="dl-folder-dash-box">
+              <span className="dl-folder-arrow">↓</span>
+              <p>Ancora nessun download</p>
+              <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
+            </div>
+          </div>
+        ) : (
+          <div className="dl-folder-file-list">
+            {savedInFolderItems.map((item) => (
+              <div key={`done-${item.id}`} className="dl-folder-file-item">
+                <span className="dl-file-icon">🎵</span>
+                <div className="dl-file-info">
+                  <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
+                  {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
+                </div>
+                <a
+                  className="dl-redownload-btn"
+                  href={api.fileUrl(item.id)}
+                  download
+                  title={`Riscarica ${item.title}`}
+                  aria-label={`Riscarica ${item.title}`}
+                >
+                  ↻ Riscarica
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+      </aside>
+
+      {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
+      {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
+      <DownloadArchiveModal
+        isOpen={isArchiveOpen}
+        onClose={() => setIsArchiveOpen(false)}
+        items={history}
+        onRequeue={requeueSingleUrl}
+      />
+    </div>
+  )
 }
 
 function QueueRow({
