@@ -9,6 +9,7 @@ import BrainGraph from './components/BrainGraph'
 import DeveloperRoadmap from './components/DeveloperRoadmap'
 import AcademyHub from './components/AcademyHub'
 import ProducerSettings from './components/ProducerSettings'
+import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
@@ -191,6 +192,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
       </header>
     </div>
     {children}
+    <GlobalAudioPlayer />
   </div>
 }
 
