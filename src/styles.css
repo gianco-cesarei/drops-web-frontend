@@ -5166,6 +5166,87 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   border-color: transparent;
 }
 
+/* ==========================================================================
+   DOWNLOAD ARCHIVE MODAL & LINK MANAGER
+   ========================================================================== */
+.download-archive-modal-card {
+  width: 780px;
+  max-width: 94vw;
+  background: #0f1410;
+  border: 1px solid #233827;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  animation: scaleInCard 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.archive-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-bottom: 1px solid #1c2a1e;
+  background: #0b0f0c;
+}
+.archive-modal-header h2 {
+  font-size: 1.2rem;
+  font-weight: 850;
+  margin: 0 0 4px;
+}
+.archive-modal-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+  max-width: 620px;
+  line-height: 1.4;
+}
+
+.archive-modal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #131a14;
+  border-bottom: 1px solid #1c2a1e;
+  flex-wrap: wrap;
+}
+.archive-actions-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.archive-table-wrapper {
+  overflow-y: auto;
+  padding: 12px 20px;
+  max-height: 420px;
+}
+.archive-source-link {
+  font-size: 0.75rem;
+  color: #86efac;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.archive-source-link:hover {
+  color: #bbf7d0;
+}
+
+.archive-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #090d0a;
+  border-top: 1px solid #1c2a1e;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+
 
 
 

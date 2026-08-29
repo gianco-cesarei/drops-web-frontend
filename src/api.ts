@@ -159,6 +159,7 @@ export const api = {
       }),
     }).then(normalizeJob),
   getDownload: (id: string) => request<unknown>(`/api/v1/downloads/${encodeURIComponent(id)}`).then(normalizeJob),
+  listDownloads: (limit = 100) => request<{ downloads: unknown[] }>(`/api/v1/downloads?limit=${limit}`).then((res) => ({ downloads: (res?.downloads ?? []).map(normalizeJob) })),
   fileUrl: (id: string) => `${apiUrl()}/api/v1/downloads/${encodeURIComponent(id)}/file`,
   resolvePlaylist: (url: string) =>
     request<PlaylistPreview>('/api/v1/playlists/resolve', { method: 'POST', body: JSON.stringify({ url }) }),

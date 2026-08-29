@@ -12,6 +12,7 @@ import ProducerSettings from './components/ProducerSettings'
 import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import GlobalSearchModal from './components/GlobalSearchModal'
 import MultiSourceSync from './components/MultiSourceSync'
+import DownloadArchiveModal from './components/DownloadArchiveModal'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
@@ -1751,6 +1752,7 @@ type HistoryItem = {
   artist?: string
   coverUrl?: string
   source?: string
+  sourceUrl?: string
   bpm?: number
   bpmPending?: boolean
   ts: number
@@ -1834,6 +1836,7 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
   const [queue, setQueue] = useState<QueueJob[]>(() => loadQueue())
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
   const [busy, setBusy] = useState(false)
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false)
   const [preview, setPreview] = useState<{ data: PlaylistPreview; resolve: (urls: string[] | null) => void } | null>(null)
   const [playlistChoice, setPlaylistChoice] = useState<{ data: Extract<PlaylistPreview, { url_type: 'track_in_playlist' }>; resolve: (urls: string[] | null) => void } | null>(null)
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => new Set())
@@ -1846,6 +1849,36 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
 
   useEffect(() => { saveHistory(history) }, [history])
   useEffect(() => { saveQueue(queue) }, [queue])
+
+  const handleOpenArchive = () => {
+    setIsArchiveOpen(true)
+    api.listDownloads(100).then(({ downloads }) => {
+      if (!downloads || !downloads.length) return
+      setHistory((prev) => {
+        const localIds = new Set(prev.map((p) => p.id))
+        const fromBackend: HistoryItem[] = downloads
+          .filter((d) => d.status === 'ready' || d.status === 'completed')
+          .map((d) => ({
+            id: d.id,
+            title: d.title ?? d.fileName ?? 'Traccia',
+            artist: d.artist,
+            coverUrl: d.coverUrl,
+            source: d.source,
+            sourceUrl: d.source,
+            bpm: d.bpm,
+            bpmPending: d.bpm == null,
+            ts: Date.now(),
+          }))
+        const merged = [...prev]
+        for (const item of fromBackend) {
+          if (!localIds.has(item.id)) {
+            merged.push(item)
+          }
+        }
+        return merged.slice(0, 150)
+      })
+    }).catch(() => {})
+  }
 
   const hasActive = queue.some((j) => !readyStatuses.has(j.status) && !failedStatuses.has(j.status))
 
@@ -2046,7 +2079,7 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
           source: created.source ?? x.source,
         } : x)))
         if (readyStatuses.has(created.status)) {
-          const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
+          const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, sourceUrl: job.url, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
           window.setTimeout(() => {
             setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
             setQueue((cur) => cur.filter((x) => x.key !== freshKey))
@@ -2062,6 +2095,38 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
       })
   }
 
+  function requeueSingleUrl(url: string) {
+    if (!url) return
+    const key = makeKey()
+    const newJob: QueueJob = { key, id: null, url, status: 'starting', progress: 0, optimistic: 8 }
+    setQueue((cur) => [newJob, ...cur])
+    api.createDownload(url)
+      .then((created) => {
+        setQueue((cur) => cur.map((x) => (x.key === key ? {
+          ...x,
+          id: created.id,
+          status: created.status || 'queued',
+          title: created.title ?? x.title,
+          artist: created.artist ?? x.artist,
+          coverUrl: created.coverUrl ?? x.coverUrl,
+          source: created.source ?? x.source,
+        } : x)))
+        if (readyStatuses.has(created.status)) {
+          const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, sourceUrl: url, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
+          window.setTimeout(() => {
+            setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
+            setQueue((cur) => cur.filter((x) => x.key !== key))
+          }, 1000)
+        }
+      })
+      .catch((cause) => {
+        setQueue((cur) => cur.map((x) => (x.key === key ? {
+          ...x,
+          status: 'failed',
+          message: cause instanceof ApiError ? cause.message : 'Avvio non riuscito',
+        } : x)))
+      })
+  }
 
   const savedInFolderItems = history.filter((h) => downloadedIds.has(h.id))
 
@@ -2106,6 +2171,14 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
             <span className="dl-count">{history.length} tracce pronte</span>
           </div>
           <div className="dl-history-actions">
+            <button
+              type="button"
+              className="preset-chip-btn"
+              onClick={handleOpenArchive}
+              title="Visualizza tutti i link e lo storico completo"
+            >
+              📋 Archivio Link & Export ({history.length})
+            </button>
             {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
           </div>
         </div>
@@ -2120,6 +2193,8 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
                 onToggleAudio={toggleAudio}
                 onDownloaded={() => markDownloaded(item.id)}
                 onRemove={() => handleRemoveHistory(item.id)}
+                onRequeue={requeueSingleUrl}
+                onError={setError}
                 isSaved={downloadedIds.has(item.id)}
               />
             ))}</div>}
@@ -2187,6 +2262,12 @@ function Download({ user, onError, error, setError }: { user: User; onError: (er
   </div>
   {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
   {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
+  <DownloadArchiveModal
+    isOpen={isArchiveOpen}
+    onClose={() => setIsArchiveOpen(false)}
+    items={history}
+    onRequeue={requeueSingleUrl}
+  />
   </main>
 }
 
@@ -2234,6 +2315,8 @@ function HistoryRow({
   onToggleAudio,
   onDownloaded,
   onRemove,
+  onRequeue,
+  onError,
   isSaved,
 }: {
   item: HistoryItem
@@ -2241,9 +2324,37 @@ function HistoryRow({
   onToggleAudio?: (url: string) => void
   onDownloaded?: () => void
   onRemove?: () => void
+  onRequeue?: (url: string) => void
+  onError?: (msg: string) => void
   isSaved?: boolean
 }) {
   const fileUrl = api.fileUrl(item.id)
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    try {
+      const res = await fetch(fileUrl, { method: 'HEAD' })
+      if (!res.ok) {
+        if (item.sourceUrl || item.source) {
+          onRequeue?.(item.sourceUrl || item.source!)
+          onError?.(`File temporaneo scaduto sul server. Rilanciato il download di "${item.title}" dalla sorgente!`)
+        } else {
+          onError?.(`File temporaneo scaduto sul server. Incolla nuovamente il link per scaricarlo.`)
+        }
+        return
+      }
+      onDownloaded?.()
+      const a = document.createElement('a')
+      a.href = fileUrl
+      a.download = `${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    } catch {
+      window.location.assign(fileUrl)
+    }
+  }
+
   return (
     <div className={`dl-hist ${isSaved ? 'is-saved' : ''}`}>
       <div
@@ -2261,7 +2372,7 @@ function HistoryRow({
         {item.artist && <div className="dl-job-detail">{item.artist}</div>}
         <div className="dl-hist-chips">
           {item.bpm != null ? <span className="track-chip track-chip-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="track-chip track-chip-bpm calculating">… BPM</span> : null}
-          {item.source && <span className="dl-hist-source">fonte: {item.source}</span>}
+          {item.source && <span className="dl-hist-source">fonte: {item.source.replace(/^https?:\/\/(www\.)?/, '').slice(0, 24)}</span>}
           {isSaved && <span className="dl-saved-chip">✓ in cartella</span>}
         </div>
       </div>
@@ -2270,7 +2381,7 @@ function HistoryRow({
           className={`dl-hist-dl ${isSaved ? 'dl-saved-btn' : ''}`}
           href={fileUrl}
           download
-          onClick={() => onDownloaded?.()}
+          onClick={handleDownload}
           title={`Scarica ${item.title} nella cartella`}
           aria-label={`Scarica ${item.title}`}
         >
