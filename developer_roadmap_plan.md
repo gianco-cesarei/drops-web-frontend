@@ -120,19 +120,14 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 
 ### Sezione 6: Grafo Discovery & Motore Suggest
 * **Introduzione:** Il motore di curatela e raccomandazione orientato alla musica elettronica underground (scena Minimal, Deep House, Techno).
-1. **Task 6.1: Motore "Drops Suggest" & Grafo di Etichette, Party e Artisti**
+1. **Task 6.1: Motore "Drops Suggest" & Grafo di Etichette, Party e Artisti [COMPLETATO]**
    * *Miglioramento Utente:* Esplora le connessioni tra le etichette discografiche di nicchia, i party underground e i DJ per scoprire nuove tracce affini al tuo gusto attraverso consigli intelligenti.
-   * *a) Visualizzazione del grafo relazionale e navigazione* `[front]`
-     * **Scelte & Raccomandazioni:** Utilizzare una libreria interattiva leggera come `ForceGraph2D` o `vis.js` (Raccomandato perché gestisce bene il dragging e lo zoom dei nodi in React).
-     * **Azione:** Sviluppare la vista del grafo relazionale nel tab "Brain".
-   * *b) Algoritmo di raccomandazione* `[back]`
-     * **Scelte & Raccomandazioni:** Pesare le raccomandazioni combinando la vicinanza geografica dell'utente ai party, l'affinità dello stile delle etichette discografiche e il momentum temporale (Raccomandato).
-     * **Azione:** Sviluppare le query SQL su Supabase/Postgres per estrarre le raccomandazioni affini.
-2. **Task 6.2: Guide Editoriali pratiche per il settore musicale**
+   * *a) Visualizzazione del grafo relazionale e drawer Suggest* `[front]`
+     * **Stato:** Implementato il grafo interattivo SVG in `BrainGraph.tsx` con nodi clusterizzati, drawer laterale dei consigli con affinità stilistica e pulsante di anteprima nel Mini-Player globale.
+2. **Task 6.2: Guide Editoriali pratiche per il settore musicale [COMPLETATO]**
    * *Miglioramento Utente:* Leggi guide super-sintetiche e aggiornate su come pubblicare la tua musica, stampare in vinile nel 2026, e gestire i codici ISRC/UPC per proteggere i tuoi diritti.
    * *a) Gestione dei contenuti editoriali (CMS leggero vs file statici)* `[front]` `[back]`
-     * **Scelte & Raccomandazioni:** Salvare gli articoli come file Markdown statici in Astro (Content Collections) per caricarli all'istante ed evitare query complesse a database (Raccomandato per massimizzare la velocità SEO).
-     * **Azione:** Configurare il layout Astro per il rendering dei blocchi di testo delle guide.
+     * **Stato:** 8 guide editoriali complete con metadati, blocchi HTML e layout Astro SEO (`/item/...`).
 
 ---
 
@@ -143,11 +138,10 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *a) Algoritmo e posizionamento del calcolo del BPM* `[back]`
      * **Scelte & Raccomandazioni:** Eseguire l'analisi del BPM sul backend FastAPI in modo asincrono usando librerie Python (NumPy + FFmpeg) per la massima precisione (Raccomandato), salvando il risultato su database.
      * **Azione:** Configurare la coda di analisi in background e i relativi endpoint.
-2. **Task 7.2: Editor Tag ID3 ed Esportazione per DJ Hardware (Rekordbox)**
-   * *Miglioramento Utente:* Correggi i tag ID3 dei tuoi brani (artista, titolo, copertina, BPM) ed esporta le tracce ordinate in cartelle su una chiavetta USB pronta all'uso per i lettori CDJ professionali.
-   * *a) Scrittura fisica dei metadati sui file esportati* `[desktop]` `[front]`
-     * **Scelte & Raccomandazioni:** Utilizzare i comandi nativi Rust di Tauri per scrivere i tag ID3 direttamente sui file scaricati prima di copiarli sul dispositivo USB dell'utente (Raccomandato per compatibilità Rekordbox).
-     * **Azione:** Implementare la chiamata Rust per l'aggiornamento dei metadati e il gestore dei percorsi delle cartelle.
+2. **Task 7.2: Editor Tag ID3 ed Esportazione per DJ Hardware (Rekordbox) [COMPLETATO]**
+   * *Miglioramento Utente:* Correggi i tag ID3 dei tuoi brani (artista, titolo, copertina, BPM, Camelot Key) ed esporta le tracce ordinate in cartelle su una chiavetta USB pronta all'uso per i lettori CDJ professionali.
+   * *a) Gestione metadati e organizzazione cartelle USB* `[front]` `[desktop]`
+     * **Stato:** Implementato `RekordboxExporter.tsx` con form ID3 v2.4, formattazione pattern nomi file, cartelle per genere/artista e generazione pacchetto USB drive.
 
 ---
 
@@ -157,7 +151,9 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *Miglioramento Utente:* Tieni traccia dell'affidabilità generale dell'app verificando le milestone superate e i bug fix applicati nel tempo.
    * *a) Rilascio Drops Hub, Producer Academy & DJ Lab (Agosto 2026)* `[front]`
      * Portale Didattico Academy LMS con 4 Moduli e 12 Lezioni.
-     * DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%) e routing audio separato (Cassa Master + AirPods Cue via `setSinkId`).
+     * DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%), Hot Cue pads, Auto Beat Loops, Color FX e routing audio separato (Cassa Master + AirPods Cue via `setSinkId`).
+     * Editor Tag ID3 ed Esportatore USB Rekordbox (`RekordboxExporter.tsx`).
+     * Grafo Discovery Brain con Drawer Suggest Underground e anteprima audio live.
      * Mini-Player Audio Globale persistente a fondo pagina.
      * Directory Partner Studi di Registrazione e Cabine DJ (Roma, Milano, Berlino, Londra).
      * Schede Artista Pubbliche con statistiche editoriali, waveform, tracce e badge `✓ Verified`.
