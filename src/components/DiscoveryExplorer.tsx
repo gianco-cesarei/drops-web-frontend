@@ -121,6 +121,40 @@ const filterItems = (items: DiscoveryItem[], types: DiscoveryType[], query = '')
     })
 }
 
+export function DiscoveryHeroBanner() {
+  return (
+    <section className="discovery-hero-campaign" aria-label="Campagna Drops">
+      <div className="discovery-hero-media-wrap">
+        <picture className="discovery-hero-picture">
+          <source media="(max-width: 768px)" srcSet="/assets/cue-campaign-mobile.jpg" />
+          <img
+            src="/assets/cue-campaign-desktop.jpg"
+            alt="Manage your music world in cloud"
+            className="discovery-hero-img"
+            loading="eager"
+          />
+        </picture>
+
+        {/* Claim Pubblicitario */}
+        <div className="discovery-hero-headline-wrap">
+          <span className="discovery-hero-pill-tag">CLOUD LIBRARY & WORKFLOW</span>
+          <h1 className="discovery-hero-claim">
+            Manage your music world in cloud.
+          </h1>
+        </div>
+
+        {/* Logo Drops in basso a destra */}
+        <div className="discovery-hero-logo-badge" aria-label="Logo Drops">
+          <span className="discovery-hero-logo-text">Drops<span className="hero-logo-dot">.</span></span>
+        </div>
+
+        {/* Gradient fade in basso per far intravedere il catalogo sottostante */}
+        <div className="discovery-hero-fade" />
+      </div>
+    </section>
+  )
+}
+
 export function DiscoveryEnvironment({ items }: { items: DiscoveryItem[] }) {
   const state = useArchiveState(true)
   const [draft, setDraft] = useState('')
@@ -152,7 +186,9 @@ export function DiscoveryEnvironment({ items }: { items: DiscoveryItem[] }) {
   }
 
   return (
-    <div className="environment-layout">
+    <div className="discovery-page-container">
+      <DiscoveryHeroBanner />
+      <div className="environment-layout">
       <aside className="environment-rail">
         <span className="rail-label">Categorie</span>
         <Categories types={state.types} onChange={(types) => state.update(types)} label="Categorie Grid" items={publishedItems} />
@@ -193,6 +229,7 @@ export function DiscoveryEnvironment({ items }: { items: DiscoveryItem[] }) {
         )}
       </div>
     </div>
+  </div>
   )
 }
 
