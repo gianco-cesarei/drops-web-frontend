@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { api } from '../api'
 
 export interface IngestedTrack {
   id: string
@@ -118,6 +119,41 @@ export default function FolderIngestionHub() {
     saveFolders(folders)
   }, [folders])
 
+  useEffect(() => {
+    // Sincronizza cartelle salvate su Supabase Postgres se online
+    api.listFolders().then((res) => {
+      if (res?.folders && res.folders.length > 0) {
+        const remoteFolders: IndexedFolder[] = res.folders.map((rf: any) => ({
+          id: rf.id,
+          name: rf.name,
+          uploadDate: new Date(rf.created_at * 1000).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }),
+          timestamp: rf.created_at * 1000,
+          trackCount: rf.track_count ?? 0,
+          totalSizeMb: Math.round((rf.track_count ?? 0) * 10.5 * 10) / 10,
+          dominantGenre: rf.dominant_genre ?? 'Electronic',
+          status: 'ready',
+          isSession: /^Session/i.test(rf.name),
+          tracks: (rf.track_ids ?? []).map((tid: string, idx: number) => ({
+            id: tid,
+            filename: `track_${idx + 1}.mp3`,
+            title: `Traccia ${idx + 1}`,
+            artist: 'Cloud Library',
+            bpm: 124,
+            genre: rf.dominant_genre ?? 'Electronic',
+          })),
+        }))
+
+        setFolders((prev) => {
+          const remoteIds = new Set(remoteFolders.map((rf) => rf.id))
+          const localOnly = prev.filter((p) => !remoteIds.has(p.id))
+          return [...remoteFolders, ...localOnly]
+        })
+      }
+    }).catch(() => {
+      /* Fallback offline graceful */
+    })
+  }, [])
+
   const handleStartRename = (folder: IndexedFolder, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setEditingFolderId(folder.id)
@@ -136,6 +172,7 @@ export default function FolderIngestionHub() {
     if (selectedFolder?.id === folderId) {
       setSelectedFolder((prev) => (prev ? { ...prev, name: trimmed } : null))
     }
+    api.renameFolder(folderId, trimmed).catch(() => {})
     setEditingFolderId(null)
     setNotice(`✓ Nome cartella aggiornato in "${trimmed}"!`)
     setTimeout(() => setNotice(null), 2500)
@@ -282,6 +319,11 @@ export default function FolderIngestionHub() {
 
     setFolders((prev) => [newFolder, ...prev])
     setSelectedFolder(newFolder)
+    api.createFolder({
+      name: folderName,
+      dominant_genre: parsedTracks[0]?.genre ?? 'Electronic',
+      track_ids: parsedTracks.map((t) => t.id),
+    }).catch(() => {})
     setIsProcessing(false)
     setProcessingProgress(100)
     setNotice(`✓ Cartella "${folderName}" indicizzata con successo! ${parsedTracks.length} tracce pronte e arricchite.`)
@@ -292,6 +334,7 @@ export default function FolderIngestionHub() {
   const handleDeleteFolder = (folderId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setFolders((prev) => prev.filter((f) => f.id !== folderId))
+    api.deleteFolder(folderId).catch(() => {})
     if (selectedFolder?.id === folderId) setSelectedFolder(null)
   }
 

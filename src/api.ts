@@ -183,4 +183,11 @@ export const api = {
   listAcademySubmissions: (limit = 50, offset = 0) =>
     request<{ submissions: any[] }>(`/api/v1/academy/submissions?limit=${limit}&offset=${offset}`),
   academyStreamUrl: (submissionId: string) => `${apiUrl()}/api/v1/academy/submissions/${encodeURIComponent(submissionId)}/stream`,
+  listFolders: () => request<{ folders: any[] }>('/api/v1/folders'),
+  createFolder: (data: { name: string; dominant_genre?: string; track_ids?: string[] }) =>
+    request<any>('/api/v1/folders', { method: 'POST', body: JSON.stringify(data) }),
+  renameFolder: (id: string, name: string) =>
+    request<any>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
+  deleteFolder: (id: string) =>
+    request<void>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 }
