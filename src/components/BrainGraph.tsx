@@ -135,11 +135,29 @@ export default function BrainGraph({ extraNodes = [], extraLinks = [] }: Props) 
   }
   function resetView() { setSelected(null); setActiveTypes(new Set()); setActiveClusters(new Set()) }
 
+  const selectedNodeData = selected ? index.get(selected) : null
+  const connectedLinks = useMemo(() => {
+    if (!selected) return []
+    return links.filter((l) => l.source === selected || l.target === selected)
+  }, [selected, links])
+
+  const handlePlaySuggestTrack = (track: { title: string; artist: string; bpm: number; genre: string }) => {
+    if (typeof window !== 'undefined' && window.__drops_play_track) {
+      window.__drops_play_track({
+        title: track.title,
+        artist: track.artist,
+        bpm: track.bpm,
+        genre: track.genre,
+        audioUrl: 'https://cdn.freesound.org/previews/560/560580_11861866-lq.mp3',
+      })
+    }
+  }
+
   void revision
   return <section className="brain-panel" aria-labelledby="brain-graph-title">
     <div className="brain-controls-overlay">
       <header className="brain-panel-header">
-        <span className="fixture-label">Brain · fixture seed v2</span><h2 id="brain-graph-title" className="sr-only">Etichette, artisti, città e party</h2>
+        <span className="fixture-label">Brain · Discovery & Suggest Engine</span><h2 id="brain-graph-title" className="sr-only">Etichette, artisti, città e party</h2>
         <button type="button" className="brain-reset" onClick={resetView} disabled={!selected && !filtersActive}>Mostra tutto</button>
       </header>
       <div className="brain-type-legend" aria-label="Filtra per tipo di nodo">{brainNodeTypes.map((type) => <button type="button" key={type} data-type={type} aria-pressed={activeTypes.has(type)} onClick={() => toggleType(type)}>{type}</button>)}</div>
@@ -166,8 +184,67 @@ export default function BrainGraph({ extraNodes = [], extraLinks = [] }: Props) 
           </g>
         })}</g>
       </svg>
-      {tooltip && <aside className="brain-tooltip" role="tooltip" style={{ left: tooltip.x, top: tooltip.y }}><strong>{tooltip.node.type === 'City' ? tooltip.node.id.slice(2) : tooltip.node.id}</strong><span>{tooltip.node.type}{tooltip.node.city ? ` · ${tooltip.node.city}` : ''}</span><p>{tooltip.node.meta}</p><em>{clusterLabels[tooltip.node.cluster]}</em></aside>}
+      {tooltip && !selected && <aside className="brain-tooltip" role="tooltip" style={{ left: tooltip.x, top: tooltip.y }}><strong>{tooltip.node.type === 'City' ? tooltip.node.id.slice(2) : tooltip.node.id}</strong><span>{tooltip.node.type}{tooltip.node.city ? ` · ${tooltip.node.city}` : ''}</span><p>{tooltip.node.meta}</p><em>{clusterLabels[tooltip.node.cluster]}</em></aside>}
+
+      {/* UNDERGROUND SUGGEST DRAWER FOR SELECTED NODE */}
+      {selectedNodeData && (
+        <aside className="brain-suggest-drawer" aria-label="Consigli Discovery per il nodo selezionato">
+          <div className="suggest-drawer-header">
+            <div className="suggest-node-badge">
+              <span className={`node-type-badge ${selectedNodeData.type.toLowerCase()}`}>{selectedNodeData.type}</span>
+              <h3>{selectedNodeData.id}</h3>
+            </div>
+            <button type="button" className="close-suggest-btn" onClick={() => setSelected(null)} aria-label="Chiudi dettagli">✕</button>
+          </div>
+
+          <p className="suggest-node-meta">{selectedNodeData.meta}</p>
+
+          <div className="suggest-relations-box">
+            <span className="suggest-subhead">Connessioni & Rete ({connectedLinks.length}):</span>
+            <div className="suggest-links-chips">
+              {connectedLinks.map((l, i) => {
+                const other = l.source === selected ? l.target : l.source
+                return (
+                  <button
+                    key={`conn-${i}`}
+                    type="button"
+                    className="conn-chip"
+                    onClick={() => setSelected(other)}
+                  >
+                    <span>{l.relation}:</span> <strong>{other}</strong>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="suggest-tracks-box">
+            <span className="suggest-subhead">Tracce Consigliate dal Motore Suggest:</span>
+            <div className="suggest-tracks-list">
+              <div className="suggest-track-item">
+                <div className="track-left-meta">
+                  <strong>{selectedNodeData.id} - Hypnotic Tool 01</strong>
+                  <span>{clusterLabels[selectedNodeData.cluster]} • 126 BPM</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn-play-suggest"
+                  onClick={() => handlePlaySuggestTrack({
+                    title: `${selectedNodeData.id} - Hypnotic Tool 01`,
+                    artist: selectedNodeData.id,
+                    bpm: 126,
+                    genre: clusterLabels[selectedNodeData.cluster],
+                  })}
+                  title="Ascolta nel Mini-Player globale"
+                >
+                  ▶ Ascolta
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      )}
     </div>
-    <footer className="brain-panel-footer"><span>Verde tratteggiato: momentum · Anello ambra: collegato dal Radar</span><span>Seed statico · 15 agosto 2026 · da validare</span></footer>
+    <footer className="brain-panel-footer"><span>Verde tratteggiato: momentum · Anello ambra: collegato dal Radar</span><span>Seed discovery & suggest engine · Aggiornato 2026</span></footer>
   </section>
 }

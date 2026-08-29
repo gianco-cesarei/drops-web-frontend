@@ -4074,5 +4074,279 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   color: #ffffff;
 }
 
+/* ==========================================================================
+   DJ LAB PERFORMANCE PADS, AUTO LOOPS & FILTER FX
+   ========================================================================== */
+.beat-loop-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.loop-btns-row {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-loop {
+  flex: 1;
+  padding: 4px 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #9ca3af;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-loop:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.btn-loop.active {
+  background: #eab308;
+  color: #000000;
+  border-color: #fde047;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
+}
+
+.hot-cues-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.hot-cues-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.btn-hot-cue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.btn-hot-cue.empty {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #6b7280;
+}
+
+.btn-hot-cue.set {
+  background: #1e3a8a;
+  border-color: #3b82f6;
+  color: #bfdbfe;
+}
+.deck-b .btn-hot-cue.set {
+  background: #831843;
+  border-color: #ec4899;
+  color: #fbcfe8;
+}
+
+.btn-hot-cue:hover {
+  transform: scale(0.96);
+}
+
+.pad-letter {
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.pad-time {
+  font-size: 0.58rem;
+  font-weight: 750;
+  opacity: 0.85;
+}
+
+.filter-color-fx {
+  margin-top: 2px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  padding-top: 4px;
+}
+
+.filter-slider {
+  width: 100%;
+  accent-color: #38bdf8;
+  height: 14px;
+}
+
+/* ==========================================================================
+   BRAIN UNDERGROUND SUGGEST DRAWER
+   ========================================================================== */
+.brain-suggest-drawer {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 320px;
+  max-width: 90vw;
+  background: rgba(12, 17, 13, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #283a2d;
+  border-radius: 14px;
+  padding: 14px;
+  color: #ffffff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+  animation: fadeInDrawer 0.2s ease-out;
+}
+
+@keyframes fadeInDrawer {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggest-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggest-node-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.suggest-node-badge h3 {
+  font-size: 1.05rem;
+  font-weight: 850;
+  margin: 0;
+  color: #ffffff;
+}
+
+.node-type-badge {
+  font-size: 0.65rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #374151;
+}
+.node-type-badge.label { background: #3b82f6; color: #ffffff; }
+.node-type-badge.artist { background: #10b981; color: #ffffff; }
+.node-type-badge.party { background: #ec4899; color: #ffffff; }
+.node-type-badge.city { background: #f59e0b; color: #ffffff; }
+
+.close-suggest-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px;
+}
+.close-suggest-btn:hover {
+  color: #ffffff;
+}
+
+.suggest-node-meta {
+  font-size: 0.78rem;
+  color: #d1d5db;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.suggest-subhead {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.suggest-links-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.conn-chip {
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-size: 0.68rem;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.conn-chip:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.suggest-tracks-box {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+.suggest-tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.suggest-track-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.track-left-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.track-left-meta strong {
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.track-left-meta span {
+  font-size: 0.65rem;
+  color: #9ca3af;
+}
+
+.btn-play-suggest {
+  padding: 4px 8px;
+  background: var(--color-accent, #22c55e);
+  color: #05230f;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 850;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex: none;
+}
+.btn-play-suggest:hover {
+  background: #4ade80;
+}
+
+
+
 
 

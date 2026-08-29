@@ -20,6 +20,9 @@ export interface DeckState {
   eqHigh: number // -12dB to +6dB
   eqMid: number
   eqLow: number
+  filterFx: number // -50 (LPF) to +50 (HPF)
+  activeLoop: number | null // 2, 4, 8, 16 bars
+  hotCues: (number | null)[] // up to 4 cue points
   audioUrl?: string
 }
 
@@ -81,6 +84,9 @@ export default function DJLab() {
     eqHigh: 0,
     eqMid: 0,
     eqLow: 0,
+    filterFx: 0,
+    activeLoop: null,
+    hotCues: [0, 32, 64, null],
   })
 
   // Deck B State
@@ -99,6 +105,9 @@ export default function DJLab() {
     eqHigh: 0,
     eqMid: 0,
     eqLow: 0,
+    filterFx: 0,
+    activeLoop: null,
+    hotCues: [0, 16, 48, null],
   })
 
   // Enumerate audio output devices on mount
@@ -165,6 +174,40 @@ export default function DJLab() {
       const desiredBpm = deckB.currentBpm
       const requiredPitch = Number((((desiredBpm - deckA.bpm) / deckA.bpm) * 100).toFixed(2))
       handlePitchChange('A', requiredPitch)
+    }
+  }
+
+  // Hot Cue trigger or set
+  const handleHotCue = (deck: 'A' | 'B', cueIndex: number) => {
+    if (deck === 'A') {
+      setDeckA((prev) => {
+        const currentCue = prev.hotCues[cueIndex]
+        if (currentCue !== null && currentCue !== undefined) {
+          return { ...prev, currentTime: currentCue, isPlaying: true }
+        }
+        const updated = [...prev.hotCues]
+        updated[cueIndex] = Math.round(prev.currentTime)
+        return { ...prev, hotCues: updated }
+      })
+    } else {
+      setDeckB((prev) => {
+        const currentCue = prev.hotCues[cueIndex]
+        if (currentCue !== null && currentCue !== undefined) {
+          return { ...prev, currentTime: currentCue, isPlaying: true }
+        }
+        const updated = [...prev.hotCues]
+        updated[cueIndex] = Math.round(prev.currentTime)
+        return { ...prev, hotCues: updated }
+      })
+    }
+  }
+
+  // Auto Beat Loop toggle
+  const handleLoopToggle = (deck: 'A' | 'B', bars: number) => {
+    if (deck === 'A') {
+      setDeckA((prev) => ({ ...prev, activeLoop: prev.activeLoop === bars ? null : bars }))
+    } else {
+      setDeckB((prev) => ({ ...prev, activeLoop: prev.activeLoop === bars ? null : bars }))
     }
   }
 
@@ -360,6 +403,46 @@ export default function DJLab() {
                 </button>
               </div>
 
+              {/* AUTO BEAT LOOP ROW */}
+              <div className="beat-loop-section">
+                <span className="mini-label">AUTO BEAT LOOP:</span>
+                <div className="loop-btns-row">
+                  {[2, 4, 8, 16].map((bars) => (
+                    <button
+                      key={`loop-a-${bars}`}
+                      type="button"
+                      className={`btn-loop ${deckA.activeLoop === bars ? 'active' : ''}`}
+                      onClick={() => handleLoopToggle('A', bars)}
+                    >
+                      {bars}B
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* HOT CUE PADS (4 PADS) */}
+              <div className="hot-cues-section">
+                <span className="mini-label">HOT CUES (PADS):</span>
+                <div className="hot-cues-grid">
+                  {['A', 'B', 'C', 'D'].map((padLabel, idx) => {
+                    const cueVal = deckA.hotCues[idx]
+                    const hasCue = cueVal !== null && cueVal !== undefined
+                    return (
+                      <button
+                        key={`hotcue-a-${idx}`}
+                        type="button"
+                        className={`btn-hot-cue ${hasCue ? 'set' : 'empty'}`}
+                        onClick={() => handleHotCue('A', idx)}
+                        title={hasCue ? `Salta a Cue ${padLabel} (${cueVal}s)` : `Imposta Cue ${padLabel} al punto corrente`}
+                      >
+                        <span className="pad-letter">{padLabel}</span>
+                        <span className="pad-time">{hasCue ? `${cueVal}s` : '--'}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* TRACK SELECTOR */}
               <div className="track-load-box">
                 <span className="mini-label">Carica Traccia:</span>
@@ -419,7 +502,7 @@ export default function DJLab() {
             ========================================================================= */}
         <section className="dj-mixer-unit">
           <div className="mixer-header">
-            <span className="mixer-title-tag">2-CH MIXER</span>
+            <span className="mixer-title-tag">2-CH MIXER & COLOR FX</span>
           </div>
 
           {/* CHANNEL STRIPS (EQ & GAIN) */}
@@ -466,6 +549,20 @@ export default function DJLab() {
                     className="eq-slider"
                   />
                   <span className="knob-val">{deckA.eqLow}dB</span>
+                </label>
+                {/* COLOR FX / FILTER KNOB (LPF / HPF) */}
+                <label className="knob-label filter-color-fx">
+                  <span>FILTER (LPF/HPF)</span>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="50"
+                    step="1"
+                    value={deckA.filterFx}
+                    onChange={(e) => setDeckA({ ...deckA, filterFx: parseInt(e.target.value, 10) })}
+                    className="filter-slider"
+                  />
+                  <span className="knob-val">{deckA.filterFx === 0 ? 'FLAT' : deckA.filterFx < 0 ? `LPF ${deckA.filterFx}` : `HPF +${deckA.filterFx}`}</span>
                 </label>
               </div>
 
@@ -568,6 +665,20 @@ export default function DJLab() {
                     className="eq-slider"
                   />
                   <span className="knob-val">{deckB.eqLow}dB</span>
+                </label>
+                {/* COLOR FX / FILTER KNOB (LPF / HPF) */}
+                <label className="knob-label filter-color-fx">
+                  <span>FILTER (LPF/HPF)</span>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="50"
+                    step="1"
+                    value={deckB.filterFx}
+                    onChange={(e) => setDeckB({ ...deckB, filterFx: parseInt(e.target.value, 10) })}
+                    className="filter-slider"
+                  />
+                  <span className="knob-val">{deckB.filterFx === 0 ? 'FLAT' : deckB.filterFx < 0 ? `LPF ${deckB.filterFx}` : `HPF +${deckB.filterFx}`}</span>
                 </label>
               </div>
 
@@ -674,6 +785,46 @@ export default function DJLab() {
                 <button type="button" className="btn-bend" onClick={() => handlePitchNudge('B', +0.15)}>
                   + BEND
                 </button>
+              </div>
+
+              {/* AUTO BEAT LOOP ROW */}
+              <div className="beat-loop-section">
+                <span className="mini-label">AUTO BEAT LOOP:</span>
+                <div className="loop-btns-row">
+                  {[2, 4, 8, 16].map((bars) => (
+                    <button
+                      key={`loop-b-${bars}`}
+                      type="button"
+                      className={`btn-loop ${deckB.activeLoop === bars ? 'active' : ''}`}
+                      onClick={() => handleLoopToggle('B', bars)}
+                    >
+                      {bars}B
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* HOT CUE PADS (4 PADS) */}
+              <div className="hot-cues-section">
+                <span className="mini-label">HOT CUES (PADS):</span>
+                <div className="hot-cues-grid">
+                  {['A', 'B', 'C', 'D'].map((padLabel, idx) => {
+                    const cueVal = deckB.hotCues[idx]
+                    const hasCue = cueVal !== null && cueVal !== undefined
+                    return (
+                      <button
+                        key={`hotcue-b-${idx}`}
+                        type="button"
+                        className={`btn-hot-cue ${hasCue ? 'set' : 'empty'}`}
+                        onClick={() => handleHotCue('B', idx)}
+                        title={hasCue ? `Salta a Cue ${padLabel} (${cueVal}s)` : `Imposta Cue ${padLabel} al punto corrente`}
+                      >
+                        <span className="pad-letter">{padLabel}</span>
+                        <span className="pad-time">{hasCue ? `${cueVal}s` : '--'}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* TRACK SELECTOR */}
