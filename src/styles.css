@@ -778,10 +778,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .account-settings { display:grid; place-items:center; width:36px; height:36px; border:1px solid var(--chrome-border); border-radius:9px; color:var(--chrome-ink-dim); text-decoration:none; }
 .account-settings:hover, .account-settings.active { border-color:var(--color-accent); color:var(--color-accent); }
 .private-tools-menu { position:relative; }
-.private-tools-menu summary { list-style:none; cursor:pointer; color:var(--chrome-ink-dim); }
-.private-tools-menu summary::-webkit-details-marker { display:none; }
-.private-tools-menu summary::after { content:' ▾'; }
-.private-tools-menu[open] summary, .private-tools-menu summary.active { color:var(--chrome-ink); }
+.private-tools-menu summary { list-style:none; cursor:pointer; color:var(--chrome-ink-dim); outline:none; }
+.private-tools-menu summary::-webkit-details-marker,
+.private-tools-menu summary::marker { display:none; }
+.private-tools-menu summary::after { content:' ▾'; font-size: 0.85em; }
+.private-tools-menu:hover summary,
+.private-tools-menu[open] summary { color: var(--chrome-ink); }
+.private-header nav a.active,
+.private-tools-menu summary.active { color: #22c55e !important; }
 .private-tools-popover { position:absolute; top:calc(100% + 14px); left:50%; transform:translateX(-50%); width:180px; padding:8px; display:grid; gap:2px; border:1px solid var(--chrome-border); border-radius:12px; background:var(--chrome-bg); box-shadow:0 16px 36px rgba(0,0,0,.25); z-index:50; }
 .private-tools-popover a { padding:10px 12px; border-radius:8px; }
 .private-tools-popover a:hover { background:rgba(255,255,255,.07); }
@@ -5576,14 +5580,6 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   font-size: 0.75rem;
   padding: 4px 8px;
   cursor: pointer;
-}
-
-.private-admin-menu summary {
-  color: #a78bfa !important;
-}
-.private-admin-menu summary:hover,
-.private-admin-menu summary.active {
-  color: #c4b5fd !important;
 }
 
 

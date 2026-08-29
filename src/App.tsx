@@ -97,15 +97,9 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   const effectiveUser = user || (demoSession ? { username: 'alex_rossi', name: 'Alex Rossi' } : null)
   if (!effectiveUser) return <Login onLogin={completeLogin} onDemoLogin={completeDemoLogin} demoEnabled={demoModeEnabled} error={error} setError={setError} />
   const demoBanner = demoSession ? <div className="demo-mode-banner" role="status">Modalita demo — dati salvati solo su questo dispositivo.</div> : null
-  if (['mymusic', 'download', 'archive', 'spotify'].includes(section)) {
-    const initialTab = section === 'archive' ? 'archive' : section === 'spotify' ? 'spotify' : 'download'
-    return (
-      <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>
-        {demoBanner}
-        <MyMusicHub initialTab={initialTab} user={effectiveUser} onError={handleError} error={error} setError={setError} />
-      </PrivateFrame>
-    )
-  }
+  if (section === 'download' || section === 'mymusic') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell"><Download user={effectiveUser} onError={handleError} error={error} setError={setError} /></main></PrivateFrame>
+  if (section === 'archive') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell"><div className="workspace"><FolderIngestionHub /></div></main></PrivateFrame>
+  if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell"><PlatformSyncHub onError={handleError} error={error} /></main></PrivateFrame>
   if (section === 'radar') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
   if (section === 'academy') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<AcademyHub user={effectiveUser} /></PrivateFrame>
@@ -200,17 +194,26 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
           <a href="/app/academy" className={`nav-link-with-badge ${section === 'academy' ? 'active' : ''}`}>
             Academy <span className="badge-new-pill">NEW</span>
           </a>
-          <a href="/app/mymusic" className={['mymusic', 'download', 'archive', 'spotify'].includes(section) ? 'active' : ''}>
-            My Music
-          </a>
-          <details className="private-tools-menu private-admin-menu">
-            <summary className={['content', 'radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''}>Admin ▾</summary>
+          <details className="private-tools-menu">
+            <summary className={['mymusic', 'download', 'archive', 'spotify'].includes(section) ? 'active' : ''}>
+              My Music
+            </summary>
             <div className="private-tools-popover">
-              <a href="/app/content">Content</a>
-              <a href="/app/radar">Radar</a>
-              <a href="/app/brain">Brain Graph</a>
-              <a href="/app/developer">Developer Roadmap</a>
-              <a href="/app/editorial-suggestions">Suggerimenti Editoriali</a>
+              <a href="/app/download" className={['mymusic', 'download'].includes(section) ? 'active' : ''}>Downloader</a>
+              <a href="/app/archive" className={section === 'archive' ? 'active' : ''}>Archivio</a>
+              <a href="/app/spotify" className={section === 'spotify' ? 'active' : ''}>Sync Playlist</a>
+            </div>
+          </details>
+          <details className="private-tools-menu">
+            <summary className={['content', 'radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''}>
+              Beta
+            </summary>
+            <div className="private-tools-popover">
+              <a href="/app/content" className={section === 'content' ? 'active' : ''}>Content</a>
+              <a href="/app/radar" className={section === 'radar' ? 'active' : ''}>Radar</a>
+              <a href="/app/brain" className={section === 'brain' ? 'active' : ''}>Brain Graph</a>
+              <a href="/app/developer" className={section === 'developer' ? 'active' : ''}>Developer Roadmap</a>
+              <a href="/app/editorial-suggestions" className={section === 'editorial-suggestions' ? 'active' : ''}>Suggerimenti Editoriali</a>
             </div>
           </details>
         </nav>
@@ -235,66 +238,6 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
     <GlobalAudioPlayer />
     <GlobalSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
   </div>
-}
-
-function MyMusicHub({
-  initialTab = 'download',
-  user,
-  onError,
-  error,
-  setError,
-}: {
-  initialTab?: 'download' | 'archive' | 'spotify'
-  user: User
-  onError: (err: unknown) => void
-  error: string
-  setError: (val: string) => void
-}) {
-  const [activeTab, setActiveTab] = useState<'download' | 'archive' | 'spotify'>(initialTab)
-
-  useEffect(() => {
-    setActiveTab(initialTab)
-  }, [initialTab])
-
-  return (
-    <main className="shell">
-      <div className="platform-tabs-nav" style={{ marginBottom: '24px' }}>
-        <button
-          type="button"
-          className={`platform-tab-btn ${activeTab === 'download' ? 'active' : ''}`}
-          onClick={() => setActiveTab('download')}
-        >
-          ⬇️ Downloader (Link YouTube / SoundCloud)
-        </button>
-        <button
-          type="button"
-          className={`platform-tab-btn ${activeTab === 'archive' ? 'active' : ''}`}
-          onClick={() => setActiveTab('archive')}
-        >
-          📁 Archivio & Cartelle Cloud
-        </button>
-        <button
-          type="button"
-          className={`platform-tab-btn ${activeTab === 'spotify' ? 'active' : ''}`}
-          onClick={() => setActiveTab('spotify')}
-        >
-          🔄 Sync Playlist (Spotify & SoundCloud)
-        </button>
-      </div>
-
-      {activeTab === 'download' && (
-        <Download
-          user={user}
-          onError={onError}
-          error={error}
-          setError={setError}
-          onSwitchToArchive={() => setActiveTab('archive')}
-        />
-      )}
-      {activeTab === 'archive' && <FolderIngestionHub />}
-      {activeTab === 'spotify' && <PlatformSyncHub onError={onError} error={error} />}
-    </main>
-  )
 }
 
 function PrivatePlaceholder({ section }: { section: PrivateSection }) {
