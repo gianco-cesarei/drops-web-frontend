@@ -5624,39 +5624,44 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 .discovery-hero-headline-wrap {
   position: absolute;
-  top: clamp(24px, 6vh, 48px);
-  left: clamp(20px, 4vw, 48px);
-  max-width: min(90%, 540px);
+  top: clamp(16px, 3vh, 28px);
+  left: clamp(16px, 2.5vw, 32px);
+  max-width: clamp(190px, 22vw, 280px);
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  background: rgba(10, 14, 11, 0.72);
+  padding: clamp(10px, 1.6vw, 16px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
 }
 
 .discovery-hero-pill-tag {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: rgba(5, 46, 22, 0.85);
   border: 1px solid #22c55e;
   border-radius: 999px;
   color: #86efac;
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  backdrop-filter: blur(8px);
 }
 
 .discovery-hero-claim {
   margin: 0;
-  font-size: clamp(1.8rem, 4.2vw, 3.2rem);
+  font-size: clamp(1.25rem, 2.1vw, 1.8rem);
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.03em;
   color: #ffffff;
-  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.7), 0 2px 4px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .discovery-hero-logo-badge {

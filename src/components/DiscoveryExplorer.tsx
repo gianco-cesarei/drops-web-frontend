@@ -139,7 +139,9 @@ export function DiscoveryHeroBanner() {
         <div className="discovery-hero-headline-wrap">
           <span className="discovery-hero-pill-tag">CLOUD LIBRARY & WORKFLOW</span>
           <h1 className="discovery-hero-claim">
-            Manage your music world in cloud.
+            Manage your<br />
+            music world<br />
+            in cloud.
           </h1>
         </div>
 
