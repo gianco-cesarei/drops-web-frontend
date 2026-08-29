@@ -10,6 +10,7 @@ import DeveloperRoadmap from './components/DeveloperRoadmap'
 import AcademyHub from './components/AcademyHub'
 import ProducerSettings from './components/ProducerSettings'
 import GlobalAudioPlayer from './components/GlobalAudioPlayer'
+import GlobalSearchModal from './components/GlobalSearchModal'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
@@ -163,6 +164,19 @@ function Login({ onLogin, onDemoLogin, demoEnabled, error, setError }: { onLogin
 }
 
 function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: { section: PrivateSection; user: User; onLogoutStart: () => void; onLogoutEnd: () => void; children: ReactNode }) {
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setSearchOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [])
+
   async function logout() {
     onLogoutStart()
     try { await api.logout() } catch { /* Local session remains invalidated. */ } finally { onLogoutEnd() }
@@ -185,6 +199,16 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
           </details>
         </nav>
         <div className="account">
+          <button
+            type="button"
+            className="global-search-trigger-btn"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Apri ricerca globale"
+            title="Cerca (⌘K)"
+          >
+            <span>🔍 Cerca</span>
+            <kbd className="header-cmd-k">⌘K</kbd>
+          </button>
           <span className="account-name">{user.name ?? user.username ?? user.email ?? 'Account'}</span>
           <a href="/app/settings" className={`account-settings ${section === 'settings' ? 'active' : ''}`} aria-label="Impostazioni profilo" title="Impostazioni profilo">⚙</a>
           <button className="secondary" onClick={logout}>Esci</button>
@@ -193,6 +217,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
     </div>
     {children}
     <GlobalAudioPlayer />
+    <GlobalSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
   </div>
 }
 
