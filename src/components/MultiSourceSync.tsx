@@ -38,12 +38,13 @@ const PRESET_SOURCES = [
 ]
 
 export default function MultiSourceSync() {
-  const [activeTab, setActiveTab] = useState<'soundcloud' | 'youtube' | 'presets'>('soundcloud')
   const [inputUrl, setInputUrl] = useState('')
   const [isResolving, setIsResolving] = useState(false)
   const [importedTracks, setImportedTracks] = useState<ImportedTrack[]>(PRESET_SOURCES[0].tracks)
   const [syncNotice, setSyncNotice] = useState('')
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set(PRESET_SOURCES[0].tracks.map((t) => t.id)))
+  const [presetsOpen, setPresetsOpen] = useState(true)
+  const [tableOpen, setTableOpen] = useState(true)
 
   const handleResolveUrl = (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,7 +119,7 @@ export default function MultiSourceSync() {
         artist: track.artist,
         bpm: track.bpm,
         genre: track.genre,
-        audioUrl: 'https://cdn.freesound.org/previews/560/560580_11861866-lq.mp3',
+        audioUrl: 'https://actions.google.com/sounds/v1/science_fiction/low_humming.ogg',
       })
     }
   }
@@ -132,9 +133,9 @@ export default function MultiSourceSync() {
             <span className="badge-new-pill">SYNC HUB</span>
             <span className="academy-tag">MULTI-PLATFORM</span>
           </div>
-          <h2>SoundCloud & YouTube Crate Sync</h2>
+          <h2>SoundCloud &amp; YouTube Crate Sync</h2>
           <p className="multisource-sub">
-            Importa tracce da playlist pubbliche, set underground e link SoundCloud/YouTube direttamente nella tua libreria per analizzarle e mixarle nel DJ Lab.
+            Importa tracce da playlist pubbliche, set underground e link SoundCloud/YouTube direttamente nella tua libreria.
           </p>
         </div>
 
@@ -163,21 +164,31 @@ export default function MultiSourceSync() {
           </button>
         </form>
 
-        {/* PRESET CHIPS */}
+        {/* PRESET CHIPS (ACCORDION) */}
         <div className="preset-quick-chips">
-          <span className="mini-label">Oppure carica un set demo curato:</span>
-          <div className="chips-list">
-            {PRESET_SOURCES.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className="preset-chip-btn"
-                onClick={() => handleLoadPreset(p)}
-              >
-                {p.source === 'soundcloud' ? '🟠' : '🔴'} {p.label}
-              </button>
-            ))}
+          <div
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', marginBottom: presetsOpen ? '6px' : 0 }}
+            onClick={() => setPresetsOpen((v) => !v)}
+          >
+            <span className="mini-label" style={{ margin: 0 }}>Oppure carica un set demo curato:</span>
+            <button type="button" className="btn-sort-pill" style={{ fontSize: '11px', padding: '2px 7px' }}>
+              {presetsOpen ? '▲' : '▼'}
+            </button>
           </div>
+          {presetsOpen && (
+            <div className="chips-list">
+              {PRESET_SOURCES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="preset-chip-btn"
+                  onClick={() => handleLoadPreset(p)}
+                >
+                  {p.source === 'soundcloud' ? '🟠' : '🔴'} {p.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -187,21 +198,36 @@ export default function MultiSourceSync() {
         </div>
       )}
 
-      {/* RESOLVED TRACKS TABLE */}
+      {/* RESOLVED TRACKS TABLE (ACCORDION) */}
       <div className="resolved-tracks-card">
-        <div className="card-header-row">
+        <div
+          className="card-header-row"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setTableOpen((v) => !v)}
+        >
           <h3>Tracce Estratte ({selectedTrackIds.size}/{importedTracks.length} selezionate)</h3>
-          <button
-            type="button"
-            className="button-link-accent btn-sync-action"
-            onClick={handleSyncSelected}
-          >
-            📥 Importa nel Crate DJ Lab ({selectedTrackIds.size})
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="button-link-accent btn-sync-action"
+              onClick={handleSyncSelected}
+            >
+              📥 Importa nel Crate DJ Lab ({selectedTrackIds.size})
+            </button>
+            <button
+              type="button"
+              className="btn-sort-pill"
+              onClick={() => setTableOpen((v) => !v)}
+              style={{ fontSize: '11px', padding: '3px 8px' }}
+            >
+              {tableOpen ? '▲' : '▼'}
+            </button>
+          </div>
         </div>
 
-        <div className="tracks-table-wrapper">
-          <table className="sync-tracks-table">
+        {tableOpen && (
+          <div className="tracks-table-wrapper">
+            <table className="sync-tracks-table">
             <thead>
               <tr>
                 <th style={{ width: '36px' }}>
@@ -273,6 +299,7 @@ export default function MultiSourceSync() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   )

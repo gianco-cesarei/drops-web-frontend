@@ -373,6 +373,8 @@ describe('autenticazione App', () => {
     render(<App section="settings" navigate={vi.fn()} />)
     expect(await screen.findByText(/PRODUCER PROFILE & ACCOUNTS/i)).toBeInTheDocument()
     expect(screen.getByText(/Verifica il tuo Profilo/i)).toBeInTheDocument()
+    const expandButtons = screen.getAllByRole('button', { name: '▼ Espandi' })
+    await userEvent.click(expandButtons[expandButtons.length - 1])
     expect(screen.getByText(/Ableton Live 12 Suite/i)).toBeInTheDocument()
   })
 

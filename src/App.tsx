@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, SyntheticEvent } from 'react'
 import { api, ApiError } from './api'
-import type { PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
+import type { PlaylistEntry, PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
 import { postLoginRoute } from './lib/routes'
 import { contentFields, contentStages, radarDevelopmentFixtures, radarLockedFixtures } from './data/private.fixture'
 import type { RadarFixture } from './data/private.fixture'
@@ -98,7 +98,7 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
   if (!effectiveUser) return <Login onLogin={completeLogin} onDemoLogin={completeDemoLogin} demoEnabled={demoModeEnabled} error={error} setError={setError} />
   const demoBanner = demoSession ? <div className="demo-mode-banner" role="status">Modalita demo — dati salvati solo su questo dispositivo.</div> : null
   if (section === 'download' || section === 'mymusic') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell"><Download user={effectiveUser} onError={handleError} error={error} setError={setError} /></main></PrivateFrame>
-  if (section === 'archive') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell"><div className="workspace"><FolderIngestionHub /></div></main></PrivateFrame>
+  if (section === 'archive') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell shell-wide"><FolderIngestionHub /></main></PrivateFrame>
   if (section === 'spotify') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}>{demoBanner}<main className="shell"><PlatformSyncHub onError={handleError} error={error} /></main></PrivateFrame>
   if (section === 'radar') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Radar /></PrivateFrame>
   if (section === 'brain') return <PrivateFrame section={section} user={effectiveUser} onLogoutStart={beginLogout} onLogoutEnd={finishLogout}><Brain /></PrivateFrame>
@@ -976,14 +976,32 @@ function Content() {
     setArticles(publishedContentItems)
   }, [])
 
-  // Filtra bozze e pubblicati basandosi sulla lista in-memory e sulla pipeline manager
+  const [contentSearch, setContentSearch] = useState('')
+  const [selectedType, setSelectedType] = useState<string>('all')
+  const [draftsOpen, setDraftsOpen] = useState(false)
+  const [publishedOpen, setPublishedOpen] = useState(false)
+
+  const filteredArticles = useMemo(() => {
+    return articles.filter((item) => {
+      if (selectedType !== 'all' && item.type !== selectedType) return false
+      if (!contentSearch.trim()) return true
+      const q = contentSearch.toLowerCase()
+      const matchTitle = item.title?.toLowerCase().includes(q)
+      const matchKicker = item.kicker?.toLowerCase().includes(q)
+      const matchSummary = item.summary?.toLowerCase().includes(q)
+      const matchCity = item.primaryLocation?.name?.toLowerCase().includes(q)
+      const matchTags = Array.isArray(item.tags) ? item.tags.some((t: string) => t.toLowerCase().includes(q)) : false
+      return matchTitle || matchKicker || matchSummary || matchCity || matchTags
+    })
+  }, [articles, selectedType, contentSearch])
+
   const drafts = useMemo(() => {
-    return articles.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Draft')
-  }, [articles, state.contentStatus])
+    return filteredArticles.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Draft')
+  }, [filteredArticles, state.contentStatus])
 
   const published = useMemo(() => {
-    return articles.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Published')
-  }, [articles, state.contentStatus])
+    return filteredArticles.filter(item => getArticleStatus(item.id, state.contentStatus) === 'Published')
+  }, [filteredArticles, state.contentStatus])
 
   // Chiamata backend per estrarre la copertina tramite og:image
   const handleExtractCover = async (url: string) => {
@@ -1657,125 +1675,186 @@ function Content() {
   // --- SE EDITING NON ATTIVO, MOSTRA LA PIPELINE CON LISTA E PULSANTI MODIFICA ---
   return (
     <main className="private-workspace">
-      <header className="workspace-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="workspace-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <span className="development-badge">Content · pipeline manager</span>
+          <span className="development-badge">Content &middot; Pipeline &amp; Ricerca</span>
           <h1 className="sr-only">Content</h1>
-          <p style={{ margin: '4px 0 0 0' }}>Gestisci gli articoli da pubblicare su Drops Radar e in home.</p>
+          <p style={{ margin: '4px 0 0 0' }}>Cerca, esplora e gestisci gli articoli prima della pubblicazione.</p>
         </div>
         <button
           type="button"
-          style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+          style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer' }}
           onClick={startNewArticle}
         >
           + Crea Nuovo Articolo
         </button>
       </header>
 
-      <section className="content-pipeline" aria-label="Pipeline contenuti" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '20px' }}>
-        {/* COLONNA SINISTRA: BOZZE */}
-        <article style={{ background: 'var(--color-surface-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <h2 style={{ fontSize: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', margin: '0 0 16px' }}>
-            Bozze / Backlog
-            <span style={{ fontSize: '12px', background: 'var(--color-surface)', padding: '3px 8px', borderRadius: '8px' }}>{drafts.length}</span>
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto' }}>
-            {drafts.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Nessuna bozza.</p>
-            ) : (
-              drafts.map(item => (
-                <div key={item.id} style={{ background: 'var(--color-surface)', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ minWidth: 0, marginRight: '12px' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--color-accent-strong)', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.type}</div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      type="button"
-                      style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                      onClick={() => startEditingArticle(item)}
-                    >
-                      Modifica
-                    </button>
-                    <button
-                      type="button"
-                      style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                      onClick={() => setState(publishArticle(item.id))}
-                    >
-                      Pubblica
-                    </button>
-                    <button
-                      type="button"
-                      style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                      onClick={() => handleDeleteArticle(item.id)}
-                    >
-                      Elimina
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </article>
+      {/* BARRA DI RICERCA & FILTRI CATEGORIA */}
+      <div className="content-search-toolbar" style={{ margin: '18px 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ position: 'relative', width: '100%' }}>
+          <input
+            type="text"
+            className="sync-input-field"
+            placeholder="Cerca articoli per titolo, città, genere, tag o kicker..."
+            value={contentSearch}
+            onChange={(e) => setContentSearch(e.target.value)}
+            style={{ width: '100%', height: '40px', padding: '0 36px 0 14px', fontSize: '14px' }}
+          />
+          {contentSearch && (
+            <button
+              type="button"
+              onClick={() => setContentSearch('')}
+              style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px' }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
-        {/* COLONNA DESTRA: PUBBLICATI */}
-        <article style={{ background: 'var(--color-surface-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <h2 style={{ fontSize: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', margin: '0 0 16px' }}>
-            Pubblicati
-            <span style={{ fontSize: '12px', background: 'var(--color-surface)', padding: '3px 8px', borderRadius: '8px' }}>{published.length}</span>
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto' }}>
-            {published.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>Nessun articolo pubblicato.</p>
-            ) : (
-              published.map(item => {
-                const isFeatured = item.id === getFeaturedId(state)
-                return (
-                  <div key={item.id} style={{ background: 'var(--color-surface)', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ minWidth: 0, marginRight: '12px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {item.type}
-                        {isFeatured && <span style={{ background: 'var(--color-accent-strong)', color: '#000', fontSize: '9px', padding: '1px 5px', borderRadius: '4px', fontWeight: 'bold' }}>Raccomandato</span>}
-                      </div>
-                      <div style={{ fontSize: '13px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+        <div className="content-type-filter-pills" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'all', label: 'Tutti gli Articoli' },
+            { id: 'party', label: 'Festival & Party' },
+            { id: 'story', label: 'Guide & Scene' },
+            { id: 'artist', label: 'Artisti' },
+            { id: 'label', label: 'Etichette' },
+            { id: 'release', label: 'Radar Releases' },
+          ].map((pill) => (
+            <button
+              key={pill.id}
+              type="button"
+              className={`btn-sort-pill ${selectedType === pill.id ? 'active' : ''}`}
+              onClick={() => setSelectedType(pill.id)}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <section className="content-pipeline" aria-label="Pipeline contenuti" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        {/* COLONNA SINISTRA: BOZZE (ACCORDION) */}
+        <article style={{ background: 'var(--color-surface-subtle)', padding: '18px', borderRadius: '14px', border: '1px solid var(--color-border)' }}>
+          <div
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: draftsOpen ? '1px solid var(--color-border)' : 'none', paddingBottom: draftsOpen ? '10px' : 0, margin: draftsOpen ? '0 0 16px' : 0 }}
+            onClick={() => setDraftsOpen((prev) => !prev)}
+          >
+            <h2 style={{ fontSize: '17px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Bozze / Backlog
+              <span style={{ fontSize: '12px', background: 'var(--color-surface)', padding: '2px 8px', borderRadius: '8px', fontWeight: 'bold' }}>{drafts.length}</span>
+            </h2>
+            <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 'bold' }}>{draftsOpen ? '▲ Riduci' : '▼ Espandi'}</span>
+          </div>
+
+          {draftsOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '520px', overflowY: 'auto' }}>
+              {drafts.length === 0 ? (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', padding: '12px 0' }}>Nessuna bozza corrisponde ai filtri.</p>
+              ) : (
+                drafts.map(item => (
+                  <div key={item.id} style={{ background: 'var(--color-surface)', padding: '12px', borderRadius: '10px', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '11px', color: 'var(--color-accent-strong)', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.type} {item.primaryLocation?.name ? `· ${item.primaryLocation.name}` : ''}</div>
+                      <div style={{ fontSize: '13.5px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>{item.title}</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button
                         type="button"
-                        style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                         onClick={() => startEditingArticle(item)}
                       >
-                        Modifica
+                        ✏️ Modifica
                       </button>
-                      {!isFeatured && (
-                        <button
-                          type="button"
-                          style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent-strong)', border: '1px solid var(--color-accent-strong)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                          onClick={() => setState(setFeaturedArticle(item.id))}
-                        >
-                          Evidenzia
-                        </button>
-                      )}
                       <button
                         type="button"
-                        style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                        onClick={() => setState(draftArticle(item.id))}
+                        style={{ background: 'var(--color-accent-strong)', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        onClick={() => setState(publishArticle(item.id))}
                       >
-                        Nascondi
+                        Pubblica
                       </button>
                       <button
                         type="button"
-                        style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '5px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '6px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                         onClick={() => handleDeleteArticle(item.id)}
                       >
-                        Elimina
+                        ✕
                       </button>
                     </div>
                   </div>
-                )
-              })
-            )}
+                ))
+              )}
+            </div>
+          )}
+        </article>
+
+        {/* COLONNA DESTRA: PUBBLICATI (ACCORDION) */}
+        <article style={{ background: 'var(--color-surface-subtle)', padding: '18px', borderRadius: '14px', border: '1px solid var(--color-border)' }}>
+          <div
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: publishedOpen ? '1px solid var(--color-border)' : 'none', paddingBottom: publishedOpen ? '10px' : 0, margin: publishedOpen ? '0 0 16px' : 0 }}
+            onClick={() => setPublishedOpen((prev) => !prev)}
+          >
+            <h2 style={{ fontSize: '17px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Pubblicati
+              <span style={{ fontSize: '12px', background: 'var(--color-surface)', padding: '2px 8px', borderRadius: '8px', fontWeight: 'bold' }}>{published.length}</span>
+            </h2>
+            <span style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontWeight: 'bold' }}>{publishedOpen ? '▲ Riduci' : '▼ Espandi'}</span>
           </div>
+
+          {publishedOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '520px', overflowY: 'auto' }}>
+              {published.length === 0 ? (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', padding: '12px 0' }}>Nessun articolo pubblicato corrisponde ai filtri.</p>
+              ) : (
+                published.map(item => {
+                  const isFeatured = item.id === getFeaturedId(state)
+                  return (
+                    <div key={item.id} style={{ background: 'var(--color-surface)', padding: '12px', borderRadius: '10px', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {item.type}
+                          {isFeatured && <span style={{ background: 'var(--color-accent-strong)', color: '#000', fontSize: '9px', padding: '1px 5px', borderRadius: '4px', fontWeight: 'bold' }}>Raccomandato</span>}
+                        </div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>{item.title}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text)', border: '1px solid var(--color-border)', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => startEditingArticle(item)}
+                        >
+                          ✏️ Modifica
+                        </button>
+                        {!isFeatured && (
+                          <button
+                            type="button"
+                            style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent-strong)', border: '1px solid var(--color-accent-strong)', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                            onClick={() => setState(setFeaturedArticle(item.id))}
+                          >
+                            ⭐ Evidenzia
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', padding: '6px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => setState(draftArticle(item.id))}
+                        >
+                          Nascondi
+                        </button>
+                        <button
+                          type="button"
+                          style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', padding: '6px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => handleDeleteArticle(item.id)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
         </article>
       </section>
       <div style={{ display: 'none' }}>
@@ -2049,10 +2128,46 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
     const resolved: string[] = []
     const errors: string[] = []
     for (const link of links) {
+      // 1. Riconoscimento Playlist Spotify
+      const spPlaylistMatch = link.match(/open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/)
+      if (spPlaylistMatch && spPlaylistMatch[1]) {
+        try {
+          const res = await api.spotifyPlaylistTracks(spPlaylistMatch[1])
+          if (res?.tracks && res.tracks.length > 0) {
+            const spotifyEntries: PlaylistEntry[] = res.tracks.map((t) => ({
+              url: `https://soundcloud.com/search?q=${encodeURIComponent(`${t.artists[0] ?? ''} ${t.title}`.trim())}`,
+              title: `${t.artists.join(', ')} - ${t.title}`,
+              uploader: t.album || 'Spotify Import',
+              duration: t.duration_ms ? Math.round(t.duration_ms / 1000) : null,
+            }))
+            const chosen = await askPlaylistSelection({
+              url_type: 'playlist',
+              title: `Spotify Playlist (${spotifyEntries.length} brani)`,
+              count: spotifyEntries.length,
+              truncated: false,
+              entries: spotifyEntries,
+            })
+            if (chosen?.length) resolved.push(...chosen)
+            continue
+          }
+        } catch {
+          errors.push('Per importare playlist Spotify, connetti il tuo account nella scheda Spotify.')
+          continue
+        }
+      }
+
+      // 2. Riconoscimento Traccia Singola Spotify
+      const spTrackMatch = link.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/)
+      if (spTrackMatch) {
+        resolved.push(link)
+        continue
+      }
+
+      // 3. Risoluzione Playlist / Set Standard (YouTube / SoundCloud)
       try {
         const data = await api.resolvePlaylist(link)
         if (data.url_type === 'track') {
-          resolved.push(link)
+          resolved.push(data.selected_track_url || link)
         } else if (data.url_type === 'track_in_playlist') {
           const chosen = await askTrackInPlaylistChoice(data)
           if (chosen?.length) resolved.push(...chosen)
@@ -2063,7 +2178,15 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           resolved.push(...data.entries.map((entry) => entry.url))
         }
       } catch (cause) {
-        errors.push(cause instanceof ApiError ? cause.message : 'Analisi link non riuscita')
+        // Fallback resiliente: se l'analisi playlist fallisce ma è una traccia singola YouTube o SoundCloud, accodala direttamente
+        const ytMatch = link.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/)
+        if (ytMatch && ytMatch[1]) {
+          resolved.push(`https://www.youtube.com/watch?v=${ytMatch[1]}`)
+        } else if (link.includes('soundcloud.com/') && !link.includes('/sets/')) {
+          resolved.push(link)
+        } else {
+          errors.push(cause instanceof ApiError ? cause.message : 'Analisi link non riuscita')
+        }
       }
     }
     const unique = [...new Set(resolved)].slice(0, 100)
@@ -2192,6 +2315,11 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       })
   }
 
+  const [audioQuality, setAudioQuality] = useState<'mp3' | 'hq'>('mp3')
+  const [historyOpen, setHistoryOpen] = useState(true)
+  const [queueOpen, setQueueOpen] = useState(true)
+  const [savedOpen, setSavedOpen] = useState(true)
+
   const savedInFolderItems = history.filter((h) => downloadedIds.has(h.id))
 
   return (
@@ -2201,6 +2329,31 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
         <div className="download-hero-header">
           <span className="eyebrow">DOWNLOAD PRIVATO</span>
           <p className="lead">Area personale di {who}. Incolla uno o più link e aggiungili alla coda.</p>
+        </div>
+
+        {/* SELETTORE QUALITA' MP3 vs LOSSLESS MASTER */}
+        <div className="download-quality-selector-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '4px 0 14px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: '800', color: '#9ca3af', letterSpacing: '0.05em' }}>FORMATO AUDIO:</span>
+          <div style={{ display: 'inline-flex', gap: '6px' }}>
+            <button
+              type="button"
+              className={`btn-sort-pill ${audioQuality === 'mp3' ? 'active' : ''}`}
+              onClick={() => setAudioQuality('mp3')}
+              title="MP3 a 320 kbps (Formato standard, compresso ad alta fedeltà)"
+              style={{ fontSize: '12px', padding: '5px 14px', fontWeight: 700 }}
+            >
+              MP3 &middot; 320 kbps
+            </button>
+            <button
+              type="button"
+              className={`btn-sort-pill ${audioQuality === 'hq' ? 'active' : ''}`}
+              onClick={() => setAudioQuality('hq')}
+              title="Lossless Master (FLAC / WAV - Massima risoluzione nativa)"
+              style={{ fontSize: '12px', padding: '5px 14px', fontWeight: 700 }}
+            >
+              Lossless Master &middot; WAV / FLAC
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleAdd} className="download-form">
@@ -2228,21 +2381,21 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
         </form>
         {error && <div className="alert" role="alert">{error}</div>}
 
-        {/* Sotto l'input: 1. PRONTI / SCARICATI */}
+        {/* Sotto l'input: 1. PRONTI / SCARICATI (ACCORDION) */}
         <div className="dl-section-block">
-          <div className="dl-history-head">
+          <div className="dl-history-head" style={{ cursor: 'pointer' }} onClick={() => setHistoryOpen((v) => !v)}>
             <div className="dl-sec-title-wrap">
               <span className="eyebrow">Pronti per il salvataggio</span>
               <span className="dl-count">{history.length} tracce pronte</span>
             </div>
-            <div className="dl-history-actions">
+            <div className="dl-history-actions" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="preset-chip-btn"
                 onClick={handleOpenArchive}
                 title="Visualizza tutti i link e lo storico completo"
               >
-                📋 Archivio Link & Export ({history.length})
+                📋 Archivio Link &amp; Export ({history.length})
               </button>
               {onSwitchToArchive && (
                 <button
@@ -2255,83 +2408,117 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                 </button>
               )}
               {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
+              <button
+                type="button"
+                className="btn-sort-pill"
+                onClick={() => setHistoryOpen((v) => !v)}
+                style={{ fontSize: '11px', padding: '3px 8px' }}
+              >
+                {historyOpen ? '▲ Riduci' : '▼ Espandi'}
+              </button>
             </div>
           </div>
 
-          {history.length === 0
-            ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
-            : <div className="dl-history">{history.map((item) => (
-                <HistoryRow
-                  key={item.id}
-                  item={item}
-                  playing={playingUrl === api.fileUrl(item.id)}
-                  onToggleAudio={toggleAudio}
-                  onDownloaded={() => markDownloaded(item.id)}
-                  onRemove={() => handleRemoveHistory(item.id)}
-                  onRequeue={requeueSingleUrl}
-                  onError={setError}
-                  isSaved={downloadedIds.has(item.id)}
-                />
-              ))}</div>}
+          {historyOpen && (
+            history.length === 0
+              ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
+              : <div className="dl-history">{history.map((item) => (
+                  <HistoryRow
+                    key={item.id}
+                    item={item}
+                    playing={playingUrl === api.fileUrl(item.id)}
+                    onToggleAudio={toggleAudio}
+                    onDownloaded={() => markDownloaded(item.id)}
+                    onRemove={() => handleRemoveHistory(item.id)}
+                    onRequeue={requeueSingleUrl}
+                    onError={setError}
+                    isSaved={downloadedIds.has(item.id)}
+                  />
+                ))}</div>
+          )}
         </div>
 
-        {/* Sotto i pronti: 2. IN CODA / IN CORSO */}
+        {/* Sotto i pronti: 2. IN CODA / IN CORSO (ACCORDION) */}
         {queue.length > 0 && (
           <div className="dl-section-block dl-queue-block">
-            <div className="dl-queue-head">
+            <div className="dl-queue-head" style={{ cursor: 'pointer' }} onClick={() => setQueueOpen((v) => !v)}>
               <span className="eyebrow">In corso / Coda</span>
-              <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
+                <button
+                  type="button"
+                  className="btn-sort-pill"
+                  onClick={(e) => { e.stopPropagation(); setQueueOpen((v) => !v) }}
+                  style={{ fontSize: '11px', padding: '3px 8px' }}
+                >
+                  {queueOpen ? '▲ Riduci' : '▼ Espandi'}
+                </button>
+              </div>
             </div>
-            <div className="dl-queue-list">
-              {queue.map((job) => (
-                <QueueRow
-                  key={job.key}
-                  job={job}
-                  onRetry={() => handleRetryJob(job)}
-                  onRemove={() => handleRemoveJob(job.key)}
-                />
-              ))}
-            </div>
+            {queueOpen && (
+              <div className="dl-queue-list">
+                {queue.map((job) => (
+                  <QueueRow
+                    key={job.key}
+                    job={job}
+                    onRetry={() => handleRetryJob(job)}
+                    onRemove={() => handleRemoveJob(job.key)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </section>
 
-      {/* Right Column: Download effettuati */}
+      {/* Right Column: Download effettuati (ACCORDION) */}
       <aside className="card dl-folder-destination-card">
-        <div className="dl-folder-contents-head">
+        <div className="dl-folder-contents-head" style={{ cursor: 'pointer' }} onClick={() => setSavedOpen((v) => !v)}>
           <span className="eyebrow">Download effettuati</span>
-          <span className="dl-count">{savedInFolderItems.length} file</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="dl-count">{savedInFolderItems.length} file</span>
+            <button
+              type="button"
+              className="btn-sort-pill"
+              onClick={(e) => { e.stopPropagation(); setSavedOpen((v) => !v) }}
+              style={{ fontSize: '11px', padding: '3px 8px' }}
+            >
+              {savedOpen ? '▲' : '▼'}
+            </button>
+          </div>
         </div>
 
-        {savedInFolderItems.length === 0 ? (
-          <div className="dl-folder-empty-state">
-            <div className="dl-folder-dash-box">
-              <span className="dl-folder-arrow">↓</span>
-              <p>Ancora nessun download</p>
-              <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
-            </div>
-          </div>
-        ) : (
-          <div className="dl-folder-file-list">
-            {savedInFolderItems.map((item) => (
-              <div key={`done-${item.id}`} className="dl-folder-file-item">
-                <span className="dl-file-icon">🎵</span>
-                <div className="dl-file-info">
-                  <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
-                  {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
-                </div>
-                <a
-                  className="dl-redownload-btn"
-                  href={api.fileUrl(item.id)}
-                  download
-                  title={`Riscarica ${item.title}`}
-                  aria-label={`Riscarica ${item.title}`}
-                >
-                  ↻ Riscarica
-                </a>
+        {savedOpen && (
+          savedInFolderItems.length === 0 ? (
+            <div className="dl-folder-empty-state">
+              <div className="dl-folder-dash-box">
+                <span className="dl-folder-arrow">↓</span>
+                <p>Ancora nessun download</p>
+                <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="dl-folder-file-list">
+              {savedInFolderItems.map((item) => (
+                <div key={`done-${item.id}`} className="dl-folder-file-item">
+                  <span className="dl-file-icon">🎵</span>
+                  <div className="dl-file-info">
+                    <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
+                    {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
+                  </div>
+                  <a
+                    className="dl-redownload-btn"
+                    href={api.fileUrl(item.id)}
+                    download
+                    title={`Riscarica ${item.title}`}
+                    aria-label={`Riscarica ${item.title}`}
+                  >
+                    ↻ Riscarica
+                  </a>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </aside>
 
@@ -2473,14 +2660,27 @@ function HistoryRow({
 
 function PlaylistDialog({ data, onConfirm, onCancel }: { data: PlaylistPreview; onConfirm: (urls: string[]) => void; onCancel: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set(data.entries.map((e) => e.url)))
+  const [search, setSearch] = useState('')
   const dialogRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+
   const allOn = selected.size === data.entries.length
+
   const toggle = (url: string) => setSelected((cur) => {
     const next = new Set(cur)
     if (next.has(url)) next.delete(url); else next.add(url)
     return next
   })
+
+  const selectAll = () => setSelected(new Set(data.entries.map((e) => e.url)))
+  const deselectAll = () => setSelected(new Set())
+
+  const visibleEntries = data.entries.filter((entry) => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return entry.title.toLowerCase().includes(q) || (entry.uploader && entry.uploader.toLowerCase().includes(q))
+  })
+
   useEffect(() => {
     closeButtonRef.current?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -2494,26 +2694,95 @@ function PlaylistDialog({ data, onConfirm, onCancel }: { data: PlaylistPreview; 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onCancel])
+
+  const formatDuration = (seconds?: number | null) => {
+    if (!seconds) return null
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
   return (
     <div className="dl-overlay" role="dialog" aria-modal="true" aria-labelledby="playlist-preview-title">
-      <div ref={dialogRef} className="dl-dialog">
+      <div ref={dialogRef} className="dl-dialog dl-playlist-modal">
+        {/* HEADER MODALE */}
         <div className="dl-dialog-head">
-          <div><h2 id="playlist-preview-title" className="dl-dialog-title">{data.title ?? 'Anteprima playlist'}</h2><div className="dl-dialog-sub">{data.count} tracce{data.truncated ? ' (elenco troncato)' : ''} · {selected.size} selezionate</div></div>
-          <button ref={closeButtonRef} type="button" className="secondary" onClick={onCancel}>Chiudi</button>
+          <div>
+            <span className="dl-modal-kicker">SELEZIONE PLAYLIST & SET</span>
+            <h2 id="playlist-preview-title" className="dl-dialog-title">{data.title ?? 'Anteprima playlist'}</h2>
+            <div className="dl-dialog-sub">
+              {data.count} tracce{data.truncated ? ' (elenco troncato)' : ''} · {selected.size} selezionate
+            </div>
+          </div>
+          <button ref={closeButtonRef} type="button" className="secondary dl-modal-close-btn" onClick={onCancel} title="Chiudi finestra">✕</button>
         </div>
-        <div className="dl-dialog-tools">
-          <button type="button" className="secondary" onClick={() => setSelected(allOn ? new Set() : new Set(data.entries.map((e) => e.url)))}>{allOn ? 'Deseleziona tutti' : 'Seleziona tutti'}</button>
+
+        {/* TOOLBAR: RICERCA & PULSANTI SELEZIONE */}
+        <div className="dl-dialog-tools-row">
+          <div className="dl-modal-search-wrap">
+            <input
+              type="text"
+              className="dl-modal-search-input"
+              placeholder="Filtra tracce per titolo o artista…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button type="button" className="dl-modal-search-clear" onClick={() => setSearch('')}>✕</button>
+            )}
+          </div>
+
+          <div className="dl-dialog-tools">
+            <button type="button" className="secondary dl-tool-btn" onClick={allOn ? deselectAll : selectAll}>
+              {allOn ? 'Deseleziona tutti' : 'Seleziona tutti'}
+            </button>
+          </div>
         </div>
-        <div className="dl-dialog-list">
-          {data.entries.map((entry) => (
-            <label key={entry.url} className="dl-entry">
-              <input type="checkbox" checked={selected.has(entry.url)} onChange={() => toggle(entry.url)} />
-              <span className="dl-entry-main"><span className="dl-entry-title">{entry.title}</span>{entry.uploader ? <span className="dl-entry-sub">{entry.uploader}</span> : null}</span>
-            </label>
-          ))}
+
+        {/* LISTA TRACCE RETTANGOLARE AD ALTA DENSITÀ CON SCROLL FLUIDO */}
+        <div className="dl-dialog-list dl-playlist-scroll-list" aria-label="Elenco tracce della playlist">
+          {visibleEntries.length === 0 ? (
+            <div className="dl-playlist-empty-search">
+              <span>🔍</span>
+              <p>Nessun brano corrisponde alla ricerca</p>
+            </div>
+          ) : (
+            visibleEntries.map((entry, idx) => {
+              const isChecked = selected.has(entry.url)
+              const formattedTime = formatDuration(entry.duration)
+              return (
+                <label key={entry.url} className={`dl-entry dl-entry-dense ${isChecked ? 'is-selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    className="dl-entry-checkbox"
+                    checked={isChecked}
+                    onChange={() => toggle(entry.url)}
+                  />
+                  <span className="dl-entry-idx">{(idx + 1).toString().padStart(2, '0')}</span>
+                  <span className="dl-entry-main">
+                    <span className="dl-entry-title" title={entry.title}>{entry.title}</span>
+                    {entry.uploader && <span className="dl-entry-sub">{entry.uploader}</span>}
+                  </span>
+                  {formattedTime && <span className="dl-entry-duration">{formattedTime}</span>}
+                </label>
+              )
+            })
+          )}
         </div>
-        <div className="dl-dialog-actions">
-          <button type="button" className="primary" disabled={!selected.size} onClick={() => onConfirm(data.entries.filter((e) => selected.has(e.url)).map((e) => e.url))}>Aggiungi {selected.size} alla coda</button>
+
+        {/* FOOTER AZIONI */}
+        <div className="dl-dialog-actions dl-playlist-actions">
+          <button type="button" className="secondary" onClick={onCancel}>
+            Annulla
+          </button>
+          <button
+            type="button"
+            className="primary dl-confirm-btn"
+            disabled={!selected.size}
+            onClick={() => onConfirm(data.entries.filter((e) => selected.has(e.url)).map((e) => e.url))}
+          >
+            Aggiungi {selected.size} alla coda
+          </button>
         </div>
       </div>
     </div>

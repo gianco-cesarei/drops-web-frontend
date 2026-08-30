@@ -42,6 +42,8 @@ describe('producer features', () => {
   it('rimuove badge quando ultimo social demo viene scollegato', async () => {
     render(<ProducerSettings user={{ username: 'alex' }} />)
     expect(screen.getByText('✓ Verified')).toBeInTheDocument()
+    // Espandi la prima sezione (Verifica Profilo)
+    await userEvent.click(screen.getAllByRole('button', { name: '▼ Espandi' })[0])
     await userEvent.click(screen.getAllByRole('button', { name: 'Disconnetti' })[0])
     await userEvent.click(screen.getByRole('button', { name: 'Disconnetti' }))
     expect(screen.getByText('Non Verificato')).toBeInTheDocument()
@@ -50,6 +52,9 @@ describe('producer features', () => {
   it('mostra generi fissi finche utente non sceglie Modifica', async () => {
     render(<ProducerSettings user={{ username: 'alex' }} />)
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    // Espandi la sezione Scheda Artistica
+    const expandButtons = screen.getAllByRole('button', { name: '▼ Espandi' })
+    await userEvent.click(expandButtons[expandButtons.length - 1])
     await userEvent.click(screen.getByRole('button', { name: 'Modifica' }))
     expect(screen.getAllByRole('checkbox')).toHaveLength(8)
     await userEvent.click(screen.getByRole('button', { name: 'Annulla' }))

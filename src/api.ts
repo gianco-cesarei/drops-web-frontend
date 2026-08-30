@@ -43,7 +43,15 @@ export type SpotifyTrack = {
 
 export type SpotifyPlaylist = { id: string; name: string; tracks_total: number }
 export type PlaylistEntry = { url: string; title: string; uploader?: string; duration?: number | null }
-type PlaylistResolveBase = { entries: PlaylistEntry[]; count: number; truncated: boolean; title?: string }
+type PlaylistResolveBase = {
+  entries: PlaylistEntry[]
+  count: number
+  truncated: boolean
+  title?: string
+  selected_track_id?: string | null
+  selected_track_url?: string | null
+  playlist_id?: string | null
+}
 export type PlaylistPreview = PlaylistResolveBase & (
   | { url_type: 'track' }
   | { url_type: 'playlist' }
