@@ -102,9 +102,72 @@ function saveFolders(folders: IndexedFolder[]) {
   }
 }
 
+export const MAIN_FOLDER_STORAGE_KEY = 'drops.main.folder.id'
+export const FOLDERS_STORAGE_KEY = STORAGE_KEY
+
+export function saveTrackToMainFolder(track: {
+  id: string
+  title: string
+  artist?: string
+  genre?: string
+  bpm?: number
+  coverUrl?: string
+  source?: string
+}) {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
+    let folders: IndexedFolder[] = raw ? JSON.parse(raw) : DEMO_FOLDERS
+    if (!Array.isArray(folders) || !folders.length) folders = [...DEMO_FOLDERS]
+
+    const mainFolderId = (typeof window !== 'undefined' ? window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) : null) || folders[0].id
+    const targetIdx = folders.findIndex((f) => f.id === mainFolderId)
+    const targetFolder = targetIdx >= 0 ? folders[targetIdx] : folders[0]
+
+    const newTrack: IngestedTrack = {
+      id: track.id,
+      filename: `${track.artist ? `${track.artist} - ` : ''}${track.title}.mp3`,
+      title: track.title,
+      artist: track.artist || 'Artista Sconosciuto',
+      genre: track.genre || targetFolder.dominantGenre || 'Electronic',
+      bpm: track.bpm,
+      audioUrl: api.fileUrl(track.id),
+      sizeBytes: 10485760,
+    }
+
+    if (!targetFolder.tracks.some((t) => t.id === track.id || t.title === track.title)) {
+      targetFolder.tracks = [newTrack, ...targetFolder.tracks]
+      targetFolder.trackCount = targetFolder.tracks.length
+      targetFolder.totalSizeMb = Math.round(targetFolder.tracks.reduce((acc, t) => acc + (t.sizeBytes || 10485760), 0) / (1024 * 1024) * 10) / 10
+      folders[targetIdx >= 0 ? targetIdx : 0] = { ...targetFolder }
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(folders))
+    }
+  } catch {
+    /* ignore storage errors */
+  }
+}
+
+export function getMainFolderName(): string {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
+    const folders: IndexedFolder[] = raw ? JSON.parse(raw) : DEMO_FOLDERS
+    const mainFolderId = (typeof window !== 'undefined' ? window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) : null) || folders[0]?.id
+    const found = folders.find((f) => f.id === mainFolderId)
+    return found?.name || folders[0]?.name || 'Session 001'
+  } catch {
+    return 'Session 001'
+  }
+}
+
 export default function FolderIngestionHub() {
   const [folders, setFolders] = useState<IndexedFolder[]>(() => loadFolders())
   const [selectedFolderId, setSelectedFolderId] = useState<string>(() => folders[0]?.id || '__all__')
+  const [mainFolderId, setMainFolderId] = useState<string>(() => {
+    try {
+      return window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) || loadFolders()[0]?.id || 'f-session-001'
+    } catch {
+      return 'f-session-001'
+    }
+  })
   const [sidebarFilter, setSidebarFilter] = useState<'all' | 'folders' | 'sessions'>('all')
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingProgress, setProcessingProgress] = useState(0)
@@ -761,6 +824,29 @@ export default function FolderIngestionHub() {
                         title="Esporta playlist M3U per chiavetta USB Pioneer Rekordbox"
                       >
                         Esporta M3U (Rekordbox)
+                      </button>
+                    )}
+                    {selectedFolder.id !== '__all__' && (
+                      <button
+                        type="button"
+                        className={`am-action-btn ${mainFolderId === selectedFolder.id ? 'active' : ''}`}
+                        style={{
+                          backgroundColor: mainFolderId === selectedFolder.id ? 'var(--color-primary, #00d26a)' : 'transparent',
+                          color: mainFolderId === selectedFolder.id ? '#000' : 'inherit',
+                          fontWeight: 700,
+                          borderColor: mainFolderId === selectedFolder.id ? 'transparent' : 'rgba(255,255,255,0.2)',
+                        }}
+                        onClick={() => {
+                          setMainFolderId(selectedFolder.id)
+                          try {
+                            window.localStorage.setItem(MAIN_FOLDER_STORAGE_KEY, selectedFolder.id)
+                          } catch {}
+                          setNotice(`★ "${selectedFolder.name}" impostata come Cartella Principale per i download!`)
+                          setTimeout(() => setNotice(null), 3500)
+                        }}
+                        title="Imposta questa cartella come destinazione principale per tutti i brani scaricati"
+                      >
+                        {mainFolderId === selectedFolder.id ? '★ Cartella Main Download' : '☆ Imposta come Cartella Main'}
                       </button>
                     )}
                     <button

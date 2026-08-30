@@ -13,7 +13,7 @@ import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import GlobalSearchModal from './components/GlobalSearchModal'
 import MultiSourceSync from './components/MultiSourceSync'
 import DownloadArchiveModal from './components/DownloadArchiveModal'
-import FolderIngestionHub from './components/FolderIngestionHub'
+import FolderIngestionHub, { getMainFolderName, saveTrackToMainFolder } from './components/FolderIngestionHub'
 import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
@@ -2064,6 +2064,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           }))
           if (readyStatuses.has(fresh.status)) {
             const record: HistoryItem = { id: fresh.id, title: fresh.title ?? fresh.fileName ?? 'Traccia', artist: fresh.artist, coverUrl: fresh.coverUrl, source: fresh.source, bpm: fresh.bpm, bpmPending: fresh.bpm == null, ts: Date.now() }
+            saveTrackToMainFolder(record)
             window.setTimeout(() => {
               setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
               setQueue((cur) => cur.filter((x) => x.key !== j.key))
@@ -2208,6 +2209,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             } : x)))
             if (readyStatuses.has(created.status)) {
               const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
+              saveTrackToMainFolder(record)
               window.setTimeout(() => {
                 setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
                 setQueue((cur) => cur.filter((x) => x.key !== jobItem.key))
@@ -2354,6 +2356,24 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
               Lossless Master &middot; WAV / FLAC
             </button>
           </div>
+        </div>
+
+        {/* CARTELLA MAIN ARCHIVIO DI DESTINAZIONE */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 12px', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap', gap: '8px' }}>
+          <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+            📁 Destinazione automatica archivio: <strong style={{ color: 'var(--color-primary, #00d26a)' }}>{getMainFolderName()}</strong>
+          </span>
+          {onSwitchToArchive && (
+            <button
+              type="button"
+              className="btn-sort-pill"
+              onClick={onSwitchToArchive}
+              style={{ fontSize: '11px', padding: '2px 8px', borderColor: 'rgba(255,255,255,0.15)' }}
+              title="Cambia o crea nuove cartelle nell'Archivio"
+            >
+              Gestisci Cartelle &rarr;
+            </button>
+          )}
         </div>
 
         <form onSubmit={handleAdd} className="download-form">
