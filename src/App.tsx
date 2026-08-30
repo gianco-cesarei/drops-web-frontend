@@ -2095,7 +2095,9 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             }, 1000)
           }
         } catch (cause) {
-          setQueue((cur) => cur.map((x) => (x.key === j.key ? { ...x, status: 'failed', message: cause instanceof ApiError ? cause.message : 'Errore di rete' } : x)))
+          const is404 = cause instanceof ApiError && cause.status === 404
+          const msg = is404 ? 'Server riavviato. Clicca Riprova per avviare il download.' : (cause instanceof ApiError ? cause.message : 'Errore di rete')
+          setQueue((cur) => cur.map((x) => (x.key === j.key ? { ...x, status: 'failed', message: msg } : x)))
         }
       })
     }, 1500)
