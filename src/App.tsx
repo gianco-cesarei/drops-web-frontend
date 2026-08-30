@@ -18,6 +18,7 @@ import FolderIngestionHub, {
   getMainFolderId,
   getMainFolderName,
   getSavedFolders,
+  processLocalAudioFile,
   renameMainFolder,
   saveTrackToMainFolder,
   setMainFolder,
@@ -2007,6 +2008,22 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   const [renamingName, setRenamingName] = useState('')
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleAudioFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files).filter((f) => f.type.startsWith('audio/') || /\.(mp3|wav|aiff|flac|m4a|ogg)$/i.test(f.name))
+    if (!list.length) return
+    for (const file of list) {
+      try {
+        const item = await processLocalAudioFile(file, activeMainFolderId)
+        setHistory((cur) => [item, ...cur.filter((it) => it.id !== item.id)].slice(0, 100))
+      } catch (err) {
+        console.error('Local audio processing failed:', err)
+      }
+    }
+    setFoldersList(getSavedFolders())
+  }
 
   const queueRef = useRef<QueueJob[]>([])
   queueRef.current = queue
@@ -2556,6 +2573,61 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           </div>
         </form>
         {error && <div className="alert" role="alert">{error}</div>}
+
+        {/* DRAG & DROP ZONE PER FILE AUDIO LOCALI */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+          onDragLeave={() => setIsDraggingFile(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingFile(false);
+            if (e.dataTransfer.files) handleAudioFiles(e.dataTransfer.files);
+          }}
+          className={`download-dropzone ${isDraggingFile ? 'dragging' : ''}`}
+          style={{
+            margin: '12px 0 16px',
+            padding: '14px 18px',
+            borderRadius: '12px',
+            border: isDraggingFile ? '2px dashed #00d26a' : '1px dashed rgba(255,255,255,0.18)',
+            background: isDraggingFile ? 'rgba(0, 210, 106, 0.08)' : 'rgba(255,255,255,0.02)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept="audio/*,.mp3,.wav,.aiff,.flac,.m4a,.ogg"
+            multiple
+            onChange={(e) => {
+              if (e.target.files) handleAudioFiles(e.target.files);
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '22px' }}>📥</span>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#f1f5f9' }}>
+                Trascina qui file audio dal Mac (.mp3, .wav, .aiff, .flac)
+              </div>
+              <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                Analisi BPM istantanea, tag ID3 e salvataggio automatico nella cartella attiva
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn-sort-pill active"
+            style={{ fontSize: '11px', padding: '5px 12px', pointerEvents: 'none' }}
+          >
+            + Sfoglia File
+          </button>
+        </div>
 
         {/* Sotto l'input: 1. PRONTI / SCARICATI (ACCORDION) */}
         <div className="dl-section-block">

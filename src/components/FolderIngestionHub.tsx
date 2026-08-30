@@ -113,14 +113,14 @@ export function saveTrackToMainFolder(track: {
   bpm?: number
   coverUrl?: string
   source?: string
-}) {
+}, folderId?: string) {
   try {
     const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
     let folders: IndexedFolder[] = raw ? JSON.parse(raw) : DEMO_FOLDERS
     if (!Array.isArray(folders) || !folders.length) folders = [...DEMO_FOLDERS]
 
-    const mainFolderId = (typeof window !== 'undefined' ? window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) : null) || folders[0].id
-    const targetIdx = folders.findIndex((f) => f.id === mainFolderId)
+    const targetFolderId = folderId || (typeof window !== 'undefined' ? window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) : null) || folders[0].id
+    const targetIdx = folders.findIndex((f) => f.id === targetFolderId)
     const targetFolder = targetIdx >= 0 ? folders[targetIdx] : folders[0]
 
     const newTrack: IngestedTrack = {
@@ -212,6 +212,87 @@ export function createNewArchiveFolder(name: string): IndexedFolder {
     /* ignore */
   }
   return newFolder
+}
+
+export interface LocalAudioItem {
+  id: string
+  title: string
+  artist?: string
+  coverUrl?: string
+  source?: string
+  sourceUrl?: string
+  bpm?: number
+  bpmPending?: boolean
+  ts: number
+}
+
+export async function processLocalAudioFile(file: File, targetFolderId?: string): Promise<LocalAudioItem> {
+  const baseName = file.name.replace(/\.[^/.]+$/, '')
+  let artist = 'Artista Sconosciuto'
+  let title = baseName
+  if (baseName.includes(' - ')) {
+    const parts = baseName.split(' - ')
+    artist = parts[0].trim()
+    title = parts.slice(1).join(' - ').trim()
+  }
+
+  let calculatedBpm: number | null = null
+
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    if (AudioCtx) {
+      const audioCtx = new AudioCtx()
+      const arrayBuffer = await file.slice(0, Math.min(file.size, 4 * 1024 * 1024)).arrayBuffer()
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer)
+      const pcmData = audioBuffer.getChannelData(0)
+      const sampleRate = audioBuffer.sampleRate
+      const peaks: number[] = []
+      const step = Math.floor(sampleRate * 0.05)
+      for (let i = 0; i < pcmData.length; i += step) {
+        let max = 0
+        for (let j = i; j < Math.min(i + step, pcmData.length); j++) {
+          const val = Math.abs(pcmData[j])
+          if (val > max) max = val
+        }
+        if (max > 0.35) peaks.push(i / sampleRate)
+      }
+      if (peaks.length > 8) {
+        const intervals: number[] = []
+        for (let i = 1; i < peaks.length; i++) {
+          const diff = peaks[i] - peaks[i - 1]
+          if (diff >= 0.33 && diff <= 0.86) {
+            intervals.push(diff)
+          }
+        }
+        if (intervals.length > 4) {
+          const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
+          const rawBpm = Math.round(60 / avgInterval)
+          if (rawBpm >= 60 && rawBpm <= 200) {
+            calculatedBpm = rawBpm
+          }
+        }
+      }
+      audioCtx.close().catch(() => {})
+    }
+  } catch {
+    /* fallback to default */
+  }
+
+  const itemId = `loc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  const record: LocalAudioItem = {
+    id: itemId,
+    title,
+    artist,
+    coverUrl: undefined,
+    source: 'locale',
+    sourceUrl: file.name,
+    bpm: calculatedBpm || 124,
+    bpmPending: false,
+    ts: Date.now(),
+  }
+
+  saveTrackToMainFolder(record, targetFolderId)
+  return record
 }
 
 export function getMainFolderName(): string {
