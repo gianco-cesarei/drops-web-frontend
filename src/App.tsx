@@ -2593,29 +2593,15 @@ function HistoryRow({
 }) {
   const fileUrl = api.fileUrl(item.id)
 
-  const handleDownload = async (e: React.MouseEvent) => {
+  const handleDownload = (e: React.MouseEvent) => {
     e.preventDefault()
-    try {
-      const res = await fetch(fileUrl, { method: 'HEAD' })
-      if (!res.ok) {
-        if (item.sourceUrl || item.source) {
-          onRequeue?.(item.sourceUrl || item.source!)
-          onError?.(`File temporaneo scaduto sul server. Rilanciato il download di "${item.title}" dalla sorgente!`)
-        } else {
-          onError?.(`File temporaneo scaduto sul server. Incolla nuovamente il link per scaricarlo.`)
-        }
-        return
-      }
-      onDownloaded?.()
-      const a = document.createElement('a')
-      a.href = fileUrl
-      a.download = `${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-    } catch {
-      window.location.assign(fileUrl)
-    }
+    onDownloaded?.()
+    const a = document.createElement('a')
+    a.href = fileUrl
+    a.download = `${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   return (
