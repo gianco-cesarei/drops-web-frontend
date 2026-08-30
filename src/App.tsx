@@ -2195,7 +2195,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       setQueue((cur) => [...newJobs, ...cur])
       setInput('')
       newJobs.forEach((jobItem) => {
-        api.createDownload(jobItem.url)
+        api.createDownload(jobItem.url, { quality: audioQuality })
           .then((created) => {
             setQueue((cur) => cur.map((x) => (x.key === jobItem.key ? {
               ...x,
@@ -2365,7 +2365,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && input.trim()) {
                 e.preventDefault()
                 const form = e.currentTarget.form
                 if (form) form.requestSubmit()

@@ -156,7 +156,7 @@ export const api = {
     }, 'login').then(unwrapUser),
   me: () => request<User | { user: User }>('/api/v1/auth/me', {}, 'session').then(unwrapUser),
   logout: () => request<void>('/api/v1/auth/logout', { method: 'POST' }),
-  createDownload: (url: string, meta?: { artist?: string; title?: string; cover_url?: string | null }) =>
+  createDownload: (url: string, meta?: { artist?: string; title?: string; cover_url?: string | null; quality?: 'mp3' | 'hq' }) =>
     request<unknown>('/api/v1/downloads', {
       method: 'POST',
       body: JSON.stringify({
@@ -164,6 +164,7 @@ export const api = {
         ...(meta?.artist ? { artist: meta.artist } : {}),
         ...(meta?.title ? { title: meta.title } : {}),
         ...(meta?.cover_url ? { cover_url: meta.cover_url } : {}),
+        ...(meta?.quality && meta.quality !== 'mp3' ? { quality: meta.quality } : {}),
       }),
     }).then(normalizeJob),
   getDownload: (id: string) => request<unknown>(`/api/v1/downloads/${encodeURIComponent(id)}`).then(normalizeJob),
