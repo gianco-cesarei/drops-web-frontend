@@ -9,6 +9,12 @@
 - Curriculum Academy trasformato in accordion esclusivo: un solo capitolo aperto alla volta.
 - Producer Settings mostra riepilogo e generi come chip; campi editabili solo tramite azione `Modifica`.
 - Aggiunti accessi Settings accanto al nome account e al collegamento profilo pubblico Academy.
+- Menu header ora esclusivi: apertura singola, chiusura esterna ed Escape con ritorno focus.
+- Allineato invio Monthly Review al contratto backend `/presign`, incluso `size_bytes`; errore upload non dichiara più bozze inesistenti.
+
+### Pending
+
+- Persistenza cloud di profilo, generi e social: frontend pronto, ma API profilo/social non ancora disponibile nel backend.
 
 ## [0.2.0] - 2026-08-23
 

@@ -257,6 +257,7 @@ export default function AcademyHub({
         focus_area: focusArea,
         filename: trackFile.name,
         content_type: trackFile.type,
+        size_bytes: trackFile.size,
       })
 
       const formData = new FormData()
@@ -282,7 +283,7 @@ export default function AcademyHub({
       }
       setTrackFile(null)
     } catch {
-      setSubmissionNotice('Bozza salvata sul dispositivo. Invio non disponibile: servizio upload non ancora collegato.')
+      setSubmissionNotice('Invio non riuscito. File resta selezionato: controlla connessione e riprova.')
     } finally {
       setIsUploading(false)
     }

@@ -169,6 +169,8 @@ function Login({ onLogin, onDemoLogin, demoEnabled, error, setError }: { onLogin
 
 function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: { section: PrivateSection; user: User; onLogoutStart: () => void; onLogoutEnd: () => void; children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false)
+  const [openMenu, setOpenMenu] = useState<'academy' | 'music' | 'beta' | null>(null)
+  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -181,24 +183,48 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
 
+  useEffect(() => {
+    const closeOutside = (event: PointerEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) setOpenMenu(null)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !openMenu) return
+      const trigger = headerRef.current?.querySelector<HTMLElement>(`[data-menu-trigger="${openMenu}"]`)
+      setOpenMenu(null)
+      requestAnimationFrame(() => trigger?.focus())
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [openMenu])
+
+  useEffect(() => setOpenMenu(null), [section])
+
+  const controlMenu = (menu: 'academy' | 'music' | 'beta', open: boolean) => {
+    setOpenMenu((current) => open ? menu : current === menu ? null : current)
+  }
+
   async function logout() {
     onLogoutStart()
     try { await api.logout() } catch { /* Local session remains invalidated. */ } finally { onLogoutEnd() }
   }
   return <div className={`private-layout private-layout-${section}`}>
     <div className="private-header-bar">
-      <header className="private-header">
+      <header className="private-header" ref={headerRef}>
         <a href="/" className="logo">Drops<span>.</span></a>
         <nav aria-label="Area privata">
           <a href="/">Discovery</a>
-          <details className="private-tools-menu">
-            <summary className={section === 'academy' ? 'active' : ''}>
+          <details className="private-tools-menu" open={openMenu === 'academy'} onToggle={(event) => controlMenu('academy', event.currentTarget.open)}>
+            <summary className={section === 'academy' ? 'active' : ''} data-menu-trigger="academy" aria-expanded={openMenu === 'academy'}>
               Academy
             </summary>
             <div className="private-tools-popover academy-popover-menu">
               <div className="popover-section-title">Lessons</div>
-              <a href="/app/academy#lessons" className="popover-item">🎓 Lezioni & Video Moduli</a>
-              <a href="/app/academy#feedback" className="popover-item">🎧 Track Review (Guest Artist)</a>
+              <a href="/app/academy#lessons" className="popover-item" onClick={() => setOpenMenu(null)}>🎓 Lezioni & Video Moduli</a>
+              <a href="/app/academy#feedback" className="popover-item" onClick={() => setOpenMenu(null)}>🎧 Track Review (Guest Artist)</a>
 
               <div className="popover-section-title">Tools</div>
               <a href="/app/academy#djlab" className="popover-item">🎛️ DJ Lab & Set Studio</a>
@@ -215,8 +241,8 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
               <a href="/item/vinile-2026-stampa-tempi-costi" className="popover-item">📄 Vinile 2026: Stampa & Costi</a>
             </div>
           </details>
-          <details className="private-tools-menu">
-            <summary className={['mymusic', 'download', 'archive', 'spotify'].includes(section) ? 'active' : ''}>
+          <details className="private-tools-menu" open={openMenu === 'music'} onToggle={(event) => controlMenu('music', event.currentTarget.open)}>
+            <summary className={['mymusic', 'download', 'archive', 'spotify'].includes(section) ? 'active' : ''} data-menu-trigger="music" aria-expanded={openMenu === 'music'}>
               My Music
             </summary>
             <div className="private-tools-popover">
@@ -225,8 +251,8 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
               <a href="/app/spotify" className={section === 'spotify' ? 'active' : ''}>Sync Playlist</a>
             </div>
           </details>
-          <details className="private-tools-menu">
-            <summary className={['content', 'radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''}>
+          <details className="private-tools-menu" open={openMenu === 'beta'} onToggle={(event) => controlMenu('beta', event.currentTarget.open)}>
+            <summary className={['content', 'radar', 'brain', 'developer', 'editorial-suggestions'].includes(section) ? 'active' : ''} data-menu-trigger="beta" aria-expanded={openMenu === 'beta'}>
               Beta
             </summary>
             <div className="private-tools-popover">

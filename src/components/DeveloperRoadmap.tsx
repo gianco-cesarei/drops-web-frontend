@@ -221,6 +221,10 @@ const DEFAULT_SECTIONS: Section[] = [
             title: 'Gestione profilo e verifica social reattiva con calcolo XP',
             tags: ['front'],
           },
+          {
+            title: 'API profilo/social per persistenza cloud e verifica account reale',
+            tags: ['back'],
+          },
         ],
       },
     ],

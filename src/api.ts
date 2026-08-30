@@ -171,8 +171,8 @@ export const api = {
   discogsEnrich: (track: Pick<SpotifyTrack, 'title' | 'artists' | 'isrc'>) => request<DiscogsEnrichment | null>('/api/v1/discogs/enrich', { method: 'POST', body: JSON.stringify({ artist: track.artists.join(', '), title: track.title, isrc: track.isrc }) }),
   bpmCompute: (track: Pick<SpotifyTrack, 'id' | 'title' | 'artists' | 'isrc'>, sourceUrl?: string) => request<{ job_id: string; status: string; bpm?: number; confidence?: number }>('/api/v1/bpm/compute', { method: 'POST', body: JSON.stringify({ track_key: track.id, artist: track.artists[0] ?? '', title: track.title, isrc: track.isrc, source_url: sourceUrl }) }),
   bpmJob: (jobId: string) => request<{ id: string; status: string; bpm?: number; confidence?: number; error?: string }>(`/api/v1/bpm/job/${encodeURIComponent(jobId)}`),
-  prepareAcademyUpload: (data: { title: string; bpm?: number; genre?: string; focus_area?: string; filename: string; content_type: string }) =>
-    request<{ submission_id: string; upload_url: string; upload_fields: Record<string, string>; key: string; max_bytes: number }>('/api/v1/academy/submissions/prepare-upload', {
+  prepareAcademyUpload: (data: { title: string; bpm?: number; genre?: string; focus_area?: string; filename: string; content_type: string; size_bytes: number }) =>
+    request<{ submission_id: string; upload_url: string; upload_fields: Record<string, string>; key: string; max_bytes: number }>('/api/v1/academy/submissions/presign', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

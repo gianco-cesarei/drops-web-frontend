@@ -78,14 +78,17 @@ describe('API client', () => {
     })
   })
 
-  it('invia richieste prepare e complete upload per Academy R2', async () => {
+  it('invia richieste presign e complete upload per Academy R2', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ submission_id: 'sub-1', upload_url: 'https://r2.test', upload_fields: {}, key: 'k1', max_bytes: 100 }), { status: 200, headers: { 'content-type': 'application/json' } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'sub-1', status: 'ready' }), { status: 200, headers: { 'content-type': 'application/json' } }))
     vi.stubGlobal('fetch', fetchMock)
 
-    const prep = await api.prepareAcademyUpload({ title: 'My Track', filename: 'track.wav', content_type: 'audio/wav' })
+    const prep = await api.prepareAcademyUpload({ title: 'My Track', filename: 'track.wav', content_type: 'audio/wav', size_bytes: 2048 })
     expect(prep.submission_id).toBe('sub-1')
+
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.drops.test/api/v1/academy/submissions/presign')
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toMatchObject({ filename: 'track.wav', size_bytes: 2048 })
 
     const complete = await api.completeAcademyUpload('sub-1')
     expect(complete.status).toBe('ready')

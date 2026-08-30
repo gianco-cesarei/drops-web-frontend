@@ -109,6 +109,7 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *Miglioramento Utente:* Scala i 4 livelli producer da Bedroom a Breakthrough, accumula XP e ottieni la spunta di verifica collegando i tuoi account social ufficiali.
    * *a) Gestione profilo e verifica social reattiva* `[front]`
      * **Stato:** Implementato `ProducerSettings.tsx` con anteprima badge, generi mostrati come chip fissi, modalità Modifica esplicita, massimo 4 generi e regole XP anti-spam. Rotella Settings disponibile accanto al nome account e al profilo pubblico Academy.
+     * **Dipendenza aperta:** Persistenza cloud e connessioni social reali richiedono API profilo/social nel backend; stato attuale resta demo locale esplicita.
 
 ---
 

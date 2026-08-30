@@ -328,6 +328,37 @@ describe('autenticazione App', () => {
     expect(within(nav).queryByText('Graph')).not.toBeInTheDocument()
   })
 
+  it('header apre un solo menu e chiude con Escape restituendo il focus', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })))
+    render(<App section="brain" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    const nav = await screen.findByRole('navigation', { name: 'Area privata' })
+    const academy = within(nav).getByText('Academy')
+    const music = within(nav).getByText('My Music')
+
+    await user.click(academy)
+    expect(academy).toHaveAttribute('aria-expanded', 'true')
+    await user.click(music)
+    expect(academy).toHaveAttribute('aria-expanded', 'false')
+    expect(music).toHaveAttribute('aria-expanded', 'true')
+
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(music).toHaveAttribute('aria-expanded', 'false'))
+    await waitFor(() => expect(music).toHaveFocus())
+  })
+
+  it('header chiude menu cliccando fuori', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })))
+    render(<App section="brain" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    const academy = within(await screen.findByRole('navigation', { name: 'Area privata' })).getByText('Academy')
+
+    await user.click(academy)
+    expect(academy).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.pointerDown(document.body)
+    expect(academy).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('mostra portale didattico Academy con moduli, video e feedback box', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'alex', name: 'Alex Rossi' })))
     render(<App section="academy" navigate={vi.fn()} />)
