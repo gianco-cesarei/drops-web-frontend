@@ -754,10 +754,10 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 /* Private React Shell Layout */
 .private-layout { min-height: 100dvh; overflow-x: clip; }
 .private-header-bar { position: sticky; top: 0; z-index: 30; background: var(--chrome-bg); border-bottom: 1px solid var(--chrome-border); }
-.private-header { width: min(100%, 1208px); min-height: 72px; margin: auto; padding-inline: clamp(14px, 3vw, 24px); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: clamp(14px, 2.5vw, 28px); }
+.private-header { width: min(100%, 1208px); min-height: 60px; margin: auto; padding-inline: clamp(12px, 2vw, 20px); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: clamp(10px, 1.5vw, 20px); }
 .private-header .logo { margin-right: 10px; color: var(--chrome-ink); text-decoration: none; }
 .private-header .logo span { color: var(--color-accent); }
-.private-header nav { min-width: 0; display: flex; align-items: center; gap: 18px; font-size: var(--font-size-sm); font-weight: var(--weight-bold); letter-spacing: .05em; text-transform: uppercase; }
+.private-header nav { min-width: 0; display: flex; align-items: center; gap: clamp(10px, 1.5vw, 18px); font-size: .75rem; font-weight: var(--weight-bold); letter-spacing: .05em; text-transform: uppercase; }
 .private-header nav, .private-header .account { max-width: 100%; }
 .private-header nav a { color: var(--chrome-ink-dim); text-decoration: none; transition: color 0.15s ease; }
 .private-header nav a:hover { color: var(--chrome-ink); }
@@ -782,6 +782,17 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .private-tools-popover a:hover { background:rgba(34,197,94,0.12); color: #ffffff; }
 .private-header .secondary { border-color: var(--chrome-border); background: transparent; color: var(--chrome-ink-dim); }
 .private-header .secondary:hover { border-color: var(--color-accent); color: var(--chrome-ink); }
+@media (max-width: 1050px) {
+  .account-name { display:none; }
+  .private-header { grid-template-columns:auto minmax(0,1fr) auto; }
+}
+@media (max-width: 760px) {
+  .private-header { min-height:56px; grid-template-columns:auto auto; }
+  .private-header nav { grid-column:1 / -1; grid-row:2; overflow-x:auto; padding:0 0 9px; scrollbar-width:none; }
+  .private-header nav::-webkit-scrollbar { display:none; }
+  .private-header .account { grid-column:2; grid-row:1; }
+  .private-header .secondary { padding:.42rem .62rem; }
+}
 .private-layout .shell { width: min(100%, 1208px); min-height: calc(100dvh - 72px); padding: clamp(16px, 2.5vw, 24px); }
 .private-layout .workspace { min-width: 0; }
 .private-layout .card { min-width: 0; padding: clamp(20px, 3vw, 36px); }
@@ -4649,11 +4660,12 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .global-search-trigger-btn {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 240px;
+  justify-content: center;
+  gap: 6px;
+  min-width: 58px;
+  width: 58px;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 7px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -5801,7 +5813,6 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
     justify-content: center;
   }
 }
-
 
 
 

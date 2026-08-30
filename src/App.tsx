@@ -246,7 +246,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
             aria-label="Cerca tutte le canzoni"
             title="Cerca tutte le canzoni (⌘K)"
           >
-            <span>🔍 Cerca tutte le canzoni...</span>
+            <span aria-hidden="true">⌕</span>
             <kbd className="header-cmd-k">⌘K</kbd>
           </button>
           <span className="account-name">{user.name ?? user.username ?? user.email ?? 'Account'}</span>

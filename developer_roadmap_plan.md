@@ -96,7 +96,7 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 1. **Task 5.1: Portale di Formazione per DJ e Produttori (Lezioni e Dispense) [COMPLETATO]**
    * *Miglioramento Utente:* Impara le tecniche di mixaggio e produzione musicale in un'area riservata organizzata in moduli didattici, video-lezioni, schede tecniche e test di autovalutazione.
    * *a) Struttura dell'area didattica e hosting dei video delle lezioni* `[front]` `[back]`
-     * **Stato:** Implementata la piattaforma Academy con 4 moduli (12 lezioni), player video immersivo, layout compatto no-scroll e tab per invio tracce e download risorse.
+     * **Stato:** Implementata piattaforma Academy con 4 moduli (12 lezioni), player video, layout desktop senza scroll pagina, pannelli a scroll interno e capitoli accordion esclusivi: aprire un capitolo chiude quello precedente. Navigazione raggruppata nell'header e responsive verificato da mobile a desktop.
 2. **Task 5.2: Directory & Mappa delle Scuole di Musica e Cabine DJ Partner [COMPLETATO]**
    * *Miglioramento Utente:* Trova accademie musicali fisiche, sale prove, studi di registrazione e cabine DJ a noleggio vicino a te visualizzandoli su una mappa e directory geografica interattiva.
    * *a) Integrazione directory spazi e punti d'interesse* `[front]`
@@ -108,7 +108,7 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 4. **Task 5.4: Gamification Producer, Livelli XP (01–04) & Badge Verified ✓ [COMPLETATO]**
    * *Miglioramento Utente:* Scala i 4 livelli producer da Bedroom a Breakthrough, accumula XP e ottieni la spunta di verifica collegando i tuoi account social ufficiali.
    * *a) Gestione profilo e verifica social reattiva* `[front]`
-     * **Stato:** Implementato `ProducerSettings.tsx` con anteprima live del badge, selezione generi musicali fino a 4 massimi e regole XP anti-spam.
+     * **Stato:** Implementato `ProducerSettings.tsx` con anteprima badge, generi mostrati come chip fissi, modalità Modifica esplicita, massimo 4 generi e regole XP anti-spam. Rotella Settings disponibile accanto al nome account e al profilo pubblico Academy.
 
 ---
 

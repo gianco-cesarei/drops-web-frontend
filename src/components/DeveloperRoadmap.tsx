@@ -349,6 +349,10 @@ const DEFAULT_SECTIONS: Section[] = [
             tags: ['front'],
           },
           {
+            title: 'Academy UI compatta: header raggruppato, pannelli a scroll interno, accordion LMS singolo e Settings lettura/modifica',
+            tags: ['front'],
+          },
+          {
             title: 'Split dei 3 monorepo, rate limit fix Discogs/Cloudflare e Spotify OAuth',
             tags: ['front', 'back'],
           },
