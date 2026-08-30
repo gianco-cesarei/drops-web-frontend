@@ -146,11 +146,78 @@ export function saveTrackToMainFolder(track: {
   }
 }
 
-export function getMainFolderName(): string {
+export function getSavedFolders(): IndexedFolder[] {
   try {
     const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
-    const folders: IndexedFolder[] = raw ? JSON.parse(raw) : DEMO_FOLDERS
-    const mainFolderId = (typeof window !== 'undefined' ? window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) : null) || folders[0]?.id
+    if (!raw) return DEMO_FOLDERS
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? (parsed as IndexedFolder[]) : DEMO_FOLDERS
+  } catch {
+    return DEMO_FOLDERS
+  }
+}
+
+export function getMainFolderId(): string {
+  try {
+    const folders = getSavedFolders()
+    return (typeof window !== 'undefined' ? window.localStorage.getItem(MAIN_FOLDER_STORAGE_KEY) : null) || folders[0]?.id || 'f-session-001'
+  } catch {
+    return 'f-session-001'
+  }
+}
+
+export function setMainFolder(folderId: string) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(MAIN_FOLDER_STORAGE_KEY, folderId)
+  }
+}
+
+export function renameMainFolder(folderId: string, newName: string): boolean {
+  try {
+    if (!newName.trim()) return false
+    const folders = getSavedFolders()
+    const target = folders.find((f) => f.id === folderId)
+    if (target) {
+      target.name = newName.trim()
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(folders))
+      api.renameFolder(folderId, newName.trim()).catch(() => {})
+      return true
+    }
+  } catch {
+    /* ignore */
+  }
+  return false
+}
+
+export function createNewArchiveFolder(name: string): IndexedFolder {
+  const newFolder: IndexedFolder = {
+    id: `f-${Date.now()}`,
+    name: name.trim() || `Nuova Sessione ${new Date().toLocaleDateString('it-IT')}`,
+    uploadDate: new Date().toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }),
+    timestamp: Date.now(),
+    trackCount: 0,
+    totalSizeMb: 0,
+    dominantGenre: 'Electronic',
+    status: 'ready',
+    isSession: true,
+    tracks: [],
+  }
+  try {
+    const folders = getSavedFolders()
+    const updated = [newFolder, ...folders]
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    window.localStorage.setItem(MAIN_FOLDER_STORAGE_KEY, newFolder.id)
+    api.createFolder({ name: newFolder.name, dominant_genre: newFolder.dominantGenre }).catch(() => {})
+  } catch {
+    /* ignore */
+  }
+  return newFolder
+}
+
+export function getMainFolderName(): string {
+  try {
+    const folders = getSavedFolders()
+    const mainFolderId = getMainFolderId()
     const found = folders.find((f) => f.id === mainFolderId)
     return found?.name || folders[0]?.name || 'Session 001'
   } catch {

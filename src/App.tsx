@@ -13,8 +13,26 @@ import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import GlobalSearchModal from './components/GlobalSearchModal'
 import MultiSourceSync from './components/MultiSourceSync'
 import DownloadArchiveModal from './components/DownloadArchiveModal'
-import FolderIngestionHub, { getMainFolderName, saveTrackToMainFolder } from './components/FolderIngestionHub'
-import { linkRadarToBrain, resetPrototypeState, setRadarStatus, usePrototypeState, getArticleStatus, publishArticle, draftArticle, getFeaturedId, setFeaturedArticle } from './data/brainStore'
+import FolderIngestionHub, {
+  createNewArchiveFolder,
+  getMainFolderId,
+  getMainFolderName,
+  getSavedFolders,
+  renameMainFolder,
+  saveTrackToMainFolder,
+  setMainFolder,
+} from './components/FolderIngestionHub'
+import {
+  linkRadarToBrain,
+  resetPrototypeState,
+  setRadarStatus,
+  usePrototypeState,
+  getArticleStatus,
+  publishArticle,
+  draftArticle,
+  getFeaturedId,
+  setFeaturedArticle,
+} from './data/brainStore'
 import type { RadarStatus } from './data/brainStore'
 import { publishedContentItems } from './data/content.data'
 
@@ -1983,6 +2001,12 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   const [preview, setPreview] = useState<{ data: PlaylistPreview; resolve: (urls: string[] | null) => void } | null>(null)
   const [playlistChoice, setPlaylistChoice] = useState<{ data: Extract<PlaylistPreview, { url_type: 'track_in_playlist' }>; resolve: (urls: string[] | null) => void } | null>(null)
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => new Set())
+  const [foldersList, setFoldersList] = useState(() => getSavedFolders())
+  const [activeMainFolderId, setActiveMainFolderId] = useState(() => getMainFolderId())
+  const [isRenamingFolder, setIsRenamingFolder] = useState(false)
+  const [renamingName, setRenamingName] = useState('')
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
 
   const queueRef = useRef<QueueJob[]>([])
   queueRef.current = queue
@@ -2358,20 +2382,150 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           </div>
         </div>
 
-        {/* CARTELLA MAIN ARCHIVIO DI DESTINAZIONE */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 12px', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#9ca3af' }}>
-            📁 Destinazione automatica archivio: <strong style={{ color: 'var(--color-primary, #00d26a)' }}>{getMainFolderName()}</strong>
-          </span>
+        {/* CARTELLA MAIN ARCHIVIO DI DESTINAZIONE INTERATTIVA */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 14px', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 auto', minWidth: '220px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap' }}>📁 Salva in:</span>
+            {isRenamingFolder ? (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flex: '1 1 auto' }}>
+                <input
+                  type="text"
+                  value={renamingName}
+                  onChange={(e) => setRenamingName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (renameMainFolder(activeMainFolderId, renamingName)) {
+                        setFoldersList(getSavedFolders())
+                        setIsRenamingFolder(false)
+                      }
+                    } else if (e.key === 'Escape') {
+                      setIsRenamingFolder(false)
+                    }
+                  }}
+                  style={{ height: '30px', padding: '0 8px', fontSize: '13px', background: '#0a0f0c', border: '1px solid #22c55e', color: '#fff', borderRadius: '6px', outline: 'none' }}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="btn-sort-pill active"
+                  style={{ height: '30px', padding: '0 10px', fontSize: '12px' }}
+                  onClick={() => {
+                    if (renameMainFolder(activeMainFolderId, renamingName)) {
+                      setFoldersList(getSavedFolders())
+                      setIsRenamingFolder(false)
+                    }
+                  }}
+                >
+                  ✓ Salva
+                </button>
+                <button
+                  type="button"
+                  className="btn-sort-pill"
+                  style={{ height: '30px', padding: '0 8px', fontSize: '12px' }}
+                  onClick={() => setIsRenamingFolder(false)}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : isCreatingFolder ? (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flex: '1 1 auto' }}>
+                <input
+                  type="text"
+                  placeholder="Nome nuova cartella..."
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newFolderName.trim()) {
+                      const created = createNewArchiveFolder(newFolderName)
+                      setFoldersList(getSavedFolders())
+                      setActiveMainFolderId(created.id)
+                      setIsCreatingFolder(false)
+                      setNewFolderName('')
+                    } else if (e.key === 'Escape') {
+                      setIsCreatingFolder(false)
+                    }
+                  }}
+                  style={{ height: '30px', padding: '0 8px', fontSize: '13px', background: '#0a0f0c', border: '1px solid #22c55e', color: '#fff', borderRadius: '6px', outline: 'none' }}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="btn-sort-pill active"
+                  style={{ height: '30px', padding: '0 10px', fontSize: '12px' }}
+                  onClick={() => {
+                    if (newFolderName.trim()) {
+                      const created = createNewArchiveFolder(newFolderName)
+                      setFoldersList(getSavedFolders())
+                      setActiveMainFolderId(created.id)
+                      setIsCreatingFolder(false)
+                      setNewFolderName('')
+                    }
+                  }}
+                >
+                  + Crea
+                </button>
+                <button
+                  type="button"
+                  className="btn-sort-pill"
+                  style={{ height: '30px', padding: '0 8px', fontSize: '12px' }}
+                  onClick={() => setIsCreatingFolder(false)}
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <select
+                  value={activeMainFolderId}
+                  onChange={(e) => {
+                    setActiveMainFolderId(e.target.value)
+                    setMainFolder(e.target.value)
+                  }}
+                  style={{ height: '30px', padding: '0 10px', fontSize: '13px', fontWeight: '700', background: '#0a0f0c', border: '1px solid rgba(255,255,255,0.18)', color: '#00d26a', borderRadius: '6px', outline: 'none', cursor: 'pointer' }}
+                >
+                  {foldersList.map((f) => (
+                    <option key={f.id} value={f.id} style={{ background: '#121814', color: '#f1f5f9' }}>
+                      📁 {f.name} ({f.trackCount || 0} brani)
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn-sort-pill"
+                  style={{ height: '28px', padding: '0 8px', fontSize: '11px' }}
+                  onClick={() => {
+                    const currentFolder = foldersList.find((f) => f.id === activeMainFolderId)
+                    setRenamingName(currentFolder?.name || '')
+                    setIsRenamingFolder(true)
+                  }}
+                  title="Rinomina questa cartella di salvataggio"
+                >
+                  ✏️ Rinomina
+                </button>
+                <button
+                  type="button"
+                  className="btn-sort-pill"
+                  style={{ height: '28px', padding: '0 8px', fontSize: '11px' }}
+                  onClick={() => {
+                    setNewFolderName('')
+                    setIsCreatingFolder(true)
+                  }}
+                  title="Crea una nuova cartella"
+                >
+                  + Nuova Cartella
+                </button>
+              </div>
+            )}
+          </div>
           {onSwitchToArchive && (
             <button
               type="button"
               className="btn-sort-pill"
               onClick={onSwitchToArchive}
-              style={{ fontSize: '11px', padding: '2px 8px', borderColor: 'rgba(255,255,255,0.15)' }}
-              title="Cambia o crea nuove cartelle nell'Archivio"
+              style={{ fontSize: '11px', padding: '3px 10px', borderColor: 'rgba(255,255,255,0.15)' }}
+              title="Vedi tutte le cartelle e i brani nell'Archivio"
             >
-              Gestisci Cartelle &rarr;
+              Vai all'Archivio &rarr;
             </button>
           )}
         </div>
@@ -2845,25 +2999,33 @@ function TrackInPlaylistDialog({
   return (
     <div className="dl-overlay" role="dialog" aria-modal="true" aria-labelledby="track-playlist-choice-title">
       <div ref={dialogRef} className="dl-dialog dl-choice-dialog">
-        <div>
-          <h2 id="track-playlist-choice-title" className="dl-dialog-title">Cosa vuoi scaricare?</h2>
-          <div className="dl-dialog-sub">{data.count} tracce{data.truncated ? ' (elenco troncato)' : ''}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <span className="dl-modal-kicker">DOWNLOAD MULTIPLO RILEVATO</span>
+            <h2 id="track-playlist-choice-title" className="dl-dialog-title">Cosa vuoi scaricare?</h2>
+            <div className="dl-dialog-sub">Questo link include una traccia singola e un Mix / Playlist di {data.count} brani</div>
+          </div>
+          <button type="button" className="dl-modal-close-btn" onClick={onCancel} title="Chiudi finestra">✕</button>
         </div>
+
         <div className="dl-choice-track">
-          <span className="eyebrow">Traccia selezionata</span>
+          <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#22c55e' }}>Traccia Singola</span>
           <strong>{selectedTitle}</strong>
+          <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '4px' }}>
+            Mix / Playlist: <strong style={{ color: '#f1f5f9' }}>{data.title || 'Playlist YouTube'}</strong> &bull; {data.count} tracce totali
+          </span>
         </div>
-        <div className="dl-dialog-list dl-choice-preview" aria-label="Anteprima playlist">
-          {data.entries.map((entry) => (
-            <div key={entry.url} className="dl-entry">
-              <span className="dl-entry-main"><span className="dl-entry-title">{entry.title}</span>{entry.uploader ? <span className="dl-entry-sub">{entry.uploader}</span> : null}</span>
-            </div>
-          ))}
-        </div>
+
         <div className="dl-choice-actions">
-          <button ref={trackButtonRef} type="button" className="primary" onClick={onTrack} aria-label={`Scarica solo questa traccia: ${selectedTitle}`}>Solo questa traccia</button>
-          <button type="button" className="secondary" onClick={onPlaylist} aria-label={`Scarica tutta la playlist, ${data.count} tracce`}>Tutta la playlist</button>
-          <button type="button" className="secondary" onClick={onCancel} aria-label="Annulla scelta download">Annulla</button>
+          <button ref={trackButtonRef} type="button" className="primary" onClick={onTrack} aria-label={`Scarica solo questa traccia: ${selectedTitle}`}>
+            ✓ Scarica solo questa traccia
+          </button>
+          <button type="button" className="secondary" onClick={onPlaylist} aria-label={`Scarica tutta la playlist, ${data.count} tracce`}>
+            🗂️ Scegli dalla Playlist ({data.count} tracce) &rarr;
+          </button>
+          <button type="button" className="secondary" onClick={onCancel} aria-label="Annulla scelta download">
+            Annulla
+          </button>
         </div>
       </div>
     </div>
