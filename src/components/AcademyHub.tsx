@@ -182,6 +182,22 @@ function getSavedLessons(): Set<string> {
   }
 }
 
+export type AcademyTab = 'lessons' | 'djlab' | 'resources' | 'feedback'
+export type DJLabSubTab = 'beatmatching' | 'rekordbox' | 'studios'
+
+function parseInitialState(initialTab?: string): { tab: AcademyTab; subTab: DJLabSubTab } {
+  const raw = (initialTab && initialTab !== 'lessons')
+    ? initialTab
+    : (typeof window !== 'undefined' && window.location.hash ? window.location.hash.replace('#', '') : (initialTab || 'lessons'))
+
+  if (raw === 'rekordbox') return { tab: 'djlab', subTab: 'rekordbox' }
+  if (raw === 'studios') return { tab: 'djlab', subTab: 'studios' }
+  if (raw === 'djlab') return { tab: 'djlab', subTab: 'beatmatching' }
+  if (raw === 'resources') return { tab: 'resources', subTab: 'beatmatching' }
+  if (raw === 'feedback') return { tab: 'feedback', subTab: 'beatmatching' }
+  return { tab: 'lessons', subTab: 'beatmatching' }
+}
+
 export default function AcademyHub({
   user,
   initialTab = 'lessons',
@@ -189,27 +205,23 @@ export default function AcademyHub({
   user?: User | null
   initialTab?: 'lessons' | 'djlab' | 'rekordbox' | 'studios' | 'feedback' | 'resources'
 }) {
+  const initialParsed = parseInitialState(initialTab)
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(MODULES[0].lessons[0])
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(() => getSavedLessons())
-  const [tab, setTab] = useState<'lessons' | 'djlab' | 'rekordbox' | 'studios' | 'feedback' | 'resources'>(() => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '')
-      if (['lessons', 'djlab', 'rekordbox', 'studios', 'feedback', 'resources'].includes(hash)) {
-        return hash as any
-      }
-    }
-    return initialTab
-  })
+  const [tab, setTab] = useState<AcademyTab>(initialParsed.tab)
+  const [djLabSubTab, setDjLabSubTab] = useState<DJLabSubTab>(initialParsed.subTab)
   const [openModuleId, setOpenModuleId] = useState(1)
 
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash.replace('#', '')
-      if (['lessons', 'djlab', 'rekordbox', 'studios', 'feedback', 'resources'].includes(hash)) {
-        setTab(hash as any)
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const parsed = parseInitialState(window.location.hash.replace('#', ''))
+        setTab(parsed.tab)
+        if (['rekordbox', 'studios', 'djlab'].includes(window.location.hash.replace('#', ''))) {
+          setDjLabSubTab(parsed.subTab)
+        }
       }
     }
-    handleHash()
     window.addEventListener('hashchange', handleHash)
     return () => window.removeEventListener('hashchange', handleHash)
   }, [])
@@ -343,21 +355,74 @@ export default function AcademyHub({
         </div>
       </section>
 
+      {/* 4 MAIN ACADEMY TABS */}
+      <nav className="academy-main-tabs" role="tablist" aria-label="Sezioni Academy">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'lessons'}
+          className={`academy-tab-btn ${tab === 'lessons' ? 'active' : ''}`}
+          onClick={() => setTab('lessons')}
+        >
+          🎓 Lezioni & Video Moduli
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'djlab'}
+          className={`academy-tab-btn ${tab === 'djlab' ? 'active' : ''}`}
+          onClick={() => setTab('djlab')}
+        >
+          🎛️ DJ & Studio Lab
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'resources'}
+          className={`academy-tab-btn ${tab === 'resources' ? 'active' : ''}`}
+          onClick={() => setTab('resources')}
+        >
+          📦 Risorse & Guide
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'feedback'}
+          className={`academy-tab-btn ${tab === 'feedback' ? 'active' : ''}`}
+          onClick={() => setTab('feedback')}
+        >
+          🎧 Track Review (Guest Artist)
+        </button>
+      </nav>
+
       {tab === 'djlab' && (
-        <section className="academy-tab-panel" role="tabpanel" aria-label="DJ Lab Beatmatching">
-          <DJLab />
-        </section>
-      )}
-
-      {tab === 'rekordbox' && (
-        <section className="academy-tab-panel" role="tabpanel" aria-label="Rekordbox USB Prep">
-          <RekordboxExporter />
-        </section>
-      )}
-
-      {tab === 'studios' && (
-        <section className="academy-tab-panel" role="tabpanel" aria-label="Studi di registrazione partner">
-          <StudioDirectory />
+        <section className="academy-tab-panel" role="tabpanel" aria-label="DJ & Studio Lab">
+          <div className="djlab-subnav-bar">
+            <button
+              type="button"
+              className={`djlab-subnav-btn ${djLabSubTab === 'beatmatching' ? 'active' : ''}`}
+              onClick={() => setDjLabSubTab('beatmatching')}
+            >
+              🎛️ Dual-Deck Beatmatch & FX
+            </button>
+            <button
+              type="button"
+              className={`djlab-subnav-btn ${djLabSubTab === 'rekordbox' ? 'active' : ''}`}
+              onClick={() => setDjLabSubTab('rekordbox')}
+            >
+              💾 Rekordbox USB Prep & ID3 Tag
+            </button>
+            <button
+              type="button"
+              className={`djlab-subnav-btn ${djLabSubTab === 'studios' ? 'active' : ''}`}
+              onClick={() => setDjLabSubTab('studios')}
+            >
+              📍 Studi & Cabine DJ Partner
+            </button>
+          </div>
+          {djLabSubTab === 'beatmatching' && <DJLab />}
+          {djLabSubTab === 'rekordbox' && <RekordboxExporter />}
+          {djLabSubTab === 'studios' && <StudioDirectory />}
         </section>
       )}
 
@@ -583,8 +648,11 @@ export default function AcademyHub({
       )}
 
       {tab === 'resources' && (
-        <section className="academy-resources-full academy-tab-panel" role="tabpanel">
-          <h3>Tutti i Materiali Didattici & Kit di Produzione</h3>
+        <section className="academy-resources-full academy-tab-panel" role="tabpanel" aria-label="Risorse & Guide">
+          <div className="resources-hero-header">
+            <h3>Tutti i Materiali Didattici, Kit di Produzione & Guide</h3>
+            <p className="resources-subtext">Sample pack, template DAW per il club e studi di settore per selector e producer indipendenti.</p>
+          </div>
           <div className="all-resources-grid">
             <div className="resource-card-large">
               <span className="res-pill">SAMPLE PACK</span>
@@ -599,10 +667,28 @@ export default function AcademyHub({
               <button className="button-link-accent" disabled>Risorsa non disponibile</button>
             </div>
             <div className="resource-card-large">
-              <span className="res-pill">E-BOOK & GUIDE</span>
+              <span className="res-pill">E-BOOK & MANUALE</span>
               <h4>Manuale Pratico di Stampa su Vinile & ISRC (2026 Edition)</h4>
               <p>Guida completa a costi di galvanica, cutting, lacche, codici a barre UPC e diritti connessi SIAE/SPA.</p>
               <button className="button-link-accent" disabled>Risorsa non disponibile</button>
+            </div>
+            <div className="resource-card-large">
+              <span className="res-pill">GUIDA PRATICA</span>
+              <h4>Guida Borderò SIAE / SPA & Diritto d'Autore per DJ</h4>
+              <p>Come compilare correttamente il programma musicale digitale mioBorderò senza incorrere in sanzioni o contestazioni.</p>
+              <a href="/item/guida-bordero-siae-spa-dj-diritto-autore" className="button-link-accent">Leggi Guida ↗</a>
+            </div>
+            <div className="resource-card-large">
+              <span className="res-pill">WORKFLOW DJ</span>
+              <h4>Workflow Professionale CDJ-3000 & Gestione Chiavette USB</h4>
+              <p>Ottimizzazione formattazione FAT32 / exFAT, esportazione playlist Rekordbox e gestione hot-cue per il club.</p>
+              <a href="/item/guida-rekordbox-usb-cdj-3000-workflow-professionale" className="button-link-accent">Leggi Guida ↗</a>
+            </div>
+            <div className="resource-card-large">
+              <span className="res-pill">DISTRIBUZIONE</span>
+              <h4>Come si pubblica la musica oggi: Distributori & DSP</h4>
+              <p>Analisi comparata tra DistroKid, TuneCore, Label Worx e Symphonic per label indipendenti e self-release.</p>
+              <a href="/item/come-si-pubblica-la-musica-oggi" className="button-link-accent">Leggi Guida ↗</a>
             </div>
           </div>
         </section>

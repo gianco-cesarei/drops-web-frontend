@@ -62,6 +62,27 @@ const DEFAULT_SECTIONS: Section[] = [
           },
         ],
       },
+      {
+        id: '1.3',
+        title: 'Drop Agent — Autonomous Music Curator & Ingestion Engine',
+        benefit:
+          'Agente autonomo per curatela, estrazione tracklist da DJ set YouTube, download continuo del mix e dei singoli rilasci a 320kbps MP3, analisi armonica Camelot Wheel (8A/8B/11B) e BPM, tagging ID3v2.4 con cover art e generazione TRACKLIST.md.',
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'Download automatico mix continuo + 14 singoli release a 320k MP3',
+            tags: ['back', 'desktop'],
+          },
+          {
+            title: 'Estrazione armonica Camelot Key (8A/8B/11B) e rilevamento BPM',
+            tags: ['back', 'desktop'],
+          },
+          {
+            title: 'ID3v2.4 Tagging completo con artwork e generazione TRACKLIST.md / .m3u8',
+            tags: ['back', 'desktop'],
+          },
+        ],
+      },
     ],
   },
   {
@@ -128,6 +149,27 @@ const DEFAULT_SECTIONS: Section[] = [
           {
             title: "Riproduttore audio persistente e coda d'ascolto",
             tags: ['front'],
+          },
+        ],
+      },
+      {
+        id: '3.3',
+        title: 'Architettura UI Utente Semplificata (Home, Download, Archivio)',
+        benefit:
+          "Nuova navigazione pulita e focalizzata per l'utente finale: Home pubblica con discovery visivo ed hero, login diretto, e percorsi dedicati a Download e Archivio senza sovrastrutture complesse.",
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'Home con Discovery visivo e accesso diretto /app/login',
+            tags: ['front'],
+          },
+          {
+            title: 'Pagina Downloader con accordion, drag & drop e gestione qualità',
+            tags: ['front', 'back'],
+          },
+          {
+            title: 'Pagina Archivio con organizzazione cartelle, preview rapido ed export Rekordbox',
+            tags: ['front', 'back'],
           },
         ],
       },
@@ -324,9 +366,73 @@ const DEFAULT_SECTIONS: Section[] = [
       },
     ],
   },
+  {
+    n: 8,
+    name: 'Archivio Storico & Milestone Consolidate',
+    short: 'Archivio Storico',
+    archive: true,
+    intro:
+      'Registro storico di tutte le funzionalità consolidate, milestone rilasciate e architetture completate di Drops.',
+    tasks: [
+      {
+        id: '8.1',
+        title: 'Rilascio Drop Agent v1 & Semplificazione UI (Agosto 2026)',
+        benefit:
+          'Completamento del motore di ingestion autonomo Drop Agent e consolidamento della nuova architettura UI semplificata (Home, Downloader, Archivio).',
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'Drop Agent: download mix continuo + 14 singoli a 320k con Camelot Key (8A/8B/11B), BPM, ID3 e TRACKLIST.md',
+            tags: ['back', 'desktop'],
+          },
+          {
+            title: 'Nuova UX semplificata: Home pubblica con foto/hero e login, pagine Download e Archivio dedicate',
+            tags: ['front'],
+          },
+        ],
+      },
+      {
+        id: '8.2',
+        title: 'Milestone Storiche Drops Hub, Producer Academy & DJ Lab',
+        benefit:
+          "Tieni traccia dell'affidabilità generale dell'app verificando le milestone superate e i moduli consolidati nel tempo.",
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'Libreria Cloud in stile Apple Music con Drag & Drop cartelle ed export M3U Rekordbox',
+            tags: ['front', 'back'],
+          },
+          {
+            title: 'DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%) e routing Master/Cue via setSinkId',
+            tags: ['front'],
+          },
+          {
+            title: 'Rekordbox Exporter ID3v2.4 con formattazione cartelle USB drive',
+            tags: ['front', 'desktop'],
+          },
+          {
+            title: 'Portale Didattico Academy LMS con 4 Moduli (12 lezioni) e Directory Spazi/Cabine DJ Partner',
+            tags: ['front', 'back'],
+          },
+          {
+            title: 'Grafo Discovery Brain con Drawer Suggest Underground e anteprima audio live',
+            tags: ['front'],
+          },
+          {
+            title: 'Ricerca Globale Spotlight (⌘K) e Mini-Player globale persistente',
+            tags: ['front'],
+          },
+          {
+            title: 'Selettore qualità audio download (MP3 320 kbps vs Lossless FLAC/HQ)',
+            tags: ['front', 'back'],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
-const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v8'
+const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v9'
 
 export default function DeveloperRoadmap() {
   const [sections, setSections] = useState<Section[]>([])
@@ -349,7 +455,6 @@ export default function DeveloperRoadmap() {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
       let initialSections: Section[] = stored ? JSON.parse(stored) : DEFAULT_SECTIONS
-      initialSections = initialSections.filter((s) => s.n !== 8)
       setSections(initialSections)
 
       // Trova la prima sezione che ha task non completati (in corso o da fare)

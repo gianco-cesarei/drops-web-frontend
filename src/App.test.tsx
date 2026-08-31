@@ -315,48 +315,61 @@ describe('autenticazione App', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
-  it('espone navigazione privata approvata senza History o Graph', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })))
-    render(<App section="brain" navigate={vi.fn()} />)
+  it('espone navigazione ultra-semplificata per utente Standard con solo Download e Archivio', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'alex_rossi', role: 'user' })))
+    render(<App section="download" navigate={vi.fn()} />)
     const nav = await screen.findByRole('navigation', { name: 'Area privata' })
     const links = within(nav).getAllByRole('link')
-    expect(links.map((link) => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/', '/app/academy#lessons', '/app/download', '/app/archive', '/app/spotify', '/app/content', '/app/radar', '/app/brain', '/app/developer']))
-    expect(screen.getByRole('link', { name: 'Impostazioni profilo' })).toHaveAttribute('href', '/app/settings')
-    expect(within(nav).getByText('My Music')).toBeInTheDocument()
-    expect(within(nav).getByText(/Beta/i)).toBeInTheDocument()
-    expect(within(nav).queryByText('History')).not.toBeInTheDocument()
-    expect(within(nav).queryByText('Graph')).not.toBeInTheDocument()
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/app/download', '/app/archive'])
+    expect(within(nav).queryByText(/Admin Console/i)).not.toBeInTheDocument()
+    expect(within(nav).queryByText(/Beta/i)).not.toBeInTheDocument()
+    expect(within(nav).queryByText(/Brain/i)).not.toBeInTheDocument()
+    expect(within(nav).queryByText(/History/i)).not.toBeInTheDocument()
   })
 
-  it('header apre un solo menu e chiude con Escape restituendo il focus', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })))
-    render(<App section="brain" navigate={vi.fn()} />)
+  it('espone cassetto Admin Console per utente admin con accesso a tutte le sezioni', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'admin', role: 'admin' })))
+    render(<App section="download" navigate={vi.fn()} />)
     const user = userEvent.setup()
-    const nav = await screen.findByRole('navigation', { name: 'Area privata' })
-    const academy = within(nav).getByText('Academy')
-    const music = within(nav).getByText('My Music')
+    const trigger = await screen.findByRole('button', { name: /Admin Console/i })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
 
-    await user.click(academy)
-    expect(academy).toHaveAttribute('aria-expanded', 'true')
-    await user.click(music)
-    expect(academy).toHaveAttribute('aria-expanded', 'false')
-    expect(music).toHaveAttribute('aria-expanded', 'true')
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    const drawer = await screen.findByRole('dialog', { name: 'Admin Console' })
+    expect(drawer).toBeInTheDocument()
+
+    const drawerLinks = within(drawer).getAllByRole('link')
+    expect(drawerLinks.map((l) => l.getAttribute('href'))).toEqual(
+      expect.arrayContaining([
+        '/app/download',
+        '/app/archive',
+        '/app/spotify',
+        '/app/radar',
+        '/app/brain',
+        '/app/editorial-suggestions',
+        '/app/academy#lessons',
+        '/app/academy#djlab',
+        '/app/academy#resources',
+        '/app/academy#feedback',
+        '/app/content',
+        '/app/settings',
+        '/app/developer',
+      ])
+    )
+  })
+
+  it('chiude Admin Console premendo Escape o cliccando fuori', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'admin', role: 'admin' })))
+    render(<App section="download" navigate={vi.fn()} />)
+    const user = userEvent.setup()
+    const trigger = await screen.findByRole('button', { name: /Admin Console/i })
+
+    await user.click(trigger)
+    expect(await screen.findByRole('dialog', { name: 'Admin Console' })).toBeInTheDocument()
 
     await user.keyboard('{Escape}')
-    await waitFor(() => expect(music).toHaveAttribute('aria-expanded', 'false'))
-    await waitFor(() => expect(music).toHaveFocus())
-  })
-
-  it('header chiude menu cliccando fuori', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ username: 'dj' })))
-    render(<App section="brain" navigate={vi.fn()} />)
-    const user = userEvent.setup()
-    const academy = within(await screen.findByRole('navigation', { name: 'Area privata' })).getByText('Academy')
-
-    await user.click(academy)
-    expect(academy).toHaveAttribute('aria-expanded', 'true')
-    fireEvent.pointerDown(document.body)
-    expect(academy).toHaveAttribute('aria-expanded', 'false')
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Admin Console' })).not.toBeInTheDocument())
   })
 
   it('mostra portale didattico Academy con moduli, video e feedback box', async () => {

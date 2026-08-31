@@ -1,9 +1,11 @@
 ---
-import { DiscoveryEnvironment } from '../components/DiscoveryExplorer'
-import { publishedContentItems } from '../data/content.data'
+import DropsLanding from '../components/DropsLanding'
 import PublicLayout from '../layouts/PublicLayout.astro'
 ---
 
-<PublicLayout title="Discovery — Drops">
-  <main class="public-main"><DiscoveryEnvironment items={publishedContentItems} client:load /></main>
+<PublicLayout title="Drops — Curated Underground Electronic Music">
+  <main class="public-main">
+    <DropsLanding client:load />
+  </main>
 </PublicLayout>
+

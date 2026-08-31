@@ -1,8 +1,11 @@
+export type UserRole = 'admin' | 'user' | 'test' | string
+
 export type User = {
   id?: string | number
   email?: string
   name?: string
   username?: string
+  role?: UserRole
 }
 
 export type Job = {

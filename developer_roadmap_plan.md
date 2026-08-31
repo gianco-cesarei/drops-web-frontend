@@ -41,6 +41,15 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *a) Opzioni di conversione e formati (MP3 vs FLAC/HQ)* `[back]` `[front]`
      * **Stato:** Selettore visivo di qualità a due opzioni (`🎵 MP3 (320 kbps)` vs `🔥 HQ Master (Pesante)`), memorizzazione preferenza ed estrazione audio HD.
 
+3. **Task 1.3: Drop Agent — Autonomous Music Curator & Ingestion Engine [COMPLETATO]**
+   * *Miglioramento Utente:* Agente autonomo per curatela, estrazione tracklist da DJ set YouTube, download continuo del mix e dei singoli rilasci a 320kbps MP3, analisi armonica Camelot Wheel (8A/8B/11B) e BPM, tagging ID3v2.4 con cover art e generazione TRACKLIST.md.
+   * *a) Download automatico mix continuo + 14 singoli release a 320k MP3* `[back]` `[desktop]`
+     * **Stato:** Motore CLI/script `drop_agent.py` con download del mix continuo e ricerca automatizzata/fallback per singoli release completi in formato MP3 a 320kbps con tag e cover embedded.
+   * *b) Estrazione armonica Camelot Key (8A/8B/11B) e rilevamento BPM* `[back]` `[desktop]`
+     * **Stato:** Modulo `harmonic_analyzer.py` basato su librosa/chroma features e mappatura Krumhansl-Kershner su ruota Camelot (8A/8B/11B/10B) con calcolo tempo BPM e generazione regole di mixaggio armonico.
+   * *c) ID3v2.4 Tagging completo con artwork e generazione TRACKLIST.md / .m3u8* `[back]` `[desktop]`
+     * **Stato:** Script `tracklist_extractor.py` con parsing capitoli/descrizioni YouTube, tagging ID3v2.4 completo via mutagen, esportazione playlist `.m3u8` e generazione documentazione markdown `TRACKLIST.md` con tabella vibe e chiavi armoniche.
+
 ---
 
 ### Sezione 2: Gestione Playlist & Download Multiplo
@@ -68,6 +77,14 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
      * **Stato:** Generazione presigned URL R2 ed endpoint `/api/v1/download/{id}/file`.
    * *b) Riproduttore audio persistente e coda d'ascolto* `[front]`
      * **Stato:** Mini-player audio globale fisso a fondo pagina con routing `window.__drops_play_track` e hover play su colonna `#`.
+3. **Task 3.3: Architettura UI Utente Semplificata (Home, Download, Archivio) [COMPLETATO]**
+   * *Miglioramento Utente:* Nuova navigazione pulita e focalizzata per l'utente finale: Home pubblica con discovery visivo ed hero, login diretto, e percorsi dedicati a Download e Archivio senza sovrastrutture complesse.
+   * *a) Home con Discovery visivo e accesso rapido /app/login* `[front]`
+     * **Stato:** Layout pubblico semplificato (`PublicLayout.astro`, `PublicHeader.tsx`, `DiscoveryEnvironment`) con card visive, streaming integrato e routing login/area privata reattivo.
+   * *b) Pagina Downloader con accordion, drag & drop e gestione qualità* `[front]` `[back]`
+     * **Stato:** Vista `/app/download` con accordion ripiegabili, polling resiliente a riavvio server, switch qualità 320k/HQ e modale archivio rapida.
+   * *c) Pagina Archivio con organizzazione cartelle, preview rapido ed export Rekordbox* `[front]` `[back]`
+     * **Stato:** Vista `/app/archive` con visualizzazione cartelle, sidebar categorie, rinomina e spostamento destinazione inline, export M3U e sincronizzazione locale.
 
 ---
 
@@ -132,27 +149,36 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
 
 ---
 
-### Sezione 8: Archivio Attività Completate (Completati)
-* **Introduzione:** Registro delle funzionalità storiche e strutturali già testate e in produzione.
-1. **Task 8.1: Raccolta storica degli obiettivi completati**
-   * *Miglioramento Utente:* Tieni traccia dell'affidabilità generale dell'app verificando le milestone superate e i bug fix applicati nel tempo.
-    * *a) Rilascio Drops Hub, Producer Academy & DJ Lab (Agosto 2026)* `[front]` `[back]`
-      * Libreria Cloud in stile Apple Music (`FolderIngestionHub.tsx`): caricamento drag & drop di intere cartelle dal desktop, navigazione con viste Tutti i Brani / Cartelle / Sessioni, rinomina istantanea inline (`✏️`), hero con grande artwork, statistiche ed esportazione playlist M3U Rekordbox.
-      * Passata generale UI e sezioni collassabili a scorrimento (Accordion) su Download, Content, Spotify Sync e Producer Settings per compattare la vista ed eliminare il disordine visivo.
-      * Motore di ricerca e filtro rapido articoli prima del contenuto in `/app/content` con visualizzazione a scorrimento, filtri categoria e bozze/pubblicati.
-      * Selettore qualità audio download con switch a due pulsanti: `🎵 MP3 (320 kbps)` (leggero) e `🔥 HQ Master (Pesante)` (Lossless FLAC/WAV).
-      * Portale Didattico Academy LMS con 4 Moduli e 12 Lezioni.
-      * DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%), Hot Cue pads, Auto Beat Loops, Color FX e routing audio separato (Cassa Master + AirPods Cue via `setSinkId`).
-      * Ricerca Globale Spotlight (`Cmd+K` / `Ctrl+K`) con indicizzazione istantanea e risultati categorizzati (Tracce, Artisti, Etichette, Academy, Guide).
-      * Editor Tag ID3 ed Esportatore USB Rekordbox (`RekordboxExporter.tsx`).
-      * Grafo Discovery Brain con Drawer Suggest Underground e anteprima audio live.
-      * Mini-Player Audio Globale persistente a fondo pagina.
-      * Directory Partner Studi di Registrazione e Cabine DJ (Roma, Milano, Berlino, Londra).
-      * Schede Artista Pubbliche con statistiche editoriali, waveform, tracce e badge `✓ Verified`.
-      * Producer Settings con connessione social interattiva e selezione generi musicali fino a 4.
-    * *b) Funzionalità di base consolidate* `[front]` `[back]`
-      * Split dei 3 monorepo e pulizia del codice morto.
-      * Risoluzione dello schermo nero sul mini-player (blocco delle dimensioni dell'artwork a 56x56).
-      * Gestione rate limit di Discogs (coda pacizzata con sleep di 300ms e thread pool securizzata).
-      * Estrazione IP reale del client Cloudflare per superare il blocco di rate limit globale.
-      * Spotify OAuth iniziale con reindirizzamenti dinamici.
+### Sezione 8: Archivio Attività Completate (Archivio Storico)
+* **Introduzione:** Registro storico delle milestone consolidate, architetture rilasciate e miglioramenti strutturali di Drops.
+1. **Task 8.1: Rilascio Drop Agent v1 & Semplificazione UX (Agosto 2026)**
+   * *Miglioramento Utente:* Ingestion autonoma e completa di set DJ underground e tracce singole a 320kbps con analisi armonica Camelot, accompagnata da una nuova esperienza utente pulita (Home, Download, Archivio).
+   * *a) Ingestion Engine Autonomo (Drop Agent)* `[back]` `[desktop]`
+     * Motore CLI `drop_agent.py` con download automatico full mix + tracce singole a 320k MP3 con artwork e tag ID3v2.4.
+     * Analisi armonica `harmonic_analyzer.py`: stima tonalità musicale (Krumhansl-Kershner), mappatura Camelot Wheel (es. `8A`, `11B`), BPM e tabella `TRACKLIST.md` con regole di harmonic mixing.
+     * Generazione automatica playlist `.m3u8` ed organizzazione per cartelle tematiche e generi (`data/audio/...`).
+   * *b) Architettura UI Semplificata* `[front]`
+     * Home pubblica con layout visivo ad alta conversione, streaming preview e login rapido.
+     * Pagine private focalizzate: Downloader multifunzione con switch qualità (320k/HQ) e Archivio Cloud con navigazione ad albero, inline rename e M3U export.
+2. **Task 8.2: Milestone Storiche Drops Hub, Producer Academy & DJ Lab**
+   * *Miglioramento Utente:* Tieni traccia dell'affidabilità generale dell'app verificando le milestone superate e i moduli consolidati nel tempo.
+   * *a) Rilascio Drops Hub, Producer Academy & DJ Lab (Agosto 2026)* `[front]` `[back]`
+     * Libreria Cloud in stile Apple Music (`FolderIngestionHub.tsx`): caricamento drag & drop di intere cartelle dal desktop, navigazione con viste Tutti i Brani / Cartelle / Sessioni, rinomina istantanea inline (`✏️`), hero con grande artwork, statistiche ed esportazione playlist M3U Rekordbox.
+     * Passata generale UI e sezioni collassabili a scorrimento (Accordion) su Download, Content, Spotify Sync e Producer Settings per compattare la vista ed eliminare il disordine visivo.
+     * Motore di ricerca e filtro rapido articoli prima del contenuto in `/app/content` con visualizzazione a scorrimento, filtri categoria e bozze/pubblicati.
+     * Selettore qualità audio download con switch a due pulsanti: `🎵 MP3 (320 kbps)` (leggero) e `🔥 HQ Master (Pesante)` (Lossless FLAC/WAV).
+     * Portale Didattico Academy LMS con 4 Moduli e 12 Lezioni.
+     * DJ Lab Dual-Deck con Pitch Slider continuo (±8%, step 0.05%), Hot Cue pads, Auto Beat Loops, Color FX e routing audio separato (Cassa Master + AirPods Cue via `setSinkId`).
+     * Ricerca Globale Spotlight (`Cmd+K` / `Ctrl+K`) con indicizzazione istantanea e risultati categorizzati (Tracce, Artisti, Etichette, Academy, Guide).
+     * Editor Tag ID3 ed Esportatore USB Rekordbox (`RekordboxExporter.tsx`).
+     * Grafo Discovery Brain con Drawer Suggest Underground e anteprima audio live.
+     * Mini-Player Audio Globale persistente a fondo pagina.
+     * Directory Partner Studi di Registrazione e Cabine DJ (Roma, Milano, Berlino, Londra).
+     * Schede Artista Pubbliche con statistiche editoriali, waveform, tracce e badge `✓ Verified`.
+     * Producer Settings con connessione social interattiva e selezione generi musicali fino a 4.
+   * *b) Funzionalità di base consolidate* `[front]` `[back]`
+     * Split dei 3 monorepo e pulizia del codice morto.
+     * Risoluzione dello schermo nero sul mini-player (blocco delle dimensioni dell'artwork a 56x56).
+     * Gestione rate limit di Discogs (coda pacizzata con sleep di 300ms e thread pool securizzata).
+     * Estrazione IP reale del client Cloudflare per superare il blocco di rate limit globale.
+     * Spotify OAuth iniziale con reindirizzamenti dinamici.

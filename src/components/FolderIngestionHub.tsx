@@ -26,6 +26,8 @@ export interface IndexedFolder {
   dominantGenre?: string
   status: 'indexed' | 'enriching' | 'ready'
   isSession?: boolean
+  coverUrl?: string
+  description?: string
   tracks: IngestedTrack[]
 }
 
@@ -34,6 +36,35 @@ const HISTORY_KEY = 'drops.downloads.history.v1'
 const DEMO_AUDIO_PREVIEW = 'https://actions.google.com/sounds/v1/science_fiction/low_humming.ogg'
 
 const DEMO_FOLDERS: IndexedFolder[] = [
+  {
+    id: 'f-nude-dimensions-01',
+    name: 'Nude Dimensions Vol 1 (Naked Music 1999)',
+    uploadDate: '31 Ago 2026, 20:00',
+    timestamp: Date.now() - 1800000,
+    trackCount: 14,
+    totalSizeMb: 182.4,
+    dominantGenre: 'Deep House / Naked Music NYC',
+    status: 'ready',
+    coverUrl: '/assets/nude-dimensions.webp',
+    description: 'Curata con Drop Agent • 14 Single Releases + Full Mix • Camelot Harmonic Mixing 11B / 10B / 8A / 7A / 2A • 123.0 BPM',
+    tracks: [
+      { id: 'nd-00', filename: '00. Nude Dimensions - Vol 1 - 1999.mp3', title: 'Nude Dimensions Vol 1 (Full Continuous Mix)', artist: 'Naked Music', genre: 'Deep House', label: 'Naked Music NYC', year: 1999, bpm: 123, keySignature: '11B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-01', filename: '01. Petalpusher feat. Ledisi - Breakin It Down.mp3', title: "Breakin' It Down (Jay's Naked Vocal)", artist: 'Petalpusher feat. Ledisi', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '11B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-02', filename: '02. Miguel Migs - Take Me To Paradise.mp3', title: "Take Me To Paradise (Summer Lover's Dub)", artist: 'Miguel Migs', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '10B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-03', filename: '03. Janet Rushmore - On My Own.mp3', title: 'On My Own (Acapella Mix)', artist: 'Janet Rushmore', genre: 'Soulful House', label: 'Soulfuric', year: 1999, bpm: 123, keySignature: '10B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-04', filename: '04. Lisha - Thats Why Im Here.mp3', title: "That's Why I'm Here (Migs Transporter Vocal)", artist: "Li'sha", genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '8A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-05', filename: '05. Petalpusher - Surrender.mp3', title: 'Surrender (Original Vocal)', artist: 'Petalpusher', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '10B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-06', filename: '06. Night Source - Rise Above.mp3', title: 'Rise Above (Original Version)', artist: 'Night Source', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '7A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-07', filename: '07. Lovetronic - You Are Love.mp3', title: "You Are Love (Si Brad's Payback Dub)", artist: 'Lovetronic', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '8A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-08', filename: '08. Weekender - Spirit In Your Soul.mp3', title: 'Spirit In Your Soul (Original Version)', artist: 'Weekender', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '8A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-09', filename: '09. Blue Six - Music and Wine.mp3', title: "Music & Wine (Th' Attaboy Vocal)", artist: 'Blue Six', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '11A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-10', filename: '10. Charles Schillings - No Communication.mp3', title: 'No Communication, No Love (Salt City Orch. Remix)', artist: 'Charles Schillings', genre: 'Deep House', label: 'Pschent', year: 1999, bpm: 123, keySignature: '10B', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-11', filename: '11. Atjazz - Wind and Sea.mp3', title: 'Wind & Sea (Nail Remix)', artist: 'Atjazz', genre: 'Deep House', label: 'Mantis', year: 1999, bpm: 123, keySignature: '8A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-12', filename: '12. Gigi - Mood Is Right.mp3', title: 'Mood Is Right (Migs & Jelly Mix)', artist: 'Gigi', genre: 'Deep House', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '8A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-13', filename: '13. Lovetronic - You Are Love Afro.mp3', title: "You Are Love (Jay's Afrotronic Ext. Vocal)", artist: 'Lovetronic', genre: 'Afro Deep', label: 'Naked Music', year: 1999, bpm: 123, keySignature: '7A', audioUrl: DEMO_AUDIO_PREVIEW },
+      { id: 'nd-14', filename: '14. Bob Sinclar - The Ghetto.mp3', title: 'The Ghetto (Atjazz Remix)', artist: 'Bob Sinclar', genre: 'Deep House', label: 'Yellow Productions', year: 1999, bpm: 123, keySignature: '2A', audioUrl: DEMO_AUDIO_PREVIEW },
+    ],
+  },
   {
     id: 'f-session-001',
     name: 'Session 001',
@@ -719,8 +750,16 @@ export default function FolderIngestionHub() {
         {/* SIDEBAR APPLE MUSIC (Sinistra) */}
         <aside className="am-sidebar">
           {/* Sidebar Header */}
-          <div className="am-sidebar-brand-header">
+          <div className="am-sidebar-brand-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <span className="am-sidebar-kicker">ARCHIVIO & ORGANIZZAZIONE CARTELLE NEL CLOUD</span>
+            <a
+              href="/app/download"
+              className="btn-sort-pill active"
+              style={{ fontSize: '11px', padding: '4px 10px', textDecoration: 'none' }}
+              title="Vai all'area di download ed ingestione"
+            >
+              🎛️ Downloader &rarr;
+            </a>
           </div>
 
           {/* Quick Action Buttons */}
@@ -821,7 +860,15 @@ export default function FolderIngestionHub() {
                       onClick={() => setSelectedFolderId(folder.id)}
                     >
                       <div className="am-folder-artwork">
-                        <span>{folder.isSession ? '🏷️' : '📁'}</span>
+                        {folder.coverUrl ? (
+                          <img
+                            src={folder.coverUrl}
+                            alt=""
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }}
+                          />
+                        ) : (
+                          <span>{folder.isSession ? '🏷️' : '📁'}</span>
+                        )}
                       </div>
                       <div className="am-folder-info">
                         {isEditing ? (
@@ -887,11 +934,19 @@ export default function FolderIngestionHub() {
               {/* HERO HEADER IN STILE APPLE MUSIC */}
               <div className="am-hero-header">
                 <div className="am-hero-artwork-box">
-                  <div className="am-artwork-inner">
-                    <span className="am-artwork-big-icon">
-                      {selectedFolder.id === '__all__' ? '🎧' : selectedFolder.isSession ? '🏷️' : '🎵'}
-                    </span>
-                  </div>
+                  {selectedFolder.coverUrl ? (
+                    <img
+                      src={selectedFolder.coverUrl}
+                      alt={selectedFolder.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
+                    />
+                  ) : (
+                    <div className="am-artwork-inner">
+                      <span className="am-artwork-big-icon">
+                        {selectedFolder.id === '__all__' ? '🎧' : selectedFolder.isSession ? '🏷️' : '🎵'}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="am-hero-details">
@@ -945,6 +1000,12 @@ export default function FolderIngestionHub() {
                   <p className="am-hero-meta">
                     <strong>{selectedFolder.trackCount} brani</strong> &bull; {selectedFolder.totalSizeMb} MB &bull; {selectedFolder.dominantGenre} &bull; {selectedFolder.uploadDate}
                   </p>
+
+                  {selectedFolder.description && (
+                    <p style={{ margin: '4px 0 10px', fontSize: '13px', color: '#94a3b8', lineHeight: 1.5 }}>
+                      {selectedFolder.description}
+                    </p>
+                  )}
 
                   {/* APPLE MUSIC ACTION BUTTONS */}
                   <div className="am-hero-actions">
