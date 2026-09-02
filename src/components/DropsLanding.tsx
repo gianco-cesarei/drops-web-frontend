@@ -3,7 +3,6 @@ import { api } from '../api'
 import type { User } from '../api'
 
 const USER_CACHE_KEY = 'drops.user.v1'
-const DEMO_SESSION_KEY = 'drops.demo-session.v1'
 
 type RoleOption = {
   id: string
@@ -32,21 +31,17 @@ export default function DropsLanding() {
     return null
   })
 
-  // Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
-  const [authMode, setAuthMode] = useState<'register' | 'login'>('register')
+  const [authMode, setAuthMode] = useState<'register' | 'login'>('login')
 
-  // Registration Form State
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [preferredRole, setPreferredRole] = useState('dj_selector')
   
-  // Login Form State
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
-  // UI status
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -68,7 +63,6 @@ export default function DropsLanding() {
     }
   }, [])
 
-  // Close modal on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isAuthModalOpen) {
@@ -109,7 +103,6 @@ export default function DropsLanding() {
     const cleanUsername = username.trim().toLowerCase()
     const cleanPassword = password.trim()
 
-    // Validation
     if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
       setErrorMessage('Inserisci un indirizzo email valido.')
       return
@@ -126,31 +119,38 @@ export default function DropsLanding() {
     setBusy(true)
 
     try {
-      // Simulate quick secure account provisioning
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const newUser: User = {
-        username: cleanUsername,
-        name: username.trim(),
-        email: cleanEmail,
-        role: cleanUsername === 'admin' ? 'admin' : 'user',
+      let registeredUser: User | null = null
+      try {
+        const logged = await api.login(cleanUsername, cleanPassword)
+        registeredUser = {
+          ...logged,
+          email: cleanEmail,
+          role: logged.role || 'user',
+          name: logged.name || cleanUsername,
+        }
+      } catch {
+        const isAdm = cleanUsername === 'admin'
+        registeredUser = {
+          username: cleanUsername,
+          email: cleanEmail,
+          name: isAdm ? 'Admin Drops' : cleanUsername,
+          role: isAdm ? 'admin' : 'user',
+        }
       }
 
-      // Save to localStorage
-      try {
-        window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(newUser))
-        window.localStorage.setItem('drops.role_pref.v1', preferredRole)
-      } catch {}
-
-      setUser(newUser)
-      setSuccessMessage(`🎉 Benvenuto a bordo, @${cleanUsername}! Il tuo profilo DJ & Cloud è pronto.`)
-
-      // Redirect to private area
-      redirectTimerRef.current = setTimeout(() => {
-        window.location.assign('/app/download')
-      }, 1000)
-    } catch {
-      setErrorMessage('Impossibile completare la registrazione. Riprova.')
+      if (registeredUser) {
+        try {
+          window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(registeredUser))
+        } catch {}
+        setUser(registeredUser)
+        setSuccessMessage(`Benvenuto a bordo, ${registeredUser.name || registeredUser.username}! Reindirizzamento in corso...`)
+        
+        redirectTimerRef.current = setTimeout(() => {
+          window.location.assign('/app/download')
+        }, 900)
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Registrazione non riuscita. Riprova.')
     } finally {
       setBusy(false)
     }
@@ -161,15 +161,11 @@ export default function DropsLanding() {
     setErrorMessage('')
     setSuccessMessage('')
 
-    const cleanUser = loginUsername.trim().toLowerCase()
-    const cleanPass = loginPassword.trim()
+    const cleanUsername = loginUsername.trim().toLowerCase()
+    const cleanPassword = loginPassword.trim()
 
-    if (!cleanUser) {
-      setErrorMessage('Inserisci il tuo username.')
-      return
-    }
-    if (!cleanPass) {
-      setErrorMessage('Inserisci la password.')
+    if (!cleanUsername || !cleanPassword) {
+      setErrorMessage('Inserisci username e password.')
       return
     }
 
@@ -177,23 +173,23 @@ export default function DropsLanding() {
 
     try {
       let loggedUser: User | null = null
-
       try {
-        const res = await api.login(cleanUser, cleanPass)
-        const isAdm = res.role === 'admin' || cleanUser === 'admin'
+        const logged = await api.login(cleanUsername, cleanPassword)
+        const isAdm = logged.role === 'admin' || cleanUsername === 'admin'
         loggedUser = {
-          ...res,
-          role: isAdm ? 'admin' : (res.role || 'user'),
-          name: res.name || (isAdm ? 'Admin Drops' : res.username),
+          ...logged,
+          role: isAdm ? 'admin' : (logged.role || 'user'),
+          name: logged.name || (isAdm ? 'Admin Drops' : logged.username),
         }
       } catch {
-        // Fallback for local dev/demo users
-        if (cleanUser === 'admin') {
-          loggedUser = { username: 'admin', name: 'Admin Drops', role: 'admin' }
-        } else if (cleanUser === 'alex_rossi') {
-          loggedUser = { username: 'alex_rossi', name: 'Alex Rossi', role: 'user' }
+        if (cleanUsername === 'admin') {
+          loggedUser = {
+            username: 'admin',
+            name: 'Admin Drops',
+            role: 'admin',
+          }
         } else {
-          loggedUser = { username: cleanUser, name: cleanUser, role: 'user' }
+          throw new Error('Credenziali non valide.')
         }
       }
 
@@ -208,28 +204,14 @@ export default function DropsLanding() {
         }, 750)
       }
     } catch {
-      setErrorMessage('Credenziali non valide o servizio offline.')
+      setErrorMessage('Credenziali non valide.')
     } finally {
       setBusy(false)
     }
   }
 
-  const handleQuickDemoAccess = () => {
-    const demoUser: User = { username: 'alex_rossi', name: 'Alex Rossi', role: 'user' }
-    try {
-      window.localStorage.setItem(DEMO_SESSION_KEY, 'active')
-      window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(demoUser))
-    } catch {}
-    setUser(demoUser)
-    setSuccessMessage('Accesso rapido Demo attivato!')
-    redirectTimerRef.current = setTimeout(() => {
-      window.location.assign('/app/download')
-    }, 500)
-  }
-
   return (
     <div className="landing-container">
-      {/* HERO BANNER WITH CUE HEADPHONE INDICATOR & CLEAN VISUALS */}
       <section className="discovery-hero-campaign landing-clean-hero" aria-label="Campagna Drops">
         <div className="discovery-hero-media-wrap">
           <picture className="discovery-hero-picture">
@@ -242,45 +224,16 @@ export default function DropsLanding() {
             />
           </picture>
 
-          {/* CUE HEADPHONE INDICATOR BADGE (DJ BOOTH PRE-LISTEN ROUTE) */}
-          <div className="landing-cue-indicator" role="status" aria-label="Indicatore CUE Cuffia DJ attivo">
-            <div className="cue-indicator-header">
-              <span className="cue-led-indicator" title="Segnale CUE Live" />
-              <div className="cue-badge-tag">CUE</div>
-              
-              {/* Icona a 'L' verso destra: routing preascolto canale cuffia */}
-              <div className="cue-l-route-wrap" title="Routing canale cuffia (L-Shape indicator)">
-                <svg
-                  className="cue-l-route-icon"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M6 3v11a2 2 0 0 0 2 2h9" />
-                  <polyline points="14 13 18 17 14 21" />
-                </svg>
-              </div>
-
-              <span className="cue-channel-label">CH-1 PREASCOLTO</span>
-            </div>
-
-            <div className="cue-indicator-body">
-              <span className="cue-status-text">HEADPHONE MONITOR • 320K / FLAC</span>
-              <div className="cue-mini-eq" aria-hidden="true">
-                <span className="eq-bar bar-1" />
-                <span className="eq-bar bar-2" />
-                <span className="eq-bar bar-3" />
-                <span className="eq-bar bar-4" />
-              </div>
+          <div className="hero-photo-cue" aria-label="Indicatore CUE Cuffia DJ" role="status">
+            <span className="hero-photo-cue-text">CUE</span>
+            <div className="hero-photo-cue-l-line">
+              <svg width="26" height="18" viewBox="0 0 26 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 2V12C2 14.2 3.8 16 6 16H22" stroke="#00ff9d" strokeWidth="2" strokeLinecap="round" />
+                <path d="M18 12L22 16L18 20" stroke="#00ff9d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
           </div>
 
-          {/* Payoff pulito senza box */}
           <div className="discovery-hero-headline-clean">
             <h1 className="discovery-hero-claim-clean">
               Manage your<br />
@@ -289,31 +242,22 @@ export default function DropsLanding() {
             </h1>
           </div>
 
-          {/* Logo Drops */}
           <div className="discovery-hero-brand-clean" aria-label="Logo Drops">
             Drops<span className="hero-logo-dot">.</span>
           </div>
 
-          {/* Pulsanti di Azione */}
           <div className="landing-clean-hero-cta">
             {user ? (
               <div className="landing-hero-btn-row">
                 <a href="/app/download" className="landing-btn landing-btn-primary">
-                  🎛️ Apri Downloader
+                  Apri Downloader
                 </a>
                 <a href="/app/archive" className="landing-btn landing-btn-secondary">
-                  📁 Archivio
+                  Archivio
                 </a>
               </div>
             ) : (
               <div className="landing-hero-btn-row">
-                <button
-                  type="button"
-                  onClick={openRegisterModal}
-                  className="landing-btn landing-btn-primary"
-                >
-                  ✨ Iscriviti gratis
-                </button>
                 <button
                   type="button"
                   onClick={openLoginModal}
@@ -321,16 +265,20 @@ export default function DropsLanding() {
                 >
                   Accedi
                 </button>
+                <button
+                  type="button"
+                  onClick={openRegisterModal}
+                  className="landing-btn landing-btn-primary"
+                >
+                  Iscriviti
+                </button>
               </div>
             )}
           </div>
-
-          {/* Sfumatura inferiore per transizione seamless */}
           <div className="discovery-hero-fade" />
         </div>
       </section>
 
-      {/* VALUE STRIP */}
       <section className="landing-value-strip" aria-label="Caratteristiche salienti">
         <div className="landing-strip-item">
           <span className="landing-strip-icon">⚡</span>
@@ -353,7 +301,6 @@ export default function DropsLanding() {
         </div>
       </section>
 
-      {/* ESSENTIAL FEATURES */}
       <section className="landing-features-section">
         <div className="landing-section-header">
           <span className="landing-section-eyebrow">FUNZIONALITÀ</span>
@@ -390,32 +337,22 @@ export default function DropsLanding() {
         </div>
       </section>
 
-      {/* BOTTOM CTA SECTION */}
       <section className="landing-cta-section">
         <div className="landing-cta-card">
-          <span className="landing-cta-eyebrow">CREA IL TUO ACCOUNT</span>
           <h2>Manage your music world in cloud.</h2>
           <p>Organizza la tua libreria musicale, estrai tracce ad alta fedeltà e prepara le tue chiavette USB per il club.</p>
-          
           <div className="landing-cta-buttons">
             {user ? (
               <>
                 <a href="/app/download" className="landing-btn landing-btn-primary">
-                  🎛️ Apri Downloader
+                  Apri Downloader
                 </a>
                 <a href="/app/archive" className="landing-btn landing-btn-secondary">
-                  📁 Archivio
+                  Archivio
                 </a>
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={openRegisterModal}
-                  className="landing-btn landing-btn-primary"
-                >
-                  ✨ Inizia subito — Iscriviti
-                </button>
                 <button
                   type="button"
                   onClick={openLoginModal}
@@ -423,13 +360,19 @@ export default function DropsLanding() {
                 >
                   Accedi
                 </button>
+                <button
+                  type="button"
+                  onClick={openRegisterModal}
+                  className="landing-btn landing-btn-primary"
+                >
+                  Iscriviti
+                </button>
               </>
             )}
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
@@ -451,11 +394,9 @@ export default function DropsLanding() {
         </div>
       </footer>
 
-      {/* REAL INTERACTIVE REGISTRATION & LOGIN MODAL */}
       {isAuthModalOpen && (
         <div className="landing-modal-backdrop" onClick={closeAuthModal} role="dialog" aria-modal="true">
           <div className="landing-auth-modal" onClick={(e) => e.stopPropagation()}>
-            {/* Modal Close Button */}
             <button
               type="button"
               className="landing-modal-close"
@@ -465,15 +406,7 @@ export default function DropsLanding() {
               ✕
             </button>
 
-            {/* Modal Tabs: Iscriviti / Accedi */}
             <div className="landing-auth-tabs">
-              <button
-                type="button"
-                className={`landing-auth-tab ${authMode === 'register' ? 'active' : ''}`}
-                onClick={() => { setAuthMode('register'); setErrorMessage(''); }}
-              >
-                Crea Account
-              </button>
               <button
                 type="button"
                 className={`landing-auth-tab ${authMode === 'login' ? 'active' : ''}`}
@@ -481,14 +414,20 @@ export default function DropsLanding() {
               >
                 Accedi
               </button>
+              <button
+                type="button"
+                className={`landing-auth-tab ${authMode === 'register' ? 'active' : ''}`}
+                onClick={() => { setAuthMode('register'); setErrorMessage(''); }}
+              >
+                Iscriviti
+              </button>
             </div>
 
-            {/* REGISTER FORM */}
             {authMode === 'register' ? (
               <form onSubmit={handleRegisterSubmit} className="landing-auth-form">
                 <div className="landing-auth-header">
-                  <h3>Unisciti alla community Drops</h3>
-                  <p>Inizia a gestire la tua musica in cloud con qualità da club.</p>
+                  <h3>Crea il tuo Account</h3>
+                  <p>Inizia a gestire la tua libreria e a scaricare brani in alta risoluzione.</p>
                 </div>
 
                 {errorMessage && (
@@ -503,7 +442,6 @@ export default function DropsLanding() {
                   </div>
                 )}
 
-                {/* Preferred Role Picker */}
                 <div className="landing-field-group">
                   <label className="landing-field-label">Qual è il tuo profilo principale?</label>
                   <div className="landing-roles-grid">
@@ -534,7 +472,6 @@ export default function DropsLanding() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    autoComplete="email"
                   />
                 </div>
 
@@ -549,7 +486,6 @@ export default function DropsLanding() {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
-                      autoComplete="username"
                     />
                   </div>
 
@@ -563,7 +499,6 @@ export default function DropsLanding() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      autoComplete="new-password"
                     />
                   </div>
                 </div>
@@ -573,7 +508,7 @@ export default function DropsLanding() {
                   className="landing-btn landing-btn-primary landing-btn-block"
                   disabled={busy}
                 >
-                  {busy ? 'Creazione profilo in corso…' : 'Completa Iscrizione & Entra ➔'}
+                  {busy ? 'Creazione profilo in corso…' : 'Iscriviti'}
                 </button>
 
                 <p className="landing-auth-footer-text">
@@ -583,16 +518,15 @@ export default function DropsLanding() {
                     className="landing-link-button"
                     onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
                   >
-                    Accedi qui
+                    Accedi
                   </button>
                 </p>
               </form>
             ) : (
-              /* LOGIN FORM */
               <form onSubmit={handleLoginSubmit} className="landing-auth-form">
                 <div className="landing-auth-header">
                   <h3>Accedi a Drops</h3>
-                  <p>Inserisci le tue credenziali per accedere alla tua console.</p>
+                  <p>Inserisci le tue credenziali per entrare nella tua area privata.</p>
                 </div>
 
                 {errorMessage && (
@@ -613,11 +547,10 @@ export default function DropsLanding() {
                     id="login-user"
                     type="text"
                     className="landing-input"
-                    placeholder="Username o email"
+                    placeholder="Username"
                     value={loginUsername}
                     onChange={(e) => setLoginUsername(e.target.value)}
                     required
-                    autoComplete="username"
                   />
                 </div>
 
@@ -631,7 +564,6 @@ export default function DropsLanding() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
-                    autoComplete="current-password"
                   />
                 </div>
 
@@ -640,18 +572,8 @@ export default function DropsLanding() {
                   className="landing-btn landing-btn-primary landing-btn-block"
                   disabled={busy}
                 >
-                  {busy ? 'Verifica credenziali…' : 'Entra in Drops ➔'}
+                  {busy ? 'Accesso in corso…' : 'Accedi'}
                 </button>
-
-                <div className="landing-demo-quick-box">
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoAccess}
-                    className="landing-btn-demo"
-                  >
-                    ⚡ Accesso rapido modalità Demo (Alex Rossi)
-                  </button>
-                </div>
 
                 <p className="landing-auth-footer-text">
                   Non hai ancora un account?{' '}
@@ -660,7 +582,7 @@ export default function DropsLanding() {
                     className="landing-link-button"
                     onClick={() => { setAuthMode('register'); setErrorMessage(''); }}
                   >
-                    Iscriviti ora
+                    Iscriviti
                   </button>
                 </p>
               </form>

@@ -12,23 +12,22 @@ describe("DropsLanding", () => {
   it("renders hero headline, CUE headphone indicator, and CTA buttons when anonymous", () => {
     render(<DropsLanding />)
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Manage your/i)
-    expect(screen.getByLabelText(/Indicatore CUE Cuffia DJ attivo/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Indicatore CUE Cuffia DJ/i)).toBeInTheDocument()
     expect(screen.getByText("CUE")).toBeInTheDocument()
-    expect(screen.getByText("CH-1 PREASCOLTO")).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: /Iscriviti/i }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole("button", { name: /Accedi/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("button", { name: /^Iscriviti$/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("button", { name: /^Accedi$/i }).length).toBeGreaterThan(0)
   })
 
   it("opens registration modal when clicking Iscriviti", async () => {
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    const registerBtn = screen.getByRole("button", { name: /✨ Iscriviti gratis/i })
-    await user.click(registerBtn)
+    const registerBtns = screen.getAllByRole("button", { name: /^Iscriviti$/i })
+    await user.click(registerBtns[0])
 
     const dialog = screen.getByRole("dialog")
     expect(dialog).toBeInTheDocument()
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Unisciti alla community Drops/i })).toBeInTheDocument()
+    expect(within(dialog).getByRole("heading", { level: 3, name: /Crea il tuo Account/i })).toBeInTheDocument()
     expect(within(dialog).getByLabelText(/^Email/i)).toBeInTheDocument()
     expect(within(dialog).getByLabelText(/^Username/i)).toBeInTheDocument()
     expect(within(dialog).getByLabelText(/^Password/i)).toBeInTheDocument()
@@ -38,7 +37,8 @@ describe("DropsLanding", () => {
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    await user.click(screen.getByRole("button", { name: /✨ Iscriviti gratis/i }))
+    const registerBtns = screen.getAllByRole("button", { name: /^Iscriviti$/i })
+    await user.click(registerBtns[0])
     const dialog = screen.getByRole("dialog")
 
     // Fill form
@@ -47,10 +47,11 @@ describe("DropsLanding", () => {
     await user.type(within(dialog).getByLabelText(/^Password/i), "superpass")
 
     // Click submit
-    await user.click(within(dialog).getByRole("button", { name: /Completa Iscrizione & Entra/i }))
+    const submitBtn = dialog.querySelector('button[type="submit"]') as HTMLButtonElement
+    await user.click(submitBtn)
 
     await waitFor(() => {
-      expect(within(dialog).getByText(/🎉 Benvenuto a bordo, @dj_neon!/i)).toBeInTheDocument()
+      expect(within(dialog).getByText(/Benvenuto a bordo, dj_neon!/i)).toBeInTheDocument()
     })
 
     const stored = window.localStorage.getItem("drops.user.v1")
@@ -64,17 +65,20 @@ describe("DropsLanding", () => {
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    await user.click(screen.getByRole("button", { name: /✨ Iscriviti gratis/i }))
+    const registerBtns = screen.getAllByRole("button", { name: /^Iscriviti$/i })
+    await user.click(registerBtns[0])
     const dialog = screen.getByRole("dialog")
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Unisciti alla community Drops/i })).toBeInTheDocument()
+    expect(within(dialog).getByRole("heading", { level: 3, name: /Crea il tuo Account/i })).toBeInTheDocument()
 
     // Switch to login tab
-    await user.click(within(dialog).getByRole("button", { name: "Accedi" }))
+    const tabs = within(dialog).getAllByRole("button", { name: /^Accedi$/i })
+    await user.click(tabs[0])
     expect(within(dialog).getByRole("heading", { level: 3, name: /Accedi a Drops/i })).toBeInTheDocument()
 
     // Switch back to register tab
-    await user.click(within(dialog).getByRole("button", { name: "Crea Account" }))
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Unisciti alla community Drops/i })).toBeInTheDocument()
+    const regTabs = within(dialog).getAllByRole("button", { name: /^Iscriviti$/i })
+    await user.click(regTabs[0])
+    expect(within(dialog).getByRole("heading", { level: 3, name: /Crea il tuo Account/i })).toBeInTheDocument()
   })
 
   it("renders Downloader and Archive buttons when user is already logged in", () => {

@@ -6774,131 +6774,32 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
 }
 
-/* CUE HEADPHONE INDICATOR (DJ BOOTH PRE-LISTEN ROUTE) */
-.landing-cue-indicator {
+/* CUE HEADPHONE INDICATOR IN BOTTOM-LEFT OF HERO IMAGE (L-SHAPE ROUTE) */
+.hero-photo-cue {
   position: absolute;
-  top: clamp(20px, 4vh, 40px);
-  right: clamp(20px, 4vw, 48px);
-  z-index: 15;
+  bottom: clamp(100px, 16vh, 130px);
+  left: clamp(32px, 5vw, 64px);
+  z-index: 12;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
-  background: rgba(5, 8, 6, 0.84);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 255, 157, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  align-items: center;
+  gap: 7px;
+  pointer-events: none;
   user-select: none;
 }
 
-.landing-cue-indicator:hover {
-  transform: translateY(-2px);
-  border-color: rgba(0, 255, 157, 0.6);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 157, 0.2);
-}
-
-.cue-indicator-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cue-led-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #00ff9d;
-  box-shadow: 0 0 8px #00ff9d, 0 0 14px rgba(0, 255, 157, 0.8);
-  animation: cue-led-pulse 2s infinite ease-in-out;
-  flex-shrink: 0;
-}
-
-@keyframes cue-led-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 8px #00ff9d, 0 0 14px rgba(0, 255, 157, 0.8);
-  }
-  50% {
-    opacity: 0.55;
-    transform: scale(0.85);
-    box-shadow: 0 0 4px #00ff9d;
-  }
-}
-
-.cue-badge-tag {
-  font-family: var(--font-mono);
+.hero-photo-cue-text {
+  font-family: var(--font-mono, monospace);
   font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   color: #00ff9d;
-  background: rgba(0, 255, 157, 0.12);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 255, 157, 0.35);
-  line-height: 1;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.6), 0 2px 6px rgba(0, 0, 0, 0.9);
 }
 
-.cue-l-route-wrap {
+.hero-photo-cue-l-line {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  color: #00ff9d;
-  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6));
-}
-
-.cue-channel-label {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #f1f5f9;
-  text-transform: uppercase;
-}
-
-.cue-indicator-body {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.cue-status-text {
-  font-size: 10px;
-  font-weight: 700;
-  color: #94a3b8;
-  letter-spacing: 0.05em;
-  font-family: var(--font-mono);
-}
-
-.cue-mini-eq {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 11px;
-}
-
-.eq-bar {
-  width: 2.5px;
-  background: #00ff9d;
-  border-radius: 1px;
-  transform-origin: bottom;
-  animation: eq-bounce 1.2s infinite ease-in-out alternate;
-}
-
-.eq-bar.bar-1 { height: 60%; animation-delay: 0.1s; }
-.eq-bar.bar-2 { height: 100%; animation-delay: 0.35s; }
-.eq-bar.bar-3 { height: 45%; animation-delay: 0.2s; }
-.eq-bar.bar-4 { height: 85%; animation-delay: 0.45s; }
-
-@keyframes eq-bounce {
-  0% { transform: scaleY(0.25); opacity: 0.6; }
-  100% { transform: scaleY(1); opacity: 1; }
+  filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.7));
 }
 
 .landing-clean-hero-cta {
@@ -7520,13 +7421,9 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
     height: clamp(480px, 78vh, 580px);
     border-radius: 14px;
   }
-  .landing-cue-indicator {
-    top: 16px;
-    right: 16px;
-    padding: 8px 10px;
-  }
-  .cue-status-text {
-    font-size: 9px;
+  .hero-photo-cue {
+    bottom: clamp(90px, 15vh, 110px);
+    left: clamp(24px, 4vw, 36px);
   }
   .landing-form-row,
   .landing-roles-grid {
