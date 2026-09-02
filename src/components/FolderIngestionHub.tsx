@@ -347,7 +347,6 @@ export default function FolderIngestionHub() {
       return 'f-session-001'
     }
   })
-  const [sidebarFilter, setSidebarFilter] = useState<'all' | 'folders' | 'sessions'>('all')
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingProgress, setProcessingProgress] = useState(0)
   const [currentFolderProcessing, setCurrentFolderProcessing] = useState('')
@@ -361,6 +360,18 @@ export default function FolderIngestionHub() {
   // Rename folder state
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
+
+  // Console / mini-player + layout state
+  const [queue, setQueue] = useState<IngestedTrack[]>([])
+  const [queueIndex, setQueueIndex] = useState<number>(-1)
+  const [crossfade, setCrossfade] = useState<boolean>(false)
+  const [xfader, setXfader] = useState<number>(50)
+  const [eqLow, setEqLow] = useState<number>(50)
+  const [eqMid, setEqMid] = useState<number>(50)
+  const [eqHigh, setEqHigh] = useState<number>(50)
+  const [master, setMaster] = useState<number>(80)
+  const [leftOpen, setLeftOpen] = useState<boolean>(true)
+  const [consoleOpen, setConsoleOpen] = useState<boolean>(true)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -636,7 +647,7 @@ export default function FolderIngestionHub() {
         artist: track.artist || 'Artista Sconosciuto',
         bpm: track.bpm,
         genre: track.genre,
-        audioUrl: track.audioUrl || DEMO_AUDIO_PREVIEW,
+        audioUrl: track.audioUrl && track.audioUrl !== DEMO_AUDIO_PREVIEW ? track.audioUrl : undefined,
       })
     }
   }
@@ -685,13 +696,10 @@ export default function FolderIngestionHub() {
   })
 
   const filteredFolders = sortedFolders.filter((f) => {
-    if (sidebarFilter === 'folders' && f.isSession) return false
-    if (sidebarFilter === 'sessions' && !f.isSession) return false
     const q = filterQuery.toLowerCase().trim()
     if (!q) return true
     return (
       f.name.toLowerCase().includes(q) ||
-      (f.dominantGenre && f.dominantGenre.toLowerCase().includes(q)) ||
       f.tracks.some((t) => t.title.toLowerCase().includes(q) || (t.artist && t.artist.toLowerCase().includes(q)))
     )
   })
@@ -702,68 +710,98 @@ export default function FolderIngestionHub() {
     return (
       t.title.toLowerCase().includes(q) ||
       (t.artist && t.artist.toLowerCase().includes(q)) ||
-      (t.genre && t.genre.toLowerCase().includes(q)) ||
       (t.label && t.label.toLowerCase().includes(q)) ||
       (t.keySignature && t.keySignature.toLowerCase().includes(q)) ||
       (t.bpm && t.bpm.toString().includes(q))
     )
   })
 
+  const nowPlaying = queueIndex >= 0 && queueIndex < queue.length ? queue[queueIndex] : null
+
+  const playFromList = (list: IngestedTrack[], i: number) => {
+    if (!list.length || i < 0 || i >= list.length) return
+    setQueue(list)
+    setQueueIndex(i)
+    handlePlayTrack(list[i])
+  }
+  const playIndex = (i: number) => {
+    if (i < 0 || i >= queue.length) return
+    setQueueIndex(i)
+    handlePlayTrack(queue[i])
+  }
+  const playNext = () => { if (queue.length) playIndex((queueIndex + 1) % queue.length) }
+  const playPrev = () => { if (queue.length) playIndex((queueIndex - 1 + queue.length) % queue.length) }
+  const addToQueue = (t: IngestedTrack) => {
+    setQueue((cur) => (cur.some((x) => x.id === t.id) ? cur : [...cur, t]))
+    setNotice(`✓ "${t.title}" aggiunta alla coda`)
+    setTimeout(() => setNotice(null), 1800)
+  }
+  const removeFromQueue = (id: string) => {
+    const idx = queue.findIndex((x) => x.id === id)
+    if (idx === -1) return
+    const next = queue.filter((x) => x.id !== id)
+    setQueue(next)
+    setQueueIndex((qi) => (idx < qi ? qi - 1 : idx === qi ? Math.min(qi, next.length - 1) : qi))
+  }
+  const clearQueue = () => { setQueue([]); setQueueIndex(-1) }
+  const moveInQueue = (id: string, dir: -1 | 1) => {
+    setQueue((cur) => {
+      const idx = cur.findIndex((x) => x.id === id)
+      const j = idx + dir
+      if (idx === -1 || j < 0 || j >= cur.length) return cur
+      const nx = [...cur]
+      const tmp = nx[idx]; nx[idx] = nx[j]; nx[j] = tmp
+      return nx
+    })
+  }
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('drops-set-volume', { detail: master }))
+    }
+  }, [master])
+
   return (
     <div
-      className={`folder-ingestion-container apple-music-library ${isDraggingOver ? 'is-dragging-over' : ''}`}
+      className={`arch-winged-layout ${isDraggingOver ? 'is-dragging-over' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true) }}
       onDragLeave={() => setIsDraggingOver(false)}
       onDrop={handleDrop}
     >
-      {/* Drag overlay notice */}
       {isDraggingOver && (
-        <div className="am-drop-overlay">
-          <div className="am-drop-badge">
+        <div className="arch-drop-overlay">
+          <div className="arch-drop-badge">
             <span>📥</span>
             <h3>Rilascia qui la cartella da caricare</h3>
-            <p>Drops indicizzerà automaticamente tutti i file audio con BPM e Discogs</p>
+            <p>Drops indicizza automaticamente i file audio con BPM</p>
           </div>
         </div>
       )}
 
-      {notice && (
-        <div className="sync-notice-banner am-notice" role="status">
-          {notice}
-        </div>
-      )}
+      {notice && <div className="arch-notice" role="status">{notice}</div>}
 
       {isProcessing && (
-        <div className="ingestion-progress-box am-processing-box">
-          <div className="progress-info">
-            <span>Scansione metadati audio per &quot;{currentFolderProcessing}&quot;...</span>
+        <div className="arch-processing">
+          <div className="arch-processing-info">
+            <span>Scansione metadati per &quot;{currentFolderProcessing}&quot;…</span>
             <span>{processingProgress}%</span>
           </div>
-          <div className="progress-bar-track">
-            <div className="progress-bar-fill" style={{ width: `${processingProgress}%` }} />
-          </div>
+          <div className="arch-processing-track"><div className="arch-processing-fill" style={{ width: `${processingProgress}%` }} /></div>
         </div>
       )}
 
-      {/* Main Apple Music 2-Column Workspace */}
-      <div className="am-workspace-grid">
-        {/* SIDEBAR APPLE MUSIC (Sinistra) */}
-        <aside className="am-sidebar">
-          {/* Sidebar Header */}
-          <div className="am-sidebar-brand-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <span className="am-sidebar-kicker">ARCHIVIO & ORGANIZZAZIONE CARTELLE NEL CLOUD</span>
-            <a
-              href="/app/download"
-              className="btn-sort-pill active"
-              style={{ fontSize: '11px', padding: '4px 10px', textDecoration: 'none' }}
-              title="Vai all'area di download ed ingestione"
-            >
-              🎛️ Downloader &rarr;
-            </a>
+      {/* LEFT WING: CARTELLE */}
+      {leftOpen && (
+        <aside className="arch-wing-left">
+          <div className="arch-wing-head">
+            <div className="arch-wing-head-title">
+              <span className="arch-wing-kicker">📁 CARTELLE</span>
+              <span className="arch-wing-sub">{folders.length} cartelle · {allTracks.length} brani</span>
+            </div>
+            <button type="button" className="arch-wing-close" onClick={() => setLeftOpen(false)} title="Chiudi pannello cartelle">✕</button>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="am-sidebar-top-actions">
+          <div className="arch-left-actions">
             <input
               ref={fileInputRef}
               type="file"
@@ -776,413 +814,262 @@ export default function FolderIngestionHub() {
               style={{ display: 'none' }}
               id="am-folder-input-picker"
             />
-            <label htmlFor="am-folder-input-picker" className="am-btn-primary">
-              Carica Cartella
-            </label>
-            <button
-              type="button"
-              className="am-btn-secondary"
-              onClick={handleCreateNewSession}
-              title="Crea una cartella di sessione collegata ai download"
-            >
-              + Nuova Sessione
-            </button>
+            <label htmlFor="am-folder-input-picker" className="arch-btn-primary">⬆ Carica Cartella</label>
+            <button type="button" className="arch-btn-ghost" onClick={handleCreateNewSession} title="Crea una nuova cartella collegata ai download">+ Nuova Cartella</button>
           </div>
 
-          {/* Nav Categories */}
-          <div className="am-nav-section">
-            <span className="am-section-title">LIBRERIA</span>
-            <div className="am-nav-list">
-              <button
-                type="button"
-                className={`am-nav-item ${selectedFolderId === '__all__' ? 'is-active' : ''}`}
-                onClick={() => setSelectedFolderId('__all__')}
-              >
-                <span className="am-nav-icon">🎵</span>
-                <span className="am-nav-label">Tutti i Brani</span>
-                <span className="am-nav-count">{allTracks.length}</span>
-              </button>
-            </div>
-          </div>
+          <input
+            type="text"
+            className="arch-search"
+            placeholder="Cerca cartelle…"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+          />
 
-          {/* Folder Categories Filter Tabs */}
-          <div className="am-nav-section">
-            <div className="am-section-header-row">
-              <span className="am-section-title">CARTELLE & ALBUM</span>
-              <div className="am-filter-pills">
-                <button
-                  type="button"
-                  className={`am-pill ${sidebarFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setSidebarFilter('all')}
-                >
-                  Tutte
-                </button>
-                <button
-                  type="button"
-                  className={`am-pill ${sidebarFilter === 'folders' ? 'active' : ''}`}
-                  onClick={() => setSidebarFilter('folders')}
-                >
-                  Cartelle
-                </button>
-                <button
-                  type="button"
-                  className={`am-pill ${sidebarFilter === 'sessions' ? 'active' : ''}`}
-                  onClick={() => setSidebarFilter('sessions')}
-                >
-                  Sessioni
-                </button>
+          <button
+            type="button"
+            className={`arch-folder-row arch-all ${selectedFolderId === '__all__' ? 'is-active' : ''}`}
+            onClick={() => setSelectedFolderId('__all__')}
+          >
+            <span className="arch-folder-ic">🎧</span>
+            <span className="arch-folder-name">Tutti i Brani</span>
+            <span className="arch-folder-count">{allTracks.length}</span>
+          </button>
+
+          <div className="arch-folder-list">
+            {filteredFolders.length === 0 ? (
+              <div className="arch-empty">Nessuna cartella.</div>
+            ) : (
+              filteredFolders.map((folder) => {
+                const isSelected = selectedFolderId === folder.id
+                const isEditing = editingFolderId === folder.id
+                return (
+                  <div
+                    key={folder.id}
+                    className={`arch-folder-row ${isSelected ? 'is-active' : ''}`}
+                    onClick={() => setSelectedFolderId(folder.id)}
+                  >
+                    <span className="arch-folder-ic">📁</span>
+                    {isEditing ? (
+                      <div className="arch-rename" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          className="arch-rename-input"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(folder.id); if (e.key === 'Escape') setEditingFolderId(null) }}
+                          autoFocus
+                        />
+                        <button type="button" className="arch-rename-ok" onClick={() => handleSaveRename(folder.id)}>✓</button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="arch-folder-name" title={folder.name}>{folder.name}</span>
+                        <span className="arch-folder-count">{folder.trackCount}</span>
+                        <span className="arch-folder-hover">
+                          <button type="button" className="arch-mini-ic" onClick={(e) => handleStartRename(folder, e)} title="Rinomina">✏️</button>
+                          <button type="button" className="arch-mini-ic danger" onClick={(e) => handleDeleteFolder(folder.id, e)} title="Elimina">✕</button>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </aside>
+      )}
+
+      {/* CENTER: LIBRERIA */}
+      <main className="arch-wing-center">
+        <div className="arch-dock-bar">
+          <button type="button" className={`arch-dock-btn ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle">
+            📁 Cartelle ({folders.length}) {leftOpen ? '◀' : '▶'}
+          </button>
+          <button type="button" className={`arch-dock-btn ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console">
+            🎛️ Console {consoleOpen ? '▶' : '◀'}
+          </button>
+        </div>
+
+        {selectedFolder ? (
+          <div className="arch-folder-view">
+            <div className="arch-hero">
+              <div className="arch-hero-art">
+                {selectedFolder.coverUrl ? <img src={selectedFolder.coverUrl} alt={selectedFolder.name} /> : <span>{selectedFolder.id === '__all__' ? '🎧' : '📁'}</span>}
+              </div>
+              <div className="arch-hero-info">
+                <span className="arch-hero-kicker">{selectedFolder.id === '__all__' ? 'CATALOGO UNIFICATO' : 'CARTELLA'}</span>
+                {editingFolderId === selectedFolder.id && selectedFolder.id !== '__all__' ? (
+                  <div className="arch-rename hero">
+                    <input type="text" className="arch-rename-input" value={editingName} onChange={(e) => setEditingName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(selectedFolder.id); if (e.key === 'Escape') setEditingFolderId(null) }} autoFocus />
+                    <button type="button" className="arch-rename-ok" onClick={() => handleSaveRename(selectedFolder.id)}>Salva</button>
+                  </div>
+                ) : (
+                  <div className="arch-hero-title-row">
+                    <h1 className="arch-hero-title" title={selectedFolder.name}>{selectedFolder.name}</h1>
+                    {selectedFolder.id !== '__all__' && <button type="button" className="arch-mini-ic" onClick={() => handleStartRename(selectedFolder)} title="Rinomina">✏️</button>}
+                  </div>
+                )}
+                <p className="arch-hero-meta">{selectedFolder.trackCount} brani · {selectedFolder.totalSizeMb} MB · {selectedFolder.uploadDate}</p>
+                <div className="arch-hero-actions">
+                  <button type="button" className="arch-act primary" onClick={() => playFromList(filteredTracks, 0)} disabled={filteredTracks.length === 0}>▶ Riproduci Tutto</button>
+                  <button type="button" className="arch-act" onClick={() => { if (filteredTracks.length) { const i = Math.floor(Math.random() * filteredTracks.length); playFromList(filteredTracks, i) } }} disabled={filteredTracks.length === 0}>🔀 Casuale</button>
+                  {selectedFolder.id !== '__all__' && <button type="button" className="arch-act" onClick={() => handleExportM3U(selectedFolder)} title="Esporta playlist M3U per Rekordbox">Esporta M3U</button>}
+                  {selectedFolder.id !== '__all__' && (
+                    <button type="button" className={`arch-act ${mainFolderId === selectedFolder.id ? 'is-main' : ''}`} onClick={() => { setMainFolderId(selectedFolder.id); try { window.localStorage.setItem(MAIN_FOLDER_STORAGE_KEY, selectedFolder.id) } catch {}; setNotice(`★ "${selectedFolder.name}" impostata come Cartella Principale!`); setTimeout(() => setNotice(null), 3000) }} title="Imposta come destinazione principale dei download">
+                      {mainFolderId === selectedFolder.id ? '★ Cartella Main' : '☆ Imposta Main'}
+                    </button>
+                  )}
+                  <button type="button" className="arch-act" onClick={() => { navigator.clipboard.writeText(selectedFolder.tracks.map((t) => `${t.bpm ? `[${Math.round(t.bpm)} BPM] ` : ''}${t.artist || ''} - ${t.title}`).join('\n')); setNotice('✓ Tracklist copiata!'); setTimeout(() => setNotice(null), 2500) }}>📋 Copia</button>
+                </div>
               </div>
             </div>
 
-            <div className="am-search-wrap">
-              <input
-                type="text"
-                className="am-sidebar-search"
-                placeholder="Cerca cartelle..."
-                value={filterQuery}
-                onChange={(e) => setFilterQuery(e.target.value)}
-              />
+            <div className="arch-tracks-toolbar">
+              <input type="text" className="arch-tracks-search" placeholder="Cerca per titolo, artista, BPM o chiave…" value={trackFilterQuery} onChange={(e) => setTrackFilterQuery(e.target.value)} />
+              <span className="arch-tracks-counter">{filteredTracks.length} / {selectedFolder.tracks.length} brani</span>
             </div>
 
-            <div className="am-folders-scroll-list">
-              {filteredFolders.length === 0 ? (
-                <div className="am-empty-folders">
-                  <p>Nessuna cartella.</p>
-                </div>
-              ) : (
-                filteredFolders.map((folder) => {
-                  const isSelected = selectedFolderId === folder.id
-                  const isEditing = editingFolderId === folder.id
-                  return (
-                    <div
-                      key={folder.id}
-                      className={`am-folder-item ${isSelected ? 'is-active' : ''}`}
-                      onClick={() => setSelectedFolderId(folder.id)}
-                    >
-                      <div className="am-folder-artwork">
-                        {folder.coverUrl ? (
-                          <img
-                            src={folder.coverUrl}
-                            alt=""
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }}
-                          />
-                        ) : (
-                          <span>{folder.isSession ? '🏷️' : '📁'}</span>
-                        )}
-                      </div>
-                      <div className="am-folder-info">
-                        {isEditing ? (
-                          <div className="am-inline-rename-wrap" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="text"
-                              className="am-rename-input"
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveRename(folder.id)
-                                if (e.key === 'Escape') setEditingFolderId(null)
-                              }}
-                              autoFocus
-                            />
-                            <button
-                              type="button"
-                              className="am-rename-confirm"
-                              onClick={() => handleSaveRename(folder.id)}
-                            >
-                              ✓
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="am-folder-title-row">
-                            <span className="am-folder-name" title={folder.name}>{folder.name}</span>
-                            <div className="am-folder-hover-actions">
-                              <button
-                                type="button"
-                                className="am-icon-btn"
-                                onClick={(e) => handleStartRename(folder, e)}
-                                title="Rinomina cartella"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                type="button"
-                                className="am-icon-btn am-btn-delete"
-                                onClick={(e) => handleDeleteFolder(folder.id, e)}
-                                title="Rimuovi cartella"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        <span className="am-folder-sub">
-                          {folder.trackCount} {folder.trackCount === 1 ? 'brano' : 'brani'} &bull; {folder.totalSizeMb} MB
+            <div className="arch-tracks">
+              <div className="arch-track-head">
+                <span className="c-idx">#</span>
+                <span className="c-title">Titolo & Artista</span>
+                <span className="c-bpm">BPM</span>
+                <span className="c-key">Key</span>
+                <span className="c-act">Azioni</span>
+              </div>
+              <div className="arch-track-body">
+                {filteredTracks.length === 0 ? (
+                  <div className="arch-empty pad">Nessun brano trovato.</div>
+                ) : (
+                  filteredTracks.map((track, idx) => {
+                    const isThisPlaying = playingTrackId === track.id
+                    return (
+                      <div key={track.id} className={`arch-track-row ${isThisPlaying ? 'is-playing' : ''}`} onDoubleClick={() => playFromList(filteredTracks, idx)}>
+                        <button type="button" className="c-idx arch-idx-btn" onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">
+                          <span className="arch-idx-n">{(idx + 1).toString().padStart(2, '0')}</span>
+                          <span className="arch-idx-p">{isThisPlaying ? '❚❚' : '▶'}</span>
+                        </button>
+                        <span className="c-title arch-title-cell">
+                          <span className="arch-t-name" title={track.title}>{track.title}</span>
+                          <span className="arch-t-artist" title={track.artist || 'Artista Sconosciuto'}>{track.artist || 'Artista Sconosciuto'}</span>
+                        </span>
+                        <span className="c-bpm"><span className="arch-bpm">{track.bpm ? `${Math.round(track.bpm)}` : '—'}</span></span>
+                        <span className="c-key"><span className="arch-key">{track.keySignature || '—'}</span></span>
+                        <span className="c-act arch-row-act">
+                          <button type="button" className={`arch-mini ${isThisPlaying ? 'on' : ''}`} onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">{isThisPlaying ? '❚❚' : '▶'}</button>
+                          <button type="button" className="arch-mini" onClick={() => addToQueue(track)} title="Aggiungi alla coda">＋</button>
+                          {track.audioUrl && <a className="arch-mini dl" href={track.audioUrl} download={track.filename || `${track.title}.mp3`} title="Scarica">↓</a>}
                         </span>
                       </div>
-                    </div>
-                  )
-                })
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="arch-no-sel"><span>📂</span><h3>Seleziona una cartella</h3></div>
+        )}
+      </main>
+
+      {/* RIGHT WING: CONSOLE / MINI PLAYER */}
+      {consoleOpen && (
+        <aside className="arch-wing-right">
+          <div className="arch-wing-head">
+            <div className="arch-wing-head-title">
+              <span className="arch-wing-kicker">🎛️ CONSOLE</span>
+              <span className="arch-wing-sub">Mixer & coda</span>
+            </div>
+            <button type="button" className="arch-wing-close" onClick={() => setConsoleOpen(false)} title="Chiudi console">✕</button>
+          </div>
+
+          <div className="arch-now">
+            {nowPlaying ? (
+              <>
+                <div className="arch-now-art">
+                  <span>🎵</span>
+                  <div className="arch-now-eq"><span></span><span></span><span></span></div>
+                </div>
+                <div className="arch-now-info">
+                  <span className="arch-now-title" title={nowPlaying.title}>{nowPlaying.title}</span>
+                  <span className="arch-now-artist" title={nowPlaying.artist || ''}>{nowPlaying.artist || 'Artista Sconosciuto'}</span>
+                  <div className="arch-now-tags">
+                    {nowPlaying.bpm && <span className="arch-bpm">{Math.round(nowPlaying.bpm)} BPM</span>}
+                    {nowPlaying.keySignature && <span className="arch-key">{nowPlaying.keySignature}</span>}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="arch-now-empty">Nessuna traccia in riproduzione</div>
+            )}
+          </div>
+
+          <div className="arch-transport">
+            <button type="button" className="arch-tp" onClick={playPrev} disabled={!queue.length} title="Precedente">⏮</button>
+            <button type="button" className="arch-tp big" onClick={() => { if (nowPlaying) handlePlayTrack(nowPlaying); else if (filteredTracks.length) playFromList(filteredTracks, 0) }} title="Play">▶</button>
+            <button type="button" className="arch-tp" onClick={playNext} disabled={!queue.length} title="Successiva">⏭</button>
+            <button type="button" className={`arch-xfade ${crossfade ? 'on' : ''}`} onClick={() => setCrossfade((v) => !v)} title="Attiva/disattiva dissolvenza automatica tra le tracce">
+              <span className="arch-xfade-dot" /> Dissolvenza
+            </button>
+          </div>
+
+          <div className="arch-mixer">
+            <span className="arch-mixer-title">MIXER</span>
+            <div className="arch-eq">
+              <div className="arch-eq-band">
+                <input type="range" min="0" max="100" value={eqHigh} onChange={(e) => setEqHigh(Number(e.target.value))} className="arch-vslider" />
+                <span className="arch-eq-lbl">HIGH</span>
+              </div>
+              <div className="arch-eq-band">
+                <input type="range" min="0" max="100" value={eqMid} onChange={(e) => setEqMid(Number(e.target.value))} className="arch-vslider" />
+                <span className="arch-eq-lbl">MID</span>
+              </div>
+              <div className="arch-eq-band">
+                <input type="range" min="0" max="100" value={eqLow} onChange={(e) => setEqLow(Number(e.target.value))} className="arch-vslider" />
+                <span className="arch-eq-lbl">LOW</span>
+              </div>
+            </div>
+            <div className="arch-fader-row">
+              <span className="arch-fader-lbl">A</span>
+              <input type="range" min="0" max="100" value={xfader} onChange={(e) => setXfader(Number(e.target.value))} className="arch-xfader" />
+              <span className="arch-fader-lbl">B</span>
+            </div>
+            <div className="arch-master">
+              <span className="arch-master-lbl">🔊 Master</span>
+              <input type="range" min="0" max="100" value={master} onChange={(e) => setMaster(Number(e.target.value))} className="arch-hslider" />
+              <span className="arch-master-val">{master}</span>
+            </div>
+          </div>
+
+          <div className="arch-queue">
+            <div className="arch-queue-head">
+              <span className="arch-queue-title">CODA ({queue.length})</span>
+              {queue.length > 0 && <button type="button" className="arch-queue-clear" onClick={clearQueue} title="Svuota coda">🧹 Svuota</button>}
+            </div>
+            <div className="arch-queue-list">
+              {queue.length === 0 ? (
+                <div className="arch-empty pad small">Aggiungi brani con ＋ o premi Riproduci Tutto.</div>
+              ) : (
+                queue.map((t, i) => (
+                  <div key={`${t.id}-${i}`} className={`arch-q-item ${i === queueIndex ? 'is-current' : ''}`} onDoubleClick={() => playIndex(i)}>
+                    <button type="button" className="arch-q-play" onClick={() => playIndex(i)} title="Riproduci">{i === queueIndex && playingTrackId === t.id ? '❚❚' : '▶'}</button>
+                    <span className="arch-q-info">
+                      <span className="arch-q-title" title={t.title}>{t.title}</span>
+                      <span className="arch-q-artist" title={t.artist || ''}>{t.artist || 'Artista Sconosciuto'}{t.bpm ? ` · ${Math.round(t.bpm)} BPM` : ''}</span>
+                    </span>
+                    <span className="arch-q-ctrl">
+                      <button type="button" className="arch-mini" onClick={() => moveInQueue(t.id, -1)} title="Su">▲</button>
+                      <button type="button" className="arch-mini" onClick={() => moveInQueue(t.id, 1)} title="Giù">▼</button>
+                      <button type="button" className="arch-mini danger" onClick={() => removeFromQueue(t.id)} title="Rimuovi">✕</button>
+                    </span>
+                  </div>
+                ))
               )}
             </div>
           </div>
         </aside>
-
-        {/* MAIN HERO & TRACK TABLE (Destra in Stile Apple Music) */}
-        <main className="am-main-content">
-          {selectedFolder ? (
-            <div className="am-folder-view">
-              {/* HERO HEADER IN STILE APPLE MUSIC */}
-              <div className="am-hero-header">
-                <div className="am-hero-artwork-box">
-                  {selectedFolder.coverUrl ? (
-                    <img
-                      src={selectedFolder.coverUrl}
-                      alt={selectedFolder.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
-                    />
-                  ) : (
-                    <div className="am-artwork-inner">
-                      <span className="am-artwork-big-icon">
-                        {selectedFolder.id === '__all__' ? '🎧' : selectedFolder.isSession ? '🏷️' : '🎵'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="am-hero-details">
-                  <span className="am-hero-kicker">
-                    {selectedFolder.id === '__all__'
-                      ? 'CATALOGO UNIFICATO'
-                      : selectedFolder.isSession
-                      ? 'SESSIONE DI DOWNLOAD'
-                      : 'CARTELLA CLOUD'}
-                  </span>
-
-                  <div className="am-hero-title-wrap">
-                    {editingFolderId === selectedFolder.id && selectedFolder.id !== '__all__' ? (
-                      <div className="am-inline-rename-hero">
-                        <input
-                          type="text"
-                          className="am-hero-rename-input"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveRename(selectedFolder.id)
-                            if (e.key === 'Escape') setEditingFolderId(null)
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          className="am-hero-rename-save"
-                          onClick={() => handleSaveRename(selectedFolder.id)}
-                        >
-                          Salva
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <h1 className="am-hero-title">{selectedFolder.name}</h1>
-                        {selectedFolder.id !== '__all__' && (
-                          <button
-                            type="button"
-                            className="am-hero-edit-btn"
-                            onClick={() => handleStartRename(selectedFolder)}
-                            title="Rinomina questa cartella"
-                          >
-                            ✏️
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="am-hero-meta">
-                    <strong>{selectedFolder.trackCount} brani</strong> &bull; {selectedFolder.totalSizeMb} MB &bull; {selectedFolder.dominantGenre} &bull; {selectedFolder.uploadDate}
-                  </p>
-
-                  {selectedFolder.description && (
-                    <p style={{ margin: '4px 0 10px', fontSize: '13px', color: '#94a3b8', lineHeight: 1.5 }}>
-                      {selectedFolder.description}
-                    </p>
-                  )}
-
-                  {/* APPLE MUSIC ACTION BUTTONS */}
-                  <div className="am-hero-actions">
-                    <button
-                      type="button"
-                      className="am-action-btn am-btn-play-all"
-                      onClick={handlePlayAll}
-                      disabled={selectedFolder.tracks.length === 0}
-                    >
-                      Riproduci Tutto
-                    </button>
-                    <button
-                      type="button"
-                      className="am-action-btn am-btn-shuffle"
-                      onClick={handleShufflePlay}
-                      disabled={selectedFolder.tracks.length === 0}
-                    >
-                      Casuale
-                    </button>
-                    {selectedFolder.id !== '__all__' && (
-                      <button
-                        type="button"
-                        className="am-action-btn am-btn-export"
-                        onClick={() => handleExportM3U(selectedFolder)}
-                        title="Esporta playlist M3U per chiavetta USB Pioneer Rekordbox"
-                      >
-                        Esporta M3U (Rekordbox)
-                      </button>
-                    )}
-                    {selectedFolder.id !== '__all__' && (
-                      <button
-                        type="button"
-                        className={`am-action-btn ${mainFolderId === selectedFolder.id ? 'active' : ''}`}
-                        style={{
-                          backgroundColor: mainFolderId === selectedFolder.id ? 'var(--color-primary, #00d26a)' : 'transparent',
-                          color: mainFolderId === selectedFolder.id ? '#000' : 'inherit',
-                          fontWeight: 700,
-                          borderColor: mainFolderId === selectedFolder.id ? 'transparent' : 'rgba(255,255,255,0.2)',
-                        }}
-                        onClick={() => {
-                          setMainFolderId(selectedFolder.id)
-                          try {
-                            window.localStorage.setItem(MAIN_FOLDER_STORAGE_KEY, selectedFolder.id)
-                          } catch {}
-                          setNotice(`★ "${selectedFolder.name}" impostata come Cartella Principale per i download!`)
-                          setTimeout(() => setNotice(null), 3500)
-                        }}
-                        title="Imposta questa cartella come destinazione principale per tutti i brani scaricati"
-                      >
-                        {mainFolderId === selectedFolder.id ? '★ Cartella Main Download' : '☆ Imposta come Cartella Main'}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="am-action-btn am-btn-copy"
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          selectedFolder.tracks.map((t) => `${t.bpm ? `[${t.bpm} BPM] ` : ''}${t.artist} - ${t.title}`).join('\n')
-                        )
-                        setNotice(`✓ Tracklist di "${selectedFolder.name}" copiata negli appunti!`)
-                        setTimeout(() => setNotice(null), 3000)
-                      }}
-                    >
-                      📋 Copia Tracklist
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* SEARCH & FILTER BAR PER LE TRACCE */}
-              <div className="am-tracks-toolbar">
-                <input
-                  type="text"
-                  className="am-tracks-search-input"
-                  placeholder="Cerca per titolo, artista, genere, etichetta o BPM..."
-                  value={trackFilterQuery}
-                  onChange={(e) => setTrackFilterQuery(e.target.value)}
-                />
-                <span className="am-tracks-counter">
-                  Mostrati <strong>{filteredTracks.length}</strong> su {selectedFolder.tracks.length} brani
-                </span>
-              </div>
-
-              {/* TABELLA BRANI IN STILE APPLE MUSIC */}
-              <div className="am-tracks-table-container">
-                <table className="am-tracks-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '44px', textAlign: 'center' }}>#</th>
-                      <th>Titolo & Artista</th>
-                      <th>BPM</th>
-                      <th>Chiave</th>
-                      <th>Etichetta / Fonte</th>
-                      <th>Genere</th>
-                      <th style={{ width: '130px', textAlign: 'center' }}>Azioni</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTracks.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="am-empty-table-cell">
-                          Nessun brano trovato per la ricerca corrente.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredTracks.map((track, idx) => {
-                        const isThisPlaying = playingTrackId === track.id
-                        return (
-                          <tr
-                            key={track.id}
-                            className={`am-track-row ${isThisPlaying ? 'is-playing' : ''}`}
-                            onDoubleClick={() => handlePlayTrack(track)}
-                          >
-                            <td className="am-track-idx-cell" onClick={() => handlePlayTrack(track)}>
-                              <span className="am-idx-number">{(idx + 1).toString().padStart(2, '0')}</span>
-                              <span className="am-idx-play-btn">{isThisPlaying ? '❚❚' : '▶'}</span>
-                            </td>
-                            <td>
-                              <div className="am-track-title-info">
-                                <span className="am-track-name">{track.title}</span>
-                                <span className="am-track-artist">{track.artist || 'Artista Sconosciuto'}</span>
-                              </div>
-                            </td>
-                            <td>
-                              {track.bpm ? (
-                                <span className="am-bpm-badge">{Math.round(track.bpm)} BPM</span>
-                              ) : (
-                                <span className="am-meta-muted">-</span>
-                              )}
-                            </td>
-                            <td>
-                              <span className="am-camelot-badge">{track.keySignature || '8A'}</span>
-                            </td>
-                            <td>
-                              <span className="am-label-text">{track.label || 'Discogs Enriched'}</span>
-                            </td>
-                            <td>
-                              <span className="am-genre-pill">{track.genre || 'Electronic'}</span>
-                            </td>
-                            <td>
-                              <div className="am-row-actions">
-                                <button
-                                  type="button"
-                                  className={`am-btn-mini-play ${isThisPlaying ? 'active' : ''}`}
-                                  onClick={() => handlePlayTrack(track)}
-                                  title="Riproduci anteprima"
-                                >
-                                  {isThisPlaying ? '❚❚' : '▶'}
-                                </button>
-                                {track.audioUrl && (
-                                  <a
-                                    className="am-btn-mini-download"
-                                    href={track.audioUrl}
-                                    download={track.filename || `${track.title}.mp3`}
-                                    title={`Scarica ${track.title}`}
-                                  >
-                                    ↓ Scarica
-                                  </a>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="am-no-selection">
-              <span>📂</span>
-              <h3>Seleziona una cartella dalla libreria</h3>
-            </div>
-          )}
-        </main>
-      </div>
+      )}
     </div>
   )
 }

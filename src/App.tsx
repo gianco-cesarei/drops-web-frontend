@@ -2286,6 +2286,70 @@ function queueStatusLabel(status: string): string {
   return map[status] ?? 'Elaborazione…'
 }
 
+function crc32(buf: Uint8Array): number {
+  let crc = ~0
+  for (let i = 0; i < buf.length; i++) {
+    crc ^= buf[i]
+    for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1))
+  }
+  return (~crc) >>> 0
+}
+
+function buildTrackZip(folderName: string, files: { name: string; data: Uint8Array }[]): Blob {
+  const enc = new TextEncoder()
+  const parts: Uint8Array[] = []
+  const central: Uint8Array[] = []
+  let offset = 0
+  const now = new Date()
+  const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xffff
+  const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xffff
+  for (const f of files) {
+    const nameBytes = enc.encode(`${folderName}/${f.name}`)
+    const crc = crc32(f.data)
+    const size = f.data.length
+    const local = new Uint8Array(30 + nameBytes.length)
+    const dv = new DataView(local.buffer)
+    dv.setUint32(0, 0x04034b50, true)
+    dv.setUint16(4, 20, true)
+    dv.setUint16(6, 0x0800, true)
+    dv.setUint16(8, 0, true)
+    dv.setUint16(10, dosTime, true)
+    dv.setUint16(12, dosDate, true)
+    dv.setUint32(14, crc, true)
+    dv.setUint32(18, size, true)
+    dv.setUint32(22, size, true)
+    dv.setUint16(26, nameBytes.length, true)
+    local.set(nameBytes, 30)
+    parts.push(local, f.data)
+    const cen = new Uint8Array(46 + nameBytes.length)
+    const cd = new DataView(cen.buffer)
+    cd.setUint32(0, 0x02014b50, true)
+    cd.setUint16(4, 20, true)
+    cd.setUint16(6, 20, true)
+    cd.setUint16(8, 0x0800, true)
+    cd.setUint16(10, 0, true)
+    cd.setUint16(12, dosTime, true)
+    cd.setUint16(14, dosDate, true)
+    cd.setUint32(16, crc, true)
+    cd.setUint32(20, size, true)
+    cd.setUint32(24, size, true)
+    cd.setUint16(28, nameBytes.length, true)
+    cd.setUint32(42, offset, true)
+    cen.set(nameBytes, 46)
+    central.push(cen)
+    offset += local.length + size
+  }
+  const centralSize = central.reduce((a, c) => a + c.length, 0)
+  const end = new Uint8Array(22)
+  const ed = new DataView(end.buffer)
+  ed.setUint32(0, 0x06054b50, true)
+  ed.setUint16(8, files.length, true)
+  ed.setUint16(10, files.length, true)
+  ed.setUint32(12, centralSize, true)
+  ed.setUint32(16, offset, true)
+  return new Blob([...parts, ...central, end] as unknown as BlobPart[], { type: 'application/zip' })
+}
+
 function Download({ user, onError, error, setError, onSwitchToArchive }: { user: User; onError: (error: unknown) => void; error: string; setError: (value: string) => void; onSwitchToArchive?: () => void }) {
   const [input, setInput] = useState('')
   const [queue, setQueue] = useState<QueueJob[]>(() => loadQueue())
@@ -2715,6 +2779,74 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
     URL.revokeObjectURL(url)
   }
 
+  const [zipBusy, setZipBusy] = useState(false)
+
+  function handleClearIncomplete() {
+    setQueue((cur) => cur.filter((x) => readyStatuses.has(x.status)))
+  }
+
+  function handleCreateNewFolder() {
+    const name = newFolderName.trim()
+    if (!name) return
+    const folder = createNewArchiveFolder(name)
+    setFoldersList(getSavedFolders())
+    setActiveMainFolderId(folder.id)
+    setMainFolder(folder.id)
+    setNewFolderName('')
+    setIsCreatingFolder(false)
+  }
+
+  async function handleDownloadFolderZip() {
+    const readyTracks = history.filter((h) => h.id)
+    if (!readyTracks.length || zipBusy) return
+    setZipBusy(true)
+    setError('')
+    try {
+      const files: { name: string; data: Uint8Array }[] = []
+      const usedNames = new Set<string>()
+      const m3uEntries: string[] = []
+      for (const t of readyTracks) {
+        try {
+          const res = await fetch(api.fileUrl(t.id))
+          if (!res.ok) continue
+          const ct = res.headers.get('content-type') || ''
+          const data = new Uint8Array(await res.arrayBuffer())
+          if (!data.length) continue
+          const ext = ct.includes('flac') ? '.flac' : ct.includes('wav') ? '.wav' : (ct.includes('m4a') || ct.includes('mp4')) ? '.m4a' : '.mp3'
+          const base = (`${t.artist ? `${t.artist} - ` : ''}${t.title}`).replace(/[\/\\:*?"<>|]/g, '_').slice(0, 120).trim() || 'Traccia'
+          let name = `${base}${ext}`
+          let n = 2
+          while (usedNames.has(name.toLowerCase())) { name = `${base} (${n})${ext}`; n += 1 }
+          usedNames.add(name.toLowerCase())
+          files.push({ name, data })
+          m3uEntries.push(`#EXTINF:-1,${t.artist ? `${t.artist} - ` : ''}${t.title}`, name)
+        } catch {
+          /* salta traccia non raggiungibile */
+        }
+      }
+      if (!files.length) {
+        setError('Nessun file scaricabile: verifica che il server dei download sia attivo.')
+        return
+      }
+      const dateStr = new Date().toISOString().slice(0, 10)
+      const folderLabel = `${activeFolderName} - ${dateStr}`
+      const safeLabel = folderLabel.replace(/[\/\\:*?"<>|]/g, '_')
+      const m3uContent = ['#EXTM3U', `#PLAYLIST:${folderLabel}`, ...m3uEntries].join('\n')
+      files.push({ name: `${safeLabel}.m3u`, data: new TextEncoder().encode(m3uContent) })
+      const blob = buildTrackZip(safeLabel, files)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${safeLabel}.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } finally {
+      setZipBusy(false)
+    }
+  }
+
   return (
     <div className="download-winged-layout">
       {/* SCOMPARTO SINISTRO: ARCHIVIO (10% desktop proportion) */}
@@ -2844,21 +2976,46 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             <div className="dl-control-bar">
               <div className="dl-select-wrap">
                 <span className="dl-select-label">Salva in:</span>
-                <select
-                  value={activeMainFolderId}
-                  onChange={(e) => {
-                    setActiveMainFolderId(e.target.value)
-                    setMainFolder(e.target.value)
-                  }}
-                  className="dl-folder-select-clean"
-                  title="Cartella cloud di salvataggio"
-                >
-                  {foldersList.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      📁 {f.name} ({f.trackCount || 0} brani)
-                    </option>
-                  ))}
-                </select>
+                {isCreatingFolder ? (
+                  <div className="dl-newfolder-inline">
+                    <input
+                      type="text"
+                      className="dl-newfolder-input"
+                      placeholder="Nome nuova cartella"
+                      value={newFolderName}
+                      autoFocus
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); handleCreateNewFolder() }
+                        if (e.key === 'Escape') { setIsCreatingFolder(false); setNewFolderName('') }
+                      }}
+                    />
+                    <button type="button" className="dl-newfolder-confirm" onClick={handleCreateNewFolder} disabled={!newFolderName.trim()} title="Crea cartella">✓</button>
+                    <button type="button" className="dl-newfolder-cancel" onClick={() => { setIsCreatingFolder(false); setNewFolderName('') }} title="Annulla">✕</button>
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      value={activeMainFolderId}
+                      onChange={(e) => {
+                        setActiveMainFolderId(e.target.value)
+                        setMainFolder(e.target.value)
+                      }}
+                      className="dl-folder-select-clean"
+                      title="Cartella cloud di salvataggio"
+                    >
+                      {foldersList.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          📁 {f.name} ({f.trackCount || 0} brani)
+                        </option>
+                      ))}
+                    </select>
+                    <span className="dl-select-or">oppure</span>
+                    <button type="button" className="dl-create-folder-link" onClick={() => { setIsCreatingFolder(true); setNewFolderName('') }} title="Crea una nuova cartella di destinazione">
+                      <u>Crea Nuova Cartella</u>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* SELETTORE FORMATO AUDIO DISCRETO */}
@@ -2930,7 +3087,14 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           <section className="card download-queue-card">
             <div className="dl-queue-header-clean">
               <span className="eyebrow">CODA &amp; BRANI IN CORSO ({queue.length})</span>
-              <span className="dl-count">{activeCount} attivi</span>
+              <div className="dl-queue-header-actions">
+                <span className="dl-count">{activeCount} attivi</span>
+                {queue.some((j) => !readyStatuses.has(j.status)) && (
+                  <button type="button" className="dl-queue-clear" onClick={handleClearIncomplete} title="Rimuovi dalla coda tutti i download non completati">
+                    🧹 Svuota non completati
+                  </button>
+                )}
+              </div>
             </div>
             <div className="dl-queue-list-clean">
               {queue.map((job) => {
@@ -2955,15 +3119,14 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
                     <span className="dl-queue-pct">{ready ? '100%' : failed ? '!' : `${pct}%`}</span>
 
-                    {failed ? (
-                      <button type="button" className="dl-queue-retry" onClick={() => handleRetryJob(job)} title="Riprova">
+                    {failed && (
+                      <button type="button" className="dl-queue-retry" onClick={() => handleRetryJob(job)} title="Riprova download">
                         🔄
                       </button>
-                    ) : (
-                      <button type="button" className="dl-queue-remove" onClick={() => handleRemoveJob(job.key)} title="Rimuovi dalla coda">
-                        ✕
-                      </button>
                     )}
+                    <button type="button" className="dl-queue-remove" onClick={() => handleRemoveJob(job.key)} title={failed ? 'Cancella dalla coda' : 'Annulla download'} aria-label={failed ? 'Cancella dalla coda' : 'Annulla download'}>
+                      ✕
+                    </button>
                   </div>
                 )
               })}
@@ -2998,14 +3161,25 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
           {/* BATCH REKORDBOX DOWNLOAD BUTTON */}
           {history.length > 0 && (
-            <button
-              type="button"
-              className="btn-rekordbox-batch"
-              onClick={handleBatchRekordboxExport}
-              title="Esporta playlist M3U per chiavetta Rekordbox / CDJ Pioneer"
-            >
-              ⚡ Scarica pronta per Rekordbox
-            </button>
+            <div className="wing-export-actions">
+              <button
+                type="button"
+                className="btn-rekordbox-batch"
+                onClick={handleDownloadFolderZip}
+                disabled={zipBusy}
+                title="Scarica una cartella .zip con tutte le tracce pronte"
+              >
+                {zipBusy ? '⏳ Preparazione…' : '⬇️ Scarica cartella completa'}
+              </button>
+              <button
+                type="button"
+                className="btn-rekordbox-secondary"
+                onClick={handleBatchRekordboxExport}
+                title="Esporta la playlist M3U per Rekordbox / CDJ Pioneer"
+              >
+                <u>⚡ Playlist M3U per Rekordbox</u>
+              </button>
+            </div>
           )}
 
           {/* LISTA BRANI PRONTI */}
