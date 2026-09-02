@@ -637,8 +637,13 @@ export default function FolderIngestionHub() {
     }
   }
 
-  const handlePlayTrack = (track: IngestedTrack) => {
+  const handlePlayTrack = async (track: IngestedTrack) => {
     setPlayingTrackId(track.id)
+    let audioUrl = track.audioUrl && track.audioUrl !== DEMO_AUDIO_PREVIEW ? track.audioUrl : undefined
+    // For real backend files, upgrade to a signed/CORS URL so the Web Audio EQ can process the stream
+    if (audioUrl && track.id && audioUrl.includes('/api/v1/downloads/')) {
+      try { audioUrl = await api.resolveFileUrl(track.id) } catch { /* keep direct url */ }
+    }
     if (typeof window !== 'undefined') {
       window.__drops_play_track?.({
         id: track.id,
@@ -646,7 +651,7 @@ export default function FolderIngestionHub() {
         artist: track.artist || 'Artista Sconosciuto',
         bpm: track.bpm,
         genre: track.genre,
-        audioUrl: track.audioUrl && track.audioUrl !== DEMO_AUDIO_PREVIEW ? track.audioUrl : undefined,
+        audioUrl,
       })
     }
   }

@@ -173,6 +173,17 @@ export const api = {
   getDownload: (id: string) => request<unknown>(`/api/v1/downloads/${encodeURIComponent(id)}`).then(normalizeJob),
   listDownloads: (limit = 100) => request<{ downloads: unknown[] }>(`/api/v1/downloads?limit=${limit}`).then((res) => ({ downloads: (res?.downloads ?? []).map(normalizeJob) })),
   fileUrl: (id: string) => `${apiUrl()}/api/v1/downloads/${encodeURIComponent(id)}/file`,
+  // Prefer a short-lived signed URL (CORS-friendly, no cookies) so audio can flow through Web Audio (EQ) and be zipped;
+  // falls back to the direct /file URL until the backend exposes /file-url.
+  resolveFileUrl: async (id: string): Promise<string> => {
+    try {
+      const res = await request<{ url?: string }>(`/api/v1/downloads/${encodeURIComponent(id)}/file-url`)
+      if (res && typeof res.url === 'string' && res.url) return res.url
+    } catch {
+      /* endpoint not available yet -> fall back to the direct file URL */
+    }
+    return `${apiUrl()}/api/v1/downloads/${encodeURIComponent(id)}/file`
+  },
   resolvePlaylist: (url: string) =>
     request<PlaylistPreview>('/api/v1/playlists/resolve', { method: 'POST', body: JSON.stringify({ url }) }),
   spotifyConnectUrl: () => `${apiUrl()}/api/v1/spotify/connect`,

@@ -2807,7 +2807,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       const m3uEntries: string[] = []
       for (const t of readyTracks) {
         try {
-          const res = await fetch(api.fileUrl(t.id))
+          const res = await fetch(await api.resolveFileUrl(t.id))
           if (!res.ok) continue
           const ct = res.headers.get('content-type') || ''
           const data = new Uint8Array(await res.arrayBuffer())
