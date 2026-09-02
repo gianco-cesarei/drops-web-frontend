@@ -224,16 +224,6 @@ export default function DropsLanding() {
             />
           </picture>
 
-          <div className="hero-photo-cue" aria-label="Indicatore CUE Cuffia DJ" role="status">
-            <span className="hero-photo-cue-text">CUE</span>
-            <div className="hero-photo-cue-l-line">
-              <svg width="26" height="18" viewBox="0 0 26 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 2V12C2 14.2 3.8 16 6 16H22" stroke="#00ff9d" strokeWidth="2" strokeLinecap="round" />
-                <path d="M18 12L22 16L18 20" stroke="#00ff9d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-
           <div className="discovery-hero-headline-clean">
             <h1 className="discovery-hero-claim-clean">
               Manage your<br />

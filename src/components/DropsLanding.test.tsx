@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi, beforeEach } from "vitest"
+import { api } from "../api"
 import DropsLanding from "./DropsLanding"
 
 describe("DropsLanding", () => {
@@ -9,11 +10,9 @@ describe("DropsLanding", () => {
     vi.restoreAllMocks()
   })
 
-  it("renders hero headline, CUE headphone indicator, and CTA buttons when anonymous", () => {
+  it("renders hero headline and CTA buttons when anonymous", () => {
     render(<DropsLanding />)
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Manage your/i)
-    expect(screen.getByLabelText(/Indicatore CUE Cuffia DJ/i)).toBeInTheDocument()
-    expect(screen.getByText("CUE")).toBeInTheDocument()
     expect(screen.getAllByRole("button", { name: /^Iscriviti$/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole("button", { name: /^Accedi$/i }).length).toBeGreaterThan(0)
   })
@@ -34,6 +33,7 @@ describe("DropsLanding", () => {
   })
 
   it("validates registration form and registers user into localStorage with success feedback", async () => {
+    vi.spyOn(api, "login").mockResolvedValueOnce({ username: "dj_neon", name: "dj_neon", role: "user" })
     const user = userEvent.setup()
     render(<DropsLanding />)
 
