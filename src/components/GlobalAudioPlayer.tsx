@@ -16,250 +16,262 @@ declare global {
   }
 }
 
+const FADE_SECONDS = 1.4
+
 export default function GlobalAudioPlayer() {
   const [activeTrack, setActiveTrack] = useState<ActiveTrack | null>(null)
-  const [isPlaying, setIsPlaying] = useState<boolean>(false)
-  const [usingSynth, setUsingSynth] = useState<boolean>(false)
-  const [currentTime, setCurrentTime] = useState<number>(0)
-  const [duration, setDuration] = useState<number>(180)
-  const [volume, setVolume] = useState<number>(80)
-  const [isMuted, setIsMuted] = useState<boolean>(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [usingSynth, setUsingSynth] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(180)
+  const [volume, setVolume] = useState(80)
+  const [isMuted, setIsMuted] = useState(false)
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  // Single-deck Web Audio graph:  source -> EQ(low>mid>high) -> program(fade) -> master(volume) -> destination
   const ctxRef = useRef<AudioContext | null>(null)
   const masterRef = useRef<GainNode | null>(null)
+  const programRef = useRef<GainNode | null>(null)
+  const eqLowRef = useRef<BiquadFilterNode | null>(null)
+  const eqMidRef = useRef<BiquadFilterNode | null>(null)
+  const eqHighRef = useRef<BiquadFilterNode | null>(null)
+  const eqInRef = useRef<GainNode | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
+  const usingGraphRef = useRef<boolean>(false)
+  const fadeEnabledRef = useRef<boolean>(false)
+
+  // Synth engine
+  const synthGainRef = useRef<GainNode | null>(null)
   const noiseRef = useRef<AudioBuffer | null>(null)
   const schedRef = useRef<number | null>(null)
   const stepRef = useRef<number>(0)
 
-  const gainValue = () => (isMuted ? 0 : Math.max(0, Math.min(1, volume / 100)))
+  const vol = () => (isMuted ? 0 : Math.max(0, Math.min(1, volume / 100)))
 
-  // --- Synthesised club-groove engine (reliable offline / cross-browser fallback) ---
-  const ensureCtx = (): AudioContext | null => {
-    if (!ctxRef.current) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!AudioCtx) return null
-      ctxRef.current = new AudioCtx()
+  const ensureAudioEl = (): HTMLAudioElement => {
+    if (!audioRef.current) {
+      const a = new Audio()
+      a.crossOrigin = 'anonymous'
+      a.preload = 'auto'
+      a.addEventListener('timeupdate', onTimeUpdate)
+      a.addEventListener('ended', onEnded)
+      a.addEventListener('error', onError)
+      audioRef.current = a
     }
-    return ctxRef.current
+    return audioRef.current
   }
 
-  const stopSynth = () => {
-    if (schedRef.current != null) {
-      window.clearInterval(schedRef.current)
-      schedRef.current = null
+  const ensureGraph = (): AudioContext | null => {
+    if (ctxRef.current) {
+      if (ctxRef.current.state === 'suspended') ctxRef.current.resume().catch(() => {})
+      return ctxRef.current
     }
-    if (masterRef.current) {
-      try { masterRef.current.disconnect() } catch { /* ignore */ }
-      masterRef.current = null
+    try {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (!AC) return null
+      const ctx = new AC()
+      const master = ctx.createGain(); master.gain.value = vol()
+      const program = ctx.createGain(); program.gain.value = 1
+      const low = ctx.createBiquadFilter(); low.type = 'lowshelf'; low.frequency.value = 120
+      const mid = ctx.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 1000; mid.Q.value = 1
+      const high = ctx.createBiquadFilter(); high.type = 'highshelf'; high.frequency.value = 5000
+      const eqIn = ctx.createGain()
+      eqIn.connect(low); low.connect(mid); mid.connect(high); high.connect(program); program.connect(master); master.connect(ctx.destination)
+      const sg = ctx.createGain(); sg.gain.value = 0.85; sg.connect(eqIn)
+      ctxRef.current = ctx
+      masterRef.current = master; programRef.current = program
+      eqLowRef.current = low; eqMidRef.current = mid; eqHighRef.current = high
+      eqInRef.current = eqIn; synthGainRef.current = sg
+      // wire the media element once
+      const a = ensureAudioEl()
+      try {
+        const src = ctx.createMediaElementSource(a)
+        src.connect(eqIn)
+        sourceRef.current = src
+      } catch {
+        sourceRef.current = null
+      }
+      return ctx
+    } catch {
+      return null
     }
   }
 
+  const fadeProgram = (to: number, seconds: number) => {
+    const ctx = ctxRef.current, prog = programRef.current
+    if (!ctx || !prog) return
+    const now = ctx.currentTime
+    prog.gain.cancelScheduledValues(now)
+    prog.gain.setValueAtTime(prog.gain.value, now)
+    prog.gain.linearRampToValueAtTime(to, now + Math.max(0.01, seconds))
+  }
+
+  // ---- Media element events ----
+  const onTimeUpdate = () => {
+    const a = audioRef.current
+    if (!a || !a.duration || isNaN(a.duration)) return
+    setCurrentTime(a.currentTime)
+    setDuration(a.duration)
+    if (fadeEnabledRef.current) {
+      const remaining = a.duration - a.currentTime
+      if (remaining <= FADE_SECONDS && remaining > 0.15) fadeProgram(0, remaining)
+    }
+  }
+  const onEnded = () => { setIsPlaying(false); window.dispatchEvent(new CustomEvent('drops-track-ended')) }
+  const onError = () => {
+    const a = audioRef.current
+    const url = a?.getAttribute('data-src') || ''
+    if (url && usingGraphRef.current) {
+      // Likely a CORS block (crossOrigin) or 404 -> retry once without the graph so audio still plays (EQ inert)
+      usingGraphRef.current = false
+      const plain = a as HTMLAudioElement
+      plain.crossOrigin = ''
+      plain.src = url
+      plain.play().then(() => setIsPlaying(true)).catch(() => { setUsingSynth(true); startSynth(180); setIsPlaying(true) })
+    }
+  }
+
+  const playReal = (track: ActiveTrack) => {
+    const url = track.audioUrl as string
+    const ctx = ensureGraph()
+    const a = ensureAudioEl()
+    stopSynth()
+    setUsingSynth(false)
+    usingGraphRef.current = !!ctx && !!sourceRef.current
+    a.setAttribute('data-src', url)
+    a.src = url
+    a.currentTime = 0
+    if (programRef.current && ctx) {
+      if (fadeEnabledRef.current) { programRef.current.gain.setValueAtTime(0.0001, ctx.currentTime); fadeProgram(1, FADE_SECONDS) }
+      else programRef.current.gain.setValueAtTime(1, ctx.currentTime)
+    } else {
+      a.volume = vol()
+    }
+    a.play().then(() => setIsPlaying(true)).catch(() => {
+      // Autoplay/format rejection -> synth so there is always feedback
+      setUsingSynth(true); startSynth(track.bpm || 124); setIsPlaying(true)
+    })
+  }
+
+  // ---- Synth groove (offline / demo fallback, routed through the same EQ) ----
+  const stopSynth = () => { if (schedRef.current != null) { window.clearInterval(schedRef.current); schedRef.current = null } }
   const startSynth = (bpm: number) => {
-    const ctx = ensureCtx()
-    if (!ctx) return
+    const ctx = ensureGraph()
+    if (!ctx || !synthGainRef.current) return
     if (ctx.state === 'suspended') ctx.resume().catch(() => {})
     stopSynth()
     stepRef.current = 0
-
-    const master = ctx.createGain()
-    master.gain.value = gainValue() * 0.85
-    master.connect(ctx.destination)
-    masterRef.current = master
-
+    const out = synthGainRef.current
     if (!noiseRef.current) {
       const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate)
       const ch = buf.getChannelData(0)
       for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1
       noiseRef.current = buf
     }
-
     const beat = 60 / (bpm && bpm > 40 ? bpm : 124)
-    const bassNotes = [55, 55, 82.41, 65.41]
-
+    const bass = [55, 55, 82.41, 65.41]
     const scheduleBeat = () => {
-      if (!masterRef.current || !ctxRef.current) return
       const c = ctxRef.current
-      const out = masterRef.current
+      if (!c) return
       const t = c.currentTime + 0.03
       const step = stepRef.current
-
-      // Kick drum
-      const kick = c.createOscillator()
-      const kg = c.createGain()
-      kick.frequency.setValueAtTime(160, t)
-      kick.frequency.exponentialRampToValueAtTime(48, t + 0.12)
-      kg.gain.setValueAtTime(0.9, t)
-      kg.gain.exponentialRampToValueAtTime(0.001, t + 0.18)
-      kick.connect(kg).connect(out)
-      kick.start(t)
-      kick.stop(t + 0.2)
-
-      // Rolling bassline
-      const bass = c.createOscillator()
-      const bg = c.createGain()
-      bass.type = 'sawtooth'
-      bass.frequency.value = bassNotes[step % bassNotes.length]
-      bg.gain.setValueAtTime(0.0001, t)
-      bg.gain.linearRampToValueAtTime(0.14, t + 0.03)
-      bg.gain.exponentialRampToValueAtTime(0.001, t + beat * 0.9)
-      bass.connect(bg).connect(out)
-      bass.start(t)
-      bass.stop(t + beat)
-
-      // Off-beat hi-hat
+      const kick = c.createOscillator(); const kg = c.createGain()
+      kick.frequency.setValueAtTime(160, t); kick.frequency.exponentialRampToValueAtTime(48, t + 0.12)
+      kg.gain.setValueAtTime(0.9, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.18)
+      kick.connect(kg).connect(out); kick.start(t); kick.stop(t + 0.2)
+      const bs = c.createOscillator(); const bg = c.createGain()
+      bs.type = 'sawtooth'; bs.frequency.value = bass[step % bass.length]
+      bg.gain.setValueAtTime(0.0001, t); bg.gain.linearRampToValueAtTime(0.14, t + 0.03); bg.gain.exponentialRampToValueAtTime(0.001, t + beat * 0.9)
+      bs.connect(bg).connect(out); bs.start(t); bs.stop(t + beat)
       if (noiseRef.current) {
-        const hat = c.createBufferSource()
-        hat.buffer = noiseRef.current
-        const hp = c.createBiquadFilter()
-        hp.type = 'highpass'
-        hp.frequency.value = 7000
-        const hg = c.createGain()
-        const ht = t + beat / 2
-        hg.gain.setValueAtTime(0.0001, ht)
-        hg.gain.linearRampToValueAtTime(0.09, ht + 0.005)
-        hg.gain.exponentialRampToValueAtTime(0.001, ht + 0.05)
-        hat.connect(hp).connect(hg).connect(out)
-        hat.start(ht)
-        hat.stop(ht + 0.06)
+        const hat = c.createBufferSource(); hat.buffer = noiseRef.current
+        const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000
+        const hg = c.createGain(); const ht = t + beat / 2
+        hg.gain.setValueAtTime(0.0001, ht); hg.gain.linearRampToValueAtTime(0.09, ht + 0.005); hg.gain.exponentialRampToValueAtTime(0.001, ht + 0.05)
+        hat.connect(hp).connect(hg).connect(out); hat.start(ht); hat.stop(ht + 0.06)
       }
-
       stepRef.current = step + 1
     }
-
     scheduleBeat()
     schedRef.current = window.setInterval(scheduleBeat, beat * 1000)
   }
 
-  // Initialize / update playback when the active track changes
+  // ---- React to track changes ----
   useEffect(() => {
-    if (!activeTrack) {
-      stopSynth()
-      setUsingSynth(false)
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current.src = ''
-      }
-      return
-    }
-
-    stopSynth()
-    const audio = audioRef.current || new Audio()
-    audioRef.current = audio
-    audio.volume = gainValue()
-
-    let cleanup = () => {}
-
+    if (!activeTrack) return
     if (activeTrack.audioUrl) {
-      setUsingSynth(false)
-      audio.src = activeTrack.audioUrl
-      audio.currentTime = 0
-      audio.play().then(() => {
-        setIsPlaying(true)
-      }).catch(() => {
-        // Remote file blocked/unsupported -> reliable synthesised preview
-        setUsingSynth(true)
-        startSynth(activeTrack.bpm || 124)
-        setIsPlaying(true)
-      })
-
-      const handleTimeUpdate = () => {
-        if (audio.duration && !isNaN(audio.duration)) {
-          setCurrentTime(audio.currentTime)
-          setDuration(audio.duration)
-        }
-      }
-      const handleEnded = () => {
-        setIsPlaying(false)
-        setCurrentTime(0)
-      }
-      audio.addEventListener('timeupdate', handleTimeUpdate)
-      audio.addEventListener('ended', handleEnded)
-      cleanup = () => {
-        audio.removeEventListener('timeupdate', handleTimeUpdate)
-        audio.removeEventListener('ended', handleEnded)
-      }
+      playReal(activeTrack)
     } else {
-      // No real file -> synthesised groove keyed to BPM
-      setUsingSynth(true)
-      setDuration(180)
-      startSynth(activeTrack.bpm || 124)
-      setIsPlaying(true)
+      setUsingSynth(true); setDuration(180); setCurrentTime(0); startSynth(activeTrack.bpm || 124); setIsPlaying(true)
     }
-
-    return cleanup
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack])
 
-  // Play / Pause
+  // ---- Transport ----
   const handleTogglePlay = () => {
     if (!activeTrack) return
     if (usingSynth) {
-      if (isPlaying) {
-        stopSynth()
-        setIsPlaying(false)
-      } else {
-        startSynth(activeTrack.bpm || 124)
-        setIsPlaying(true)
-      }
+      if (isPlaying) { stopSynth(); setIsPlaying(false) } else { startSynth(activeTrack.bpm || 124); setIsPlaying(true) }
       return
     }
-    if (isPlaying) {
-      audioRef.current?.pause()
-      setIsPlaying(false)
-    } else {
-      audioRef.current?.play().catch(() => {})
-      setIsPlaying(true)
-    }
+    const a = audioRef.current
+    if (!a) return
+    if (isPlaying) { a.pause(); setIsPlaying(false) } else { a.play().catch(() => {}); setIsPlaying(true) }
   }
 
-  // Volume / mute applied to both engines
+  const seekTo = (value: number) => {
+    setCurrentTime(value)
+    if (usingSynth) return
+    if (audioRef.current) { try { audioRef.current.currentTime = value } catch { /* ignore */ } }
+  }
+
+  // ---- Volume ----
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = gainValue()
-    if (masterRef.current) masterRef.current.gain.value = gainValue() * 0.85
+    if (masterRef.current) masterRef.current.gain.value = vol()
+    if (audioRef.current && !usingGraphRef.current) audioRef.current.volume = vol()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [volume, isMuted])
 
-  // Register global play hook
+  // ---- External control events (from the Archive console / mixer) ----
   useEffect(() => {
-    const handleGlobalPlay = (e: CustomEvent<ActiveTrack>) => {
-      if (e.detail) {
-        setActiveTrack(e.detail)
-        setCurrentTime(0)
-      }
+    const onPlay = (e: CustomEvent<ActiveTrack>) => { if (e.detail) { setActiveTrack(e.detail); setCurrentTime(0) } }
+    const onVol = (e: CustomEvent<number>) => { const v = Math.max(0, Math.min(100, Number(e.detail))); if (!isNaN(v)) { setVolume(v); if (v > 0) setIsMuted(false) } }
+    const onEq = (e: CustomEvent<{ low: number; mid: number; high: number }>) => {
+      ensureGraph()
+      const d = e.detail || ({} as { low: number; mid: number; high: number })
+      const toDb = (n: number) => ((Math.max(0, Math.min(100, n)) - 50) / 50) * 12
+      if (eqLowRef.current && typeof d.low === 'number') eqLowRef.current.gain.value = toDb(d.low)
+      if (eqMidRef.current && typeof d.mid === 'number') eqMidRef.current.gain.value = toDb(d.mid)
+      if (eqHighRef.current && typeof d.high === 'number') eqHighRef.current.gain.value = toDb(d.high)
     }
-    const handleSetVolume = (e: CustomEvent<number>) => {
-      const v = Math.max(0, Math.min(100, Number(e.detail)))
-      if (!isNaN(v)) { setVolume(v); if (v > 0) setIsMuted(false) }
-    }
-    window.addEventListener('drops-play-track' as any, handleGlobalPlay)
-    window.addEventListener('drops-set-volume' as any, handleSetVolume)
-    window.__drops_play_track = (track: ActiveTrack) => {
-      setActiveTrack({ ...track })
-      setCurrentTime(0)
-    }
+    const onFadeEnabled = (e: CustomEvent<boolean>) => { fadeEnabledRef.current = !!e.detail }
+
+    window.addEventListener('drops-play-track' as any, onPlay as any)
+    window.addEventListener('drops-set-volume' as any, onVol as any)
+    window.addEventListener('drops-set-eq' as any, onEq as any)
+    window.addEventListener('drops-set-fade-enabled' as any, onFadeEnabled as any)
+    window.__drops_play_track = (track: ActiveTrack) => { setActiveTrack({ ...track }); setCurrentTime(0) }
+
     return () => {
-      window.removeEventListener('drops-play-track' as any, handleGlobalPlay)
-      window.removeEventListener('drops-set-volume' as any, handleSetVolume)
+      window.removeEventListener('drops-play-track' as any, onPlay as any)
+      window.removeEventListener('drops-set-volume' as any, onVol as any)
+      window.removeEventListener('drops-set-eq' as any, onEq as any)
+      window.removeEventListener('drops-set-fade-enabled' as any, onFadeEnabled as any)
       delete window.__drops_play_track
       stopSynth()
-      if (ctxRef.current) {
-        ctxRef.current.close().catch(() => {})
-        ctxRef.current = null
-      }
-      if (audioRef.current) audioRef.current.pause()
+      try { audioRef.current?.pause() } catch { /* ignore */ }
+      if (ctxRef.current) { ctxRef.current.close().catch(() => {}); ctxRef.current = null }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Timeline progression for the synthesised engine
+  // Synth timeline progression
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined
     if (isPlaying && usingSynth) {
       interval = setInterval(() => {
         setCurrentTime((prev) => {
-          if (prev >= duration) {
-            setIsPlaying(false)
-            stopSynth()
-            return 0
-          }
+          if (prev >= duration) { setIsPlaying(false); stopSynth(); return 0 }
           return prev + 1
         })
       }, 1000)
@@ -274,19 +286,10 @@ export default function GlobalAudioPlayer() {
     const s = Math.floor(secs % 60)
     return `${m}:${s < 10 ? '0' : ''}${s}`
   }
-
-  const seekTo = (value: number) => {
-    setCurrentTime(value)
-    if (!usingSynth && audioRef.current) {
-      audioRef.current.currentTime = value
-    }
-  }
-
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
     <aside className="global-mini-player-bar" aria-label="Riproduttore Audio Globale">
-      {/* TRACK INFO LEFT */}
       <div className="mini-player-track-info">
         <div className="mini-player-artwork-box">
           {activeTrack.coverUrl ? (
@@ -296,7 +299,6 @@ export default function GlobalAudioPlayer() {
           )}
           {isPlaying && <div className="live-soundwave-indicator"><span></span><span></span><span></span></div>}
         </div>
-
         <div className="mini-player-meta-text">
           <div className="mini-player-title-row">
             <strong className="mini-player-title">{activeTrack.title}</strong>
@@ -306,90 +308,28 @@ export default function GlobalAudioPlayer() {
         </div>
       </div>
 
-      {/* CENTER CONTROLS & TIMELINE */}
       <div className="mini-player-center-controls">
         <div className="mini-player-transport-row">
-          <button
-            type="button"
-            className="mini-player-btn prev"
-            onClick={() => seekTo(Math.max(0, currentTime - 15))}
-            title="Riavvolgi 15s"
-          >
-            ↺ 15s
-          </button>
-          <button
-            type="button"
-            className="mini-player-play-btn"
-            onClick={handleTogglePlay}
-            aria-label={isPlaying ? 'Metti in pausa' : 'Riproduci traccia'}
-          >
-            {isPlaying ? '❚❚' : '▶'}
-          </button>
-          <button
-            type="button"
-            className="mini-player-btn next"
-            onClick={() => seekTo(Math.min(duration, currentTime + 15))}
-            title="Avanza 15s"
-          >
-            15s ↻
-          </button>
+          <button type="button" className="mini-player-btn prev" onClick={() => seekTo(Math.max(0, currentTime - 15))} title="Riavvolgi 15s">↺ 15s</button>
+          <button type="button" className="mini-player-play-btn" onClick={handleTogglePlay} aria-label={isPlaying ? 'Metti in pausa' : 'Riproduci traccia'}>{isPlaying ? '❚❚' : '▶'}</button>
+          <button type="button" className="mini-player-btn next" onClick={() => seekTo(Math.min(duration, currentTime + 15))} title="Avanza 15s">15s ↻</button>
         </div>
-
         <div className="mini-player-progress-row">
           <span className="timecode-text">{formatTime(currentTime)}</span>
           <div className="mini-player-timeline-slider">
-            <input
-              type="range"
-              min="0"
-              max={duration}
-              value={currentTime}
-              onChange={(e) => seekTo(Number(e.target.value))}
-              aria-label="Progresso riproduzione"
-            />
+            <input type="range" min="0" max={duration} value={currentTime} onChange={(e) => seekTo(Number(e.target.value))} aria-label="Progresso riproduzione" />
             <div className="timeline-fill-bar" style={{ width: `${progressPercent}%` }}></div>
           </div>
           <span className="timecode-text">{formatTime(duration)}</span>
         </div>
       </div>
 
-      {/* RIGHT VOLUME & CLOSE */}
       <div className="mini-player-right-actions">
         <div className="mini-player-volume-control">
-          <button
-            type="button"
-            className="volume-mute-btn"
-            onClick={() => setIsMuted(!isMuted)}
-            title={isMuted ? 'Riattiva audio' : 'Disattiva audio'}
-          >
-            {isMuted || volume === 0 ? '🔇' : volume < 50 ? '🔉' : '🔊'}
-          </button>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={isMuted ? 0 : volume}
-            onChange={(e) => {
-              setVolume(Number(e.target.value))
-              if (isMuted) setIsMuted(false)
-            }}
-            className="volume-slider"
-            aria-label="Volume audio"
-          />
+          <button type="button" className="volume-mute-btn" onClick={() => setIsMuted(!isMuted)} title={isMuted ? 'Riattiva audio' : 'Disattiva audio'}>{isMuted || volume === 0 ? '🔇' : volume < 50 ? '🔉' : '🔊'}</button>
+          <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={(e) => { setVolume(Number(e.target.value)); if (isMuted) setIsMuted(false) }} className="volume-slider" aria-label="Volume audio" />
         </div>
-
-        <button
-          type="button"
-          className="mini-player-close-btn"
-          onClick={() => {
-            stopSynth()
-            setIsPlaying(false)
-            setActiveTrack(null)
-          }}
-          title="Chiudi riproduttore"
-          aria-label="Chiudi riproduttore"
-        >
-          ✕
-        </button>
+        <button type="button" className="mini-player-close-btn" onClick={() => { stopSynth(); setIsPlaying(false); try { audioRef.current?.pause() } catch { /* ignore */ } setActiveTrack(null) }} title="Chiudi riproduttore" aria-label="Chiudi riproduttore">✕</button>
       </div>
     </aside>
   )

@@ -365,7 +365,6 @@ export default function FolderIngestionHub() {
   const [queue, setQueue] = useState<IngestedTrack[]>([])
   const [queueIndex, setQueueIndex] = useState<number>(-1)
   const [crossfade, setCrossfade] = useState<boolean>(false)
-  const [xfader, setXfader] = useState<number>(50)
   const [eqLow, setEqLow] = useState<number>(50)
   const [eqMid, setEqMid] = useState<number>(50)
   const [eqHigh, setEqHigh] = useState<number>(50)
@@ -761,6 +760,30 @@ export default function FolderIngestionHub() {
     }
   }, [master])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('drops-set-eq', { detail: { low: eqLow, mid: eqMid, high: eqHigh } }))
+    }
+  }, [eqLow, eqMid, eqHigh])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('drops-set-fade-enabled', { detail: crossfade }))
+    }
+  }, [crossfade])
+
+  useEffect(() => {
+    const onEnded = () => {
+      if (queue.length && queueIndex >= 0 && queueIndex < queue.length - 1) {
+        const ni = queueIndex + 1
+        setQueueIndex(ni)
+        handlePlayTrack(queue[ni])
+      }
+    }
+    window.addEventListener('drops-track-ended', onEnded)
+    return () => window.removeEventListener('drops-track-ended', onEnded)
+  }, [queue, queueIndex])
+
   return (
     <div
       className={`arch-winged-layout ${isDraggingOver ? 'is-dragging-over' : ''}`}
@@ -1029,11 +1052,6 @@ export default function FolderIngestionHub() {
                 <input type="range" min="0" max="100" value={eqLow} onChange={(e) => setEqLow(Number(e.target.value))} className="arch-vslider" />
                 <span className="arch-eq-lbl">LOW</span>
               </div>
-            </div>
-            <div className="arch-fader-row">
-              <span className="arch-fader-lbl">A</span>
-              <input type="range" min="0" max="100" value={xfader} onChange={(e) => setXfader(Number(e.target.value))} className="arch-xfader" />
-              <span className="arch-fader-lbl">B</span>
             </div>
             <div className="arch-master">
               <span className="arch-master-lbl">🔊 Master</span>
