@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../api'
+import { isAvailableTrack, verifyAndResolveBackendAudioUrl } from '../lib/audioManager'
 
 export interface IngestedTrack {
   id: string
@@ -14,6 +15,8 @@ export interface IngestedTrack {
   sizeBytes?: number
   audioUrl?: string
   confidence?: number
+  status?: string
+  isAvailable?: boolean
 }
 
 export interface IndexedFolder {
@@ -416,9 +419,9 @@ export default function FolderIngestionHub() {
     })
   }, [])
 
-  // All tracks aggregated
+  // All tracks aggregated (only available/downloaded tracks)
   const allTracks = useMemo(() => {
-    return folders.flatMap((f) => f.tracks)
+    return folders.flatMap((f) => (f.tracks || []).filter(isAvailableTrack))
   }, [folders])
 
   const selectedFolder = useMemo(() => {
@@ -436,7 +439,14 @@ export default function FolderIngestionHub() {
         tracks: allTracks,
       }
     }
-    return folders.find((f) => f.id === selectedFolderId) || folders[0] || null
+    const found = folders.find((f) => f.id === selectedFolderId) || folders[0] || null
+    if (!found) return null
+    const validTracks = (found.tracks || []).filter(isAvailableTrack)
+    return {
+      ...found,
+      trackCount: validTracks.length,
+      tracks: validTracks,
+    }
   }, [folders, selectedFolderId, allTracks])
 
   const handleStartRename = (folder: IndexedFolder, e?: React.MouseEvent) => {
@@ -640,12 +650,26 @@ export default function FolderIngestionHub() {
   }
 
   const handlePlayTrack = async (track: IngestedTrack) => {
-    setPlayingTrackId(track.id)
-    let audioUrl = track.audioUrl && track.audioUrl !== DEMO_AUDIO_PREVIEW ? track.audioUrl : undefined
-    // For real backend files, upgrade to a signed/CORS URL so the Web Audio EQ can process the stream
-    if (audioUrl && track.id && audioUrl.includes('/api/v1/downloads/')) {
-      try { audioUrl = await api.resolveFileUrl(track.id) } catch { /* keep direct url */ }
+    if (!isAvailableTrack(track)) {
+      setNotice('⚠️ Traccia non disponibile o risorsa audio non valida.')
+      setTimeout(() => setNotice(null), 3000)
+      return
     }
+
+    let audioUrl = track.audioUrl && track.audioUrl !== DEMO_AUDIO_PREVIEW ? track.audioUrl : undefined
+    // For real backend files, upgrade to a signed/CORS URL and verify backend deployment + 3 CORS checks
+    if (track.id && (audioUrl?.includes('/api/v1/downloads/') || !audioUrl)) {
+      const corsCheck = await verifyAndResolveBackendAudioUrl(track.id, audioUrl)
+      if (!corsCheck.ok) {
+        setNotice(`⚠️ Playback bloccato: ${corsCheck.error}`)
+        setTimeout(() => setNotice(null), 4500)
+        setPlayingTrackId(null)
+        return
+      }
+      audioUrl = corsCheck.url
+    }
+
+    setPlayingTrackId(track.id)
     if (typeof window !== 'undefined') {
       window.__drops_play_track?.({
         id: track.id,
@@ -673,8 +697,9 @@ export default function FolderIngestionHub() {
 
   // Export M3U Playlist file
   const handleExportM3U = (folder: IndexedFolder) => {
+    const validTracks = (folder.tracks || []).filter(isAvailableTrack)
     const lines = ['#EXTM3U', `#PLAYLIST:${folder.name}`]
-    folder.tracks.forEach((track) => {
+    validTracks.forEach((track) => {
       const artist = track.artist || 'Unknown'
       const title = track.title || 'Track'
       lines.push(`#EXTINF:-1,${artist} - ${title}`)
@@ -704,13 +729,14 @@ export default function FolderIngestionHub() {
   const filteredFolders = sortedFolders.filter((f) => {
     const q = filterQuery.toLowerCase().trim()
     if (!q) return true
+    const validTracks = (f.tracks || []).filter(isAvailableTrack)
     return (
       f.name.toLowerCase().includes(q) ||
-      f.tracks.some((t) => t.title.toLowerCase().includes(q) || (t.artist && t.artist.toLowerCase().includes(q)))
+      validTracks.some((t) => t.title.toLowerCase().includes(q) || (t.artist && t.artist.toLowerCase().includes(q)))
     )
   })
 
-  const filteredTracks = (selectedFolder?.tracks ?? []).filter((t) => {
+  const filteredTracks = (selectedFolder?.tracks ?? []).filter(isAvailableTrack).filter((t) => {
     const q = trackFilterQuery.toLowerCase().trim()
     if (!q) return true
     return (

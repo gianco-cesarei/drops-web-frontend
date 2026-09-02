@@ -1,4 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
+import {
+  registerAudioElement,
+  stopAllOtherAudioExcept,
+  unregisterAudioElement,
+  verifyAndResolveBackendAudioUrl,
+} from '../lib/audioManager'
 
 export interface ActiveTrack {
   id?: string
@@ -26,6 +32,7 @@ export default function GlobalAudioPlayer() {
   const [duration, setDuration] = useState(180)
   const [volume, setVolume] = useState(80)
   const [isMuted, setIsMuted] = useState(false)
+  const [corsError, setCorsError] = useState<string | null>(null)
 
   // Single-deck Web Audio graph:  source -> EQ(low>mid>high) -> program(fade) -> master(volume) -> destination
   const ctxRef = useRef<AudioContext | null>(null)
@@ -56,6 +63,7 @@ export default function GlobalAudioPlayer() {
       a.addEventListener('timeupdate', onTimeUpdate)
       a.addEventListener('ended', onEnded)
       a.addEventListener('error', onError)
+      registerAudioElement(a)
       audioRef.current = a
     }
     return audioRef.current
@@ -127,16 +135,36 @@ export default function GlobalAudioPlayer() {
       const plain = a as HTMLAudioElement
       plain.crossOrigin = ''
       plain.src = url
-      plain.play().then(() => setIsPlaying(true)).catch(() => { setUsingSynth(true); startSynth(180); setIsPlaying(true) })
+      plain.play().then(() => setIsPlaying(true)).catch(() => {
+        setCorsError('Impossibile riprodurre la traccia (CORS o risorsa audio non valida).')
+        setIsPlaying(false)
+      })
     }
   }
 
-  const playReal = (track: ActiveTrack) => {
-    const url = track.audioUrl as string
+  const playReal = async (track: ActiveTrack) => {
+    setCorsError(null)
     const ctx = ensureGraph()
     const a = ensureAudioEl()
     stopSynth()
     setUsingSynth(false)
+
+    // Stop all other audio elements / players across the page immediately
+    stopAllOtherAudioExcept(a)
+
+    let url = track.audioUrl as string
+
+    // For downloaded backend tracks, verify backend /file-url deployment and 3 CORS controls
+    if (track.id && (url?.includes('/api/v1/downloads/') || !url)) {
+      const corsCheck = await verifyAndResolveBackendAudioUrl(track.id, url)
+      if (!corsCheck.ok) {
+        setCorsError(`Playback bloccato: ${corsCheck.error}`)
+        setIsPlaying(false)
+        return
+      }
+      url = corsCheck.url
+    }
+
     usingGraphRef.current = !!ctx && !!sourceRef.current
     a.setAttribute('data-src', url)
     a.src = url
@@ -148,7 +176,7 @@ export default function GlobalAudioPlayer() {
       a.volume = vol()
     }
     a.play().then(() => setIsPlaying(true)).catch(() => {
-      // Autoplay/format rejection -> synth so there is always feedback
+      // Autoplay/format rejection -> synth fallback
       setUsingSynth(true); startSynth(track.bpm || 124, track.title || track.id || ''); setIsPlaying(true)
     })
   }
@@ -156,6 +184,7 @@ export default function GlobalAudioPlayer() {
   // ---- Synth groove (offline / demo fallback, routed through the same EQ) ----
   const stopSynth = () => { if (schedRef.current != null) { window.clearInterval(schedRef.current); schedRef.current = null } }
   const startSynth = (bpm: number, seedStr = '') => {
+    stopAllOtherAudioExcept(null)
     const ctx = ensureGraph()
     if (!ctx || !synthGainRef.current) return
     if (ctx.state === 'suspended') ctx.resume().catch(() => {})
@@ -265,10 +294,21 @@ export default function GlobalAudioPlayer() {
     }
     const onFadeEnabled = (e: CustomEvent<boolean>) => { fadeEnabledRef.current = !!e.detail }
 
+    const onStopAll = (e: CustomEvent<{ activeElement?: HTMLAudioElement | null }>) => {
+      if (e.detail?.activeElement !== audioRef.current) {
+        stopSynth()
+        if (audioRef.current && !audioRef.current.paused) {
+          try { audioRef.current.pause() } catch { /* ignore */ }
+        }
+        setIsPlaying(false)
+      }
+    }
+
     window.addEventListener('drops-play-track' as any, onPlay as any)
     window.addEventListener('drops-set-volume' as any, onVol as any)
     window.addEventListener('drops-set-eq' as any, onEq as any)
     window.addEventListener('drops-set-fade-enabled' as any, onFadeEnabled as any)
+    window.addEventListener('drops-stop-all-audio' as any, onStopAll as any)
     window.__drops_play_track = (track: ActiveTrack) => { setActiveTrack({ ...track }); setCurrentTime(0) }
 
     return () => {
@@ -276,9 +316,13 @@ export default function GlobalAudioPlayer() {
       window.removeEventListener('drops-set-volume' as any, onVol as any)
       window.removeEventListener('drops-set-eq' as any, onEq as any)
       window.removeEventListener('drops-set-fade-enabled' as any, onFadeEnabled as any)
+      window.removeEventListener('drops-stop-all-audio' as any, onStopAll as any)
       delete window.__drops_play_track
       stopSynth()
-      try { audioRef.current?.pause() } catch { /* ignore */ }
+      if (audioRef.current) {
+        unregisterAudioElement(audioRef.current)
+        try { audioRef.current.pause() } catch { /* ignore */ }
+      }
       if (ctxRef.current) { ctxRef.current.close().catch(() => {}); ctxRef.current = null }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,6 +359,11 @@ export default function GlobalAudioPlayer() {
 
   return (
     <aside className="global-mini-player-bar" aria-label="Riproduttore Audio Globale">
+      {corsError && (
+        <div className="cors-error-banner" role="alert" style={{ background: '#7f1d1d', color: '#fef2f2', padding: '6px 12px', fontSize: '0.8rem', textAlign: 'center', width: '100%' }}>
+          ⚠️ {corsError}
+        </div>
+      )}
       <div className="mini-player-track-info">
         <div className="mini-player-artwork-box">
           {activeTrack.coverUrl ? (

@@ -3,6 +3,7 @@ import type { ReactNode, SyntheticEvent } from 'react'
 import { api, ApiError } from './api'
 import type { PlaylistEntry, PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
 import { postLoginRoute } from './lib/routes'
+import { isAvailableTrack, registerAudioElement, stopAllOtherAudioExcept, verifyAndResolveBackendAudioUrl } from './lib/audioManager'
 import { contentFields, contentStages, radarDevelopmentFixtures, radarLockedFixtures } from './data/private.fixture'
 import type { RadarFixture } from './data/private.fixture'
 import BrainGraph from './components/BrainGraph'
@@ -546,18 +547,31 @@ function PrivatePlaceholder({ section }: { section: PrivateSection }) {
 }
 
 const globalAudio = typeof Audio !== 'undefined' ? new Audio() : null
+if (globalAudio) {
+  registerAudioElement(globalAudio)
+}
 
 function useAudioPlayer() {
   const [playingUrl, setPlayingUrl] = useState<string | null>(null)
 
-  const toggle = useCallback((url: string) => {
+  const toggle = useCallback(async (url: string, id?: string) => {
     if (!globalAudio) return
     if (globalAudio.src === url && !globalAudio.paused) {
       globalAudio.pause()
       setPlayingUrl(null)
     } else {
+      stopAllOtherAudioExcept(globalAudio)
+      let targetUrl = url
+      if (id && (url.includes('/api/v1/downloads/') || !url)) {
+        const corsCheck = await verifyAndResolveBackendAudioUrl(id, url)
+        if (!corsCheck.ok) {
+          setPlayingUrl(null)
+          return
+        }
+        targetUrl = corsCheck.url
+      }
       globalAudio.pause()
-      globalAudio.src = url
+      globalAudio.src = targetUrl
       globalAudio.play().then(() => setPlayingUrl(url)).catch(() => setPlayingUrl(null))
       globalAudio.onended = () => setPlayingUrl(null)
       globalAudio.onerror = () => setPlayingUrl(null)
@@ -3154,14 +3168,14 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
           {/* LISTA BRANI PRONTI */}
           <div className="wing-ready-list">
-            {history.length === 0 ? (
+            {history.filter(isAvailableTrack).length === 0 ? (
               <div className="wing-ready-empty">
                 <span>🎵</span>
                 <p>Nessun brano pronto</p>
                 <small>I file convertiti e salvati nel cloud appariranno qui, pronti per il download locale.</small>
               </div>
             ) : (
-              history.map((item) => {
+              history.filter(isAvailableTrack).map((item) => {
                 const fileUrl = api.fileUrl(item.id)
                 const isPlaying = playingUrl === fileUrl
                 const isSaved = downloadedIds.has(item.id)
@@ -3170,7 +3184,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                     <button
                       type="button"
                       className={`wing-mini-play ${isPlaying ? 'playing' : ''}`}
-                      onClick={() => toggleAudio(fileUrl)}
+                      onClick={() => toggleAudio(fileUrl, item.id)}
                       title={isPlaying ? 'Pausa anteprima' : 'Ascolta anteprima'}
                     >
                       {isPlaying ? '⏸' : '▶'}

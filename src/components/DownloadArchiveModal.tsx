@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { isAvailableTrack } from '../lib/audioManager'
 
 export interface ArchiveEntry {
   id: string
@@ -8,6 +9,9 @@ export interface ArchiveEntry {
   sourceUrl?: string
   bpm?: number
   ts?: number
+  audioUrl?: string
+  status?: string
+  isAvailable?: boolean
 }
 
 export default function DownloadArchiveModal({
@@ -26,7 +30,9 @@ export default function DownloadArchiveModal({
 
   if (!isOpen) return null
 
-  const filtered = items.filter((it) => {
+  const availableItems = items.filter(isAvailableTrack)
+
+  const filtered = availableItems.filter((it) => {
     const q = filterQuery.toLowerCase().trim()
     if (!q) return true
     return (
@@ -37,7 +43,7 @@ export default function DownloadArchiveModal({
     )
   })
 
-  const allLinks = items
+  const allLinks = availableItems
     .map((it) => it.sourceUrl || it.source)
     .filter((url): url is string => Boolean(url && (url.startsWith('http://') || url.startsWith('https://'))))
 
