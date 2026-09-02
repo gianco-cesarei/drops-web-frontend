@@ -4461,10 +4461,11 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .volume-slider {
-  width: 70px;
-  height: 4px;
-  accent-color: #22c55e;
+  width: 92px;
+  height: 18px;
+  accent-color: #3ecf8e;
   cursor: pointer;
+  background: transparent;
 }
 
 .mini-player-close-btn {
@@ -7444,6 +7445,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
    ========================================================================== */
 
 .download-winged-layout {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -7943,7 +7945,11 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
+.dl-select-wrap .dl-folder-select-clean { flex: 0 1 auto; min-width: 0; max-width: 190px; }
+.dl-select-or, .dl-create-folder-link { white-space: nowrap; flex: 0 0 auto; }
 
 .dl-select-label {
   font-size: 12px;
@@ -8750,3 +8756,59 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   .arch-winged-layout { flex-direction: column; align-items: stretch; }
   .arch-wing-left, .arch-wing-right { width: 100%; position: static; max-height: none; }
 }
+
+
+/* ===================== SIDE PANEL TOGGLES (shared download + archivio) ===================== */
+.winged-side-toggle {
+  position: absolute;
+  top: 96px;
+  z-index: 30;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 34px;
+  padding: 10px 0;
+  background: #1b1f27;
+  color: #e5e8ee;
+  border: 1px solid #39414d;
+  border-radius: 11px;
+  cursor: pointer;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.winged-side-toggle:hover { border-color: #3ecf8e; background: #21262f; }
+.winged-side-toggle.active { border-color: #3ecf8e; }
+.winged-side-toggle.left { left: 4px; }
+.winged-side-toggle.right { right: 4px; }
+.winged-side-toggle .st-emoji { font-size: 15px; }
+.winged-side-toggle .st-arrow { font-size: 11px; font-weight: 800; color: #3ecf8e; }
+
+.wing-newfolder-row { margin-bottom: 8px; }
+.wing-newfolder-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: transparent;
+  border: 1px dashed var(--color-border-strong, #cbd5e1);
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.wing-newfolder-btn:hover { border-color: #16a34a; color: #16a34a; }
+
+.arch-newfolder-inline { display: flex; align-items: center; gap: 6px; }
+.arch-newfolder-input {
+  flex: 1 1 auto; min-width: 0; height: 34px; padding: 0 10px;
+  border-radius: 9px; border: 1px solid var(--a-accent, #3ecf8e);
+  background: var(--a-bg, #14171c); color: var(--a-text, #e5e8ee); font-size: 12px; outline: none;
+}
+.arch-newfolder-ok, .arch-newfolder-cancel {
+  flex: 0 0 auto; height: 32px; width: 32px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-weight: 800;
+}
+.arch-newfolder-ok { background: var(--a-accent, #3ecf8e); color: #06210f; }
+.arch-newfolder-ok:disabled { opacity: 0.5; cursor: not-allowed; }
+.arch-newfolder-cancel { background: var(--a-elev, #262c37); color: var(--a-text2, #aeb6c2); }
+.arch-newfolder-cancel:hover { color: #ef6d6d; }

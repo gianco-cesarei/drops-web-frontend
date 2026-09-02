@@ -371,6 +371,8 @@ export default function FolderIngestionHub() {
   const [master, setMaster] = useState<number>(80)
   const [leftOpen, setLeftOpen] = useState<boolean>(true)
   const [consoleOpen, setConsoleOpen] = useState<boolean>(true)
+  const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
+  const [newArchFolderName, setNewArchFolderName] = useState<string>('')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -722,6 +724,16 @@ export default function FolderIngestionHub() {
 
   const nowPlaying = queueIndex >= 0 && queueIndex < queue.length ? queue[queueIndex] : null
 
+  const handleCreateNamedFolder = () => {
+    const name = newArchFolderName.trim()
+    if (!name) return
+    const folder = createNewArchiveFolder(name)
+    setFolders(loadFolders())
+    setSelectedFolderId(folder.id)
+    setCreatingFolder(false)
+    setNewArchFolderName('')
+  }
+
   const playFromList = (list: IngestedTrack[], i: number) => {
     if (!list.length || i < 0 || i >= list.length) return
     setQueue(list)
@@ -796,6 +808,14 @@ export default function FolderIngestionHub() {
       onDragLeave={() => setIsDraggingOver(false)}
       onDrop={handleDrop}
     >
+      <button type="button" className={`winged-side-toggle left ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle" aria-label="Mostra/nascondi cartelle">
+        <span className="st-emoji">📁</span>
+        <span className="st-arrow">{leftOpen ? '◀' : '▶'}</span>
+      </button>
+      <button type="button" className={`winged-side-toggle right ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console" aria-label="Mostra/nascondi console">
+        <span className="st-emoji">🎛️</span>
+        <span className="st-arrow">{consoleOpen ? '▶' : '◀'}</span>
+      </button>
       {isDraggingOver && (
         <div className="arch-drop-overlay">
           <div className="arch-drop-badge">
@@ -843,7 +863,15 @@ export default function FolderIngestionHub() {
               id="am-folder-input-picker"
             />
             <label htmlFor="am-folder-input-picker" className="arch-btn-primary">⬆ Carica Cartella</label>
-            <button type="button" className="arch-btn-ghost" onClick={handleCreateNewSession} title="Crea una nuova cartella collegata ai download">+ Nuova Cartella</button>
+            {creatingFolder ? (
+              <div className="arch-newfolder-inline">
+                <input type="text" className="arch-newfolder-input" placeholder="Nome nuova cartella" value={newArchFolderName} autoFocus onChange={(e) => setNewArchFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateNamedFolder(); if (e.key === 'Escape') { setCreatingFolder(false); setNewArchFolderName('') } }} />
+                <button type="button" className="arch-newfolder-ok" onClick={handleCreateNamedFolder} disabled={!newArchFolderName.trim()} title="Crea">✓</button>
+                <button type="button" className="arch-newfolder-cancel" onClick={() => { setCreatingFolder(false); setNewArchFolderName('') }} title="Annulla">✕</button>
+              </div>
+            ) : (
+              <button type="button" className="arch-btn-ghost" onClick={() => { setCreatingFolder(true); setNewArchFolderName('') }} title="Crea una nuova cartella con nome">+ Nuova Cartella</button>
+            )}
           </div>
 
           <input
@@ -910,15 +938,6 @@ export default function FolderIngestionHub() {
 
       {/* CENTER: LIBRERIA */}
       <main className="arch-wing-center">
-        <div className="arch-dock-bar">
-          <button type="button" className={`arch-dock-btn ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle">
-            📁 Cartelle ({folders.length}) {leftOpen ? '◀' : '▶'}
-          </button>
-          <button type="button" className={`arch-dock-btn mirror ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console">
-            {consoleOpen ? '▶' : '◀'} Console 🎛️
-          </button>
-        </div>
-
         {selectedFolder ? (
           <div className="arch-folder-view">
             <div className="arch-hero">

@@ -149,27 +149,40 @@ export default function GlobalAudioPlayer() {
     }
     a.play().then(() => setIsPlaying(true)).catch(() => {
       // Autoplay/format rejection -> synth so there is always feedback
-      setUsingSynth(true); startSynth(track.bpm || 124); setIsPlaying(true)
+      setUsingSynth(true); startSynth(track.bpm || 124, track.title || track.id || ''); setIsPlaying(true)
     })
   }
 
   // ---- Synth groove (offline / demo fallback, routed through the same EQ) ----
   const stopSynth = () => { if (schedRef.current != null) { window.clearInterval(schedRef.current); schedRef.current = null } }
-  const startSynth = (bpm: number) => {
+  const startSynth = (bpm: number, seedStr = '') => {
     const ctx = ensureGraph()
     if (!ctx || !synthGainRef.current) return
     if (ctx.state === 'suspended') ctx.resume().catch(() => {})
     stopSynth()
     stepRef.current = 0
     const out = synthGainRef.current
+    const now0 = ctx.currentTime
+    out.gain.cancelScheduledValues(now0)
+    if (fadeEnabledRef.current) { out.gain.setValueAtTime(0.0001, now0); out.gain.linearRampToValueAtTime(0.85, now0 + FADE_SECONDS) }
+    else out.gain.setValueAtTime(0.85, now0)
     if (!noiseRef.current) {
       const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate)
       const ch = buf.getChannelData(0)
       for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1
       noiseRef.current = buf
     }
+    let seed = 0
+    for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0
+    const roots = [49.0, 55.0, 58.27, 61.74, 65.41, 73.42, 82.41, 98.0]
+    const root = roots[seed % roots.length]
+    const patterns = [[0, 0, 7, 5], [0, 7, 3, 10], [0, 5, 3, 7], [0, 3, 5, 3], [0, 0, 5, 8], [0, 10, 7, 5]]
+    const pat = patterns[(seed >> 3) % patterns.length]
+    const notes = pat.map((n) => root * Math.pow(2, n / 12))
+    const waves: OscillatorType[] = ['sawtooth', 'square', 'triangle']
+    const wave = waves[(seed >> 6) % waves.length]
+    const hatFreq = 6000 + (seed % 5) * 900
     const beat = 60 / (bpm && bpm > 40 ? bpm : 124)
-    const bass = [55, 55, 82.41, 65.41]
     const scheduleBeat = () => {
       const c = ctxRef.current
       if (!c) return
@@ -180,12 +193,18 @@ export default function GlobalAudioPlayer() {
       kg.gain.setValueAtTime(0.9, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.18)
       kick.connect(kg).connect(out); kick.start(t); kick.stop(t + 0.2)
       const bs = c.createOscillator(); const bg = c.createGain()
-      bs.type = 'sawtooth'; bs.frequency.value = bass[step % bass.length]
-      bg.gain.setValueAtTime(0.0001, t); bg.gain.linearRampToValueAtTime(0.14, t + 0.03); bg.gain.exponentialRampToValueAtTime(0.001, t + beat * 0.9)
+      bs.type = wave; bs.frequency.value = notes[step % notes.length]
+      bg.gain.setValueAtTime(0.0001, t); bg.gain.linearRampToValueAtTime(0.13, t + 0.03); bg.gain.exponentialRampToValueAtTime(0.001, t + beat * 0.9)
       bs.connect(bg).connect(out); bs.start(t); bs.stop(t + beat)
+      if (step % 2 === 0) {
+        const lead = c.createOscillator(); const lg = c.createGain()
+        lead.type = 'triangle'; lead.frequency.value = notes[(step + 2) % notes.length] * 4
+        lg.gain.setValueAtTime(0.0001, t); lg.gain.linearRampToValueAtTime(0.05, t + 0.02); lg.gain.exponentialRampToValueAtTime(0.001, t + beat * 0.5)
+        lead.connect(lg).connect(out); lead.start(t); lead.stop(t + beat * 0.5)
+      }
       if (noiseRef.current) {
         const hat = c.createBufferSource(); hat.buffer = noiseRef.current
-        const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000
+        const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = hatFreq
         const hg = c.createGain(); const ht = t + beat / 2
         hg.gain.setValueAtTime(0.0001, ht); hg.gain.linearRampToValueAtTime(0.09, ht + 0.005); hg.gain.exponentialRampToValueAtTime(0.001, ht + 0.05)
         hat.connect(hp).connect(hg).connect(out); hat.start(ht); hat.stop(ht + 0.06)
@@ -202,7 +221,7 @@ export default function GlobalAudioPlayer() {
     if (activeTrack.audioUrl) {
       playReal(activeTrack)
     } else {
-      setUsingSynth(true); setDuration(180); setCurrentTime(0); startSynth(activeTrack.bpm || 124); setIsPlaying(true)
+      setUsingSynth(true); setDuration(180); setCurrentTime(0); startSynth(activeTrack.bpm || 124, activeTrack.title || activeTrack.id || ''); setIsPlaying(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack])
@@ -211,7 +230,7 @@ export default function GlobalAudioPlayer() {
   const handleTogglePlay = () => {
     if (!activeTrack) return
     if (usingSynth) {
-      if (isPlaying) { stopSynth(); setIsPlaying(false) } else { startSynth(activeTrack.bpm || 124); setIsPlaying(true) }
+      if (isPlaying) { stopSynth(); setIsPlaying(false) } else { startSynth(activeTrack.bpm || 124, activeTrack.title || activeTrack.id || ''); setIsPlaying(true) }
       return
     }
     const a = audioRef.current
@@ -265,14 +284,20 @@ export default function GlobalAudioPlayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Synth timeline progression
+  // Synth timeline progression (+ dissolvenza fade-out and queue auto-advance)
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined
     if (isPlaying && usingSynth) {
       interval = setInterval(() => {
         setCurrentTime((prev) => {
-          if (prev >= duration) { setIsPlaying(false); stopSynth(); return 0 }
-          return prev + 1
+          const next = prev + 1
+          const remaining = duration - next
+          if (fadeEnabledRef.current && synthGainRef.current && ctxRef.current && remaining <= FADE_SECONDS && remaining > 0) {
+            const g = synthGainRef.current.gain, now = ctxRef.current.currentTime
+            g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0.0001, now + Math.max(0.1, remaining))
+          }
+          if (next >= duration) { setIsPlaying(false); stopSynth(); window.dispatchEvent(new CustomEvent('drops-track-ended')); return 0 }
+          return next
         })
       }, 1000)
     }

@@ -30,11 +30,12 @@ describe('FolderIngestionHub', () => {
     expect(screen.queryByText('Houghton Morning Session 2026')).not.toBeInTheDocument()
   })
 
-  it('permette di creare una nuova sessione di download (es. Session 002)', async () => {
+  it('permette di creare una nuova cartella con nome', async () => {
     render(<FolderIngestionHub />)
-    const newSessionBtn = screen.getByText(/Nuova Cartella/i)
-    await userEvent.click(newSessionBtn)
+    await userEvent.click(screen.getByText(/Nuova Cartella/i))
+    const input = screen.getByPlaceholderText(/Nome nuova cartella/i)
+    await userEvent.type(input, 'Cartella Test 42{Enter}')
 
-    expect(screen.getAllByText('Session 002').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Cartella Test 42').length).toBeGreaterThan(0)
   })
 })

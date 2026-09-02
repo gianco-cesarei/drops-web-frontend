@@ -2849,6 +2849,14 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
   return (
     <div className="download-winged-layout">
+      <button type="button" className={`winged-side-toggle left ${isArchiveWingOpen ? 'active' : ''}`} onClick={() => setIsArchiveWingOpen((v) => !v)} title="Apri/chiudi Archivio" aria-label="Apri/chiudi Archivio">
+        <span className="st-emoji">📁</span>
+        <span className="st-arrow">{isArchiveWingOpen ? '◀' : '▶'}</span>
+      </button>
+      <button type="button" className={`winged-side-toggle right ${isReadyWingOpen ? 'active' : ''}`} onClick={() => setIsReadyWingOpen((v) => !v)} title="Apri/chiudi Pronti" aria-label="Apri/chiudi Pronti">
+        <span className="st-emoji">📥</span>
+        <span className="st-arrow">{isReadyWingOpen ? '▶' : '◀'}</span>
+      </button>
       {/* SCOMPARTO SINISTRO: ARCHIVIO (10% desktop proportion) */}
       {isArchiveWingOpen && (
         <aside className="download-wing-left">
@@ -2865,6 +2873,18 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             >
               ✕
             </button>
+          </div>
+
+          <div className="wing-newfolder-row">
+            {isCreatingFolder ? (
+              <div className="dl-newfolder-inline">
+                <input type="text" className="dl-newfolder-input" placeholder="Nome nuova cartella" value={newFolderName} autoFocus onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateNewFolder() } if (e.key === 'Escape') { setIsCreatingFolder(false); setNewFolderName('') } }} />
+                <button type="button" className="dl-newfolder-confirm" onClick={handleCreateNewFolder} disabled={!newFolderName.trim()} title="Crea">✓</button>
+                <button type="button" className="dl-newfolder-cancel" onClick={() => { setIsCreatingFolder(false); setNewFolderName('') }} title="Annulla">✕</button>
+              </div>
+            ) : (
+              <button type="button" className="wing-newfolder-btn" onClick={() => { setIsCreatingFolder(true); setNewFolderName('') }}>＋ Crea Nuova Cartella</button>
+            )}
           </div>
 
           <div className="wing-folder-list">
@@ -2925,26 +2945,6 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
       {/* BOX CENTRALE: DOWNLOAD PRINCIPALE (30% desktop proportion) */}
       <main className="download-wing-center">
-        {/* TOGGLE DOCK BUTTONS ATTACHED TO DOWNLOAD BOX */}
-        <div className="wing-dock-bar">
-          <button
-            type="button"
-            className={`wing-dock-btn ${isArchiveWingOpen ? 'active' : ''}`}
-            onClick={() => setIsArchiveWingOpen((v) => !v)}
-            title="Apri/chiudi lo scomparto Archivio a sinistra"
-          >
-            📁 Archivio ({foldersList.length} cartelle) {isArchiveWingOpen ? '◀' : '▶'}
-          </button>
-          <button
-            type="button"
-            className={`wing-dock-btn ${isReadyWingOpen ? 'active' : ''}`}
-            onClick={() => setIsReadyWingOpen((v) => !v)}
-            title="Apri/chiudi lo scomparto Download Pronti a destra"
-          >
-            {isReadyWingOpen ? '▶' : '◀'} Pronti ({history.length} brani) 📥
-          </button>
-        </div>
-
         {/* MAIN INPUT CARD */}
         <section className="card hero-card download-hero-card">
           <form onSubmit={handleAdd} className="download-form-clean">
@@ -3050,36 +3050,14 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
           {error && <div className="alert" role="alert" style={{ marginTop: '12px' }}>{error}</div>}
 
-          {/* DRAG & DROP ZONE PER FILE AUDIO LOCALI */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
-            onDragLeave={() => setIsDraggingFile(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDraggingFile(false);
-              if (e.dataTransfer.files) handleAudioFiles(e.dataTransfer.files);
-            }}
-            className={`download-dropzone ${isDraggingFile ? 'dragging' : ''}`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              accept="audio/*,.mp3,.wav,.aiff,.flac,.m4a,.ogg"
-              multiple
-              onChange={(e) => {
-                if (e.target.files) handleAudioFiles(e.target.files);
-              }}
-            />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '18px' }}>📥</span>
-              <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>
-                Trascina qui file audio dal Mac (.mp3, .wav, .flac) per l&apos;ingestione istantanea
-              </span>
-            </div>
-            <span className="dl-browse-link"><u>Sfoglia</u></span>
-          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept="audio/*,.mp3,.wav,.aiff,.flac,.m4a,.ogg"
+            multiple
+            onChange={(e) => { if (e.target.files) handleAudioFiles(e.target.files) }}
+          />
         </section>
 
         {/* CODA IN CORSO */}
@@ -3169,15 +3147,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                 disabled={zipBusy}
                 title="Scarica una cartella .zip con tutte le tracce pronte"
               >
-                {zipBusy ? '⏳ Preparazione…' : '⬇️ Scarica cartella completa'}
-              </button>
-              <button
-                type="button"
-                className="btn-rekordbox-secondary"
-                onClick={handleBatchRekordboxExport}
-                title="Esporta la playlist M3U per Rekordbox / CDJ Pioneer"
-              >
-                <u>⚡ Playlist M3U per Rekordbox</u>
+                {zipBusy ? '⏳ Preparazione…' : '⬇️ Scarica tutto'}
               </button>
             </div>
           )}
@@ -3224,7 +3194,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                       title={`Scarica ${item.title}`}
                       aria-label={`Scarica ${item.title}`}
                     >
-                      <u>{isSaved ? '✓ Scaricato' : 'Scarica MP3'}</u>
+                      <u>{isSaved ? '✓ Salvato in locale' : 'Salva in locale'}</u>
                     </a>
                     <button
                       type="button"
