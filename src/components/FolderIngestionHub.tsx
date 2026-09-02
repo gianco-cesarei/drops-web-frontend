@@ -914,8 +914,8 @@ export default function FolderIngestionHub() {
           <button type="button" className={`arch-dock-btn ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle">
             📁 Cartelle ({folders.length}) {leftOpen ? '◀' : '▶'}
           </button>
-          <button type="button" className={`arch-dock-btn ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console">
-            🎛️ Console {consoleOpen ? '▶' : '◀'}
+          <button type="button" className={`arch-dock-btn mirror ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console">
+            {consoleOpen ? '▶' : '◀'} Console 🎛️
           </button>
         </div>
 

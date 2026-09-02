@@ -2941,7 +2941,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             onClick={() => setIsReadyWingOpen((v) => !v)}
             title="Apri/chiudi lo scomparto Download Pronti a destra"
           >
-            📥 Pronti ({history.length} brani) {isReadyWingOpen ? '▶' : '◀'}
+            {isReadyWingOpen ? '▶' : '◀'} Pronti ({history.length} brani) 📥
           </button>
         </div>
 

@@ -8361,11 +8361,11 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   position: sticky;
   top: 16px;
 }
-.arch-wing-left { width: 262px; }
-.arch-wing-right { width: 320px; }
+.arch-wing-left { flex: 0 0 20%; min-width: 210px; max-width: 340px; }
+.arch-wing-right { flex: 0 0 20%; min-width: 250px; max-width: 360px; }
 
 .arch-wing-center {
-  flex: 1 1 auto;
+  flex: 1 1 60%;
   min-width: 0;
   display: flex;
   flex-direction: column;
