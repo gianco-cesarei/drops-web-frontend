@@ -166,6 +166,8 @@ export function saveTrackToMainFolder(track: {
       bpm: track.bpm,
       audioUrl: api.fileUrl(track.id),
       sizeBytes: 10485760,
+      status: 'completed',
+      isAvailable: true,
     }
 
     if (!targetFolder.tracks.some((t) => t.id === track.id || t.title === track.title)) {
@@ -947,7 +949,7 @@ export default function FolderIngestionHub() {
                     ) : (
                       <>
                         <span className="arch-folder-name" title={folder.name}>{folder.name}</span>
-                        <span className="arch-folder-count">{folder.trackCount}</span>
+                        <span className="arch-folder-count">{(folder.tracks || []).filter(isAvailableTrack).length}</span>
                         <span className="arch-folder-hover">
                           <button type="button" className="arch-mini-ic" onClick={(e) => handleStartRename(folder, e)} title="Rinomina">✏️</button>
                           <button type="button" className="arch-mini-ic danger" onClick={(e) => handleDeleteFolder(folder.id, e)} title="Elimina">✕</button>
@@ -1007,8 +1009,8 @@ export default function FolderIngestionHub() {
               <div className="arch-track-head">
                 <span className="c-idx">#</span>
                 <span className="c-title">Titolo & Artista</span>
-                <span className="c-bpm">BPM</span>
-                <span className="c-key">Key</span>
+                <span className="c-bpm">BPM & Tag</span>
+                <span className="c-key">Chiave</span>
                 <span className="c-act">Azioni</span>
               </div>
               <div className="arch-track-body">
@@ -1017,6 +1019,8 @@ export default function FolderIngestionHub() {
                 ) : (
                   filteredTracks.map((track, idx) => {
                     const isThisPlaying = playingTrackId === track.id
+                    const ext = track.filename?.split('.').pop()?.toLowerCase() || 'mp3'
+                    const formatLabel = ext === 'flac' || ext === 'wav' ? ext.toUpperCase() : 'MP3 320k'
                     return (
                       <div key={track.id} className={`arch-track-row ${isThisPlaying ? 'is-playing' : ''}`} onDoubleClick={() => playFromList(filteredTracks, idx)}>
                         <button type="button" className="c-idx arch-idx-btn" onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">
@@ -1027,12 +1031,34 @@ export default function FolderIngestionHub() {
                           <span className="arch-t-name" title={track.title}>{track.title}</span>
                           <span className="arch-t-artist" title={track.artist || 'Artista Sconosciuto'}>{track.artist || 'Artista Sconosciuto'}</span>
                         </span>
-                        <span className="c-bpm"><span className="arch-bpm">{track.bpm ? `${Math.round(track.bpm)}` : '—'}</span></span>
-                        <span className="c-key"><span className="arch-key">{track.keySignature || '—'}</span></span>
+                        <span className="c-bpm">
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            <span className={`tag-badge tag-badge-format ${ext === 'flac' || ext === 'wav' ? 'flac' : ''}`}>{formatLabel}</span>
+                            {track.bpm ? <span className="tag-badge tag-badge-bpm"><span className="arch-bpm">{Math.round(track.bpm)}</span> BPM</span> : null}
+                          </div>
+                        </span>
+                        <span className="c-key">
+                          {track.keySignature ? <span className="tag-badge tag-badge-key">{track.keySignature}</span> : <span style={{ color: '#7c8592' }}>—</span>}
+                        </span>
                         <span className="c-act arch-row-act">
                           <button type="button" className={`arch-mini ${isThisPlaying ? 'on' : ''}`} onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">{isThisPlaying ? '❚❚' : '▶'}</button>
                           <button type="button" className="arch-mini" onClick={() => addToQueue(track)} title="Aggiungi alla coda">＋</button>
-                          {track.audioUrl && <a className="arch-mini dl" href={track.audioUrl} download={track.filename || `${track.title}.mp3`} title="Scarica">↓</a>}
+                          {track.audioUrl && (
+                            <a
+                              className="btn-save-local-cta"
+                              style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                              href={track.audioUrl}
+                              download={track.filename || `${track.title}.mp3`}
+                              title="Salva in locale"
+                            >
+                              <svg className="btn-dl-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                              </svg>
+                              <span>Salva</span>
+                            </a>
+                          )}
                         </span>
                       </div>
                     )

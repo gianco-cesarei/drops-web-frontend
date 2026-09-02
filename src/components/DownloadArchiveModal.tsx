@@ -57,7 +57,7 @@ export default function DownloadArchiveModal({
   }
 
   const handleExportJSON = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(items, null, 2))
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(availableItems, null, 2))
     const dlAnchor = document.createElement('a')
     dlAnchor.setAttribute('href', dataStr)
     dlAnchor.setAttribute('download', `drops-download-history-${new Date().toISOString().slice(0, 10)}.json`)
@@ -66,7 +66,7 @@ export default function DownloadArchiveModal({
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Titolo', 'Artista', 'BPM', 'Link Sorgente', 'Data']
-    const rows = items.map((it) => [
+    const rows = availableItems.map((it) => [
       it.id,
       `"${(it.title || '').replace(/"/g, '""')}"`,
       `"${(it.artist || '').replace(/"/g, '""')}"`,
@@ -130,7 +130,7 @@ export default function DownloadArchiveModal({
             <thead>
               <tr>
                 <th>Titolo & Artista</th>
-                <th>BPM</th>
+                <th>BPM & Tag</th>
                 <th>Link Sorgente</th>
                 <th>Azioni</th>
               </tr>
@@ -150,12 +150,19 @@ export default function DownloadArchiveModal({
                     <tr key={it.id}>
                       <td>
                         <div className="track-title-cell">
-                          <strong>{it.title}</strong>
-                          <span>{it.artist || 'Artista sconosciuto'}</span>
+                          <strong style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{it.title}</strong>
+                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{it.artist || 'Artista sconosciuto'}</span>
                         </div>
                       </td>
                       <td>
-                        {it.bpm ? <span className="bpm-tag">{Math.round(it.bpm)} BPM</span> : <span style={{ color: '#9ca3af' }}>-</span>}
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span className="tag-badge tag-badge-format">MP3 320k</span>
+                          {it.bpm ? (
+                            <span className="tag-badge tag-badge-bpm">{Math.round(it.bpm)} BPM</span>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>—</span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         {isHttp ? (
@@ -166,25 +173,31 @@ export default function DownloadArchiveModal({
                             className="archive-source-link"
                             title={url}
                           >
-                            {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 42)}... ↗
+                            {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40)}... ↗
                           </a>
                         ) : (
                           <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>{url || 'N/A'}</span>
                         )}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           {isHttp && onRequeue && (
                             <button
                               type="button"
-                              className="btn-play-mini-row"
+                              className="btn-save-local-cta"
+                              style={{ padding: '5px 10px', fontSize: '0.72rem' }}
                               onClick={() => {
                                 onRequeue(url)
                                 onClose()
                               }}
-                              title="Rilancia il download di questa traccia"
+                              title="Rilancia il download di questa traccia in locale"
                             >
-                              🔄 Riscarica
+                              <svg className="btn-dl-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                              </svg>
+                              <span>Riscarica</span>
                             </button>
                           )}
                           {isHttp && (

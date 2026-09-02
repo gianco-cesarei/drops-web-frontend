@@ -2235,7 +2235,7 @@ function loadHistory(): HistoryItem[] {
     const raw = window.localStorage.getItem(HISTORY_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? (parsed.filter((x) => x && typeof (x as HistoryItem).id === 'string') as HistoryItem[]) : []
+    return Array.isArray(parsed) ? (parsed.filter((x) => x && typeof (x as HistoryItem).id === 'string' && isAvailableTrack(x as HistoryItem)) as HistoryItem[]) : []
   } catch {
     return []
   }
@@ -2368,6 +2368,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   const [input, setInput] = useState('')
   const [queue, setQueue] = useState<QueueJob[]>(() => loadQueue())
   const [history, setHistory] = useState<HistoryItem[]>(() => loadHistory())
+  const availableHistory = useMemo(() => history.filter(isAvailableTrack), [history])
   const [busy, setBusy] = useState(false)
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
   const [preview, setPreview] = useState<{ data: PlaylistPreview; resolve: (urls: string[] | null) => void } | null>(null)
@@ -2773,7 +2774,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   }
 
   const handleBatchRekordboxExport = () => {
-    const readyTracks = history.filter((h) => h.id)
+    const readyTracks = history.filter(isAvailableTrack)
     if (!readyTracks.length) return
     const lines = ['#EXTM3U', `#PLAYLIST:${activeFolderName}`]
     readyTracks.forEach((t) => {
@@ -2811,7 +2812,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   }
 
   async function handleDownloadFolderZip() {
-    const readyTracks = history.filter((h) => h.id)
+    const readyTracks = history.filter(isAvailableTrack)
     if (!readyTracks.length || zipBusy) return
     setZipBusy(true)
     setError('')
@@ -3133,7 +3134,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           <div className="wing-header">
             <div className="wing-header-title">
               <span className="wing-title">📥 PRONTI</span>
-              <span className="wing-count">{history.length} tracce</span>
+              <span className="wing-count">{availableHistory.length} tracce</span>
             </div>
             <button
               type="button"
@@ -3152,7 +3153,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           </div>
 
           {/* BATCH REKORDBOX DOWNLOAD BUTTON */}
-          {history.length > 0 && (
+          {availableHistory.length > 0 && (
             <div className="wing-export-actions">
               <button
                 type="button"
@@ -3168,17 +3169,18 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
           {/* LISTA BRANI PRONTI */}
           <div className="wing-ready-list">
-            {history.filter(isAvailableTrack).length === 0 ? (
+            {availableHistory.length === 0 ? (
               <div className="wing-ready-empty">
                 <span>🎵</span>
                 <p>Nessun brano pronto</p>
                 <small>I file convertiti e salvati nel cloud appariranno qui, pronti per il download locale.</small>
               </div>
             ) : (
-              history.filter(isAvailableTrack).map((item) => {
+              availableHistory.map((item) => {
                 const fileUrl = api.fileUrl(item.id)
                 const isPlaying = playingUrl === fileUrl
                 const isSaved = downloadedIds.has(item.id)
+                const formatLabel = audioQuality === 'hq' ? 'FLAC' : 'MP3 320k'
                 return (
                   <div key={item.id} className="wing-ready-item">
                     <button
@@ -3193,12 +3195,13 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                       <span className="wing-track-title" title={item.title}>{item.title}</span>
                       <div className="wing-track-meta">
                         {item.artist && <span className="wing-artist">{item.artist}</span>}
-                        {item.bpm != null ? <span className="wing-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="wing-bpm">… BPM</span> : null}
+                        <span className={`tag-badge tag-badge-format ${audioQuality === 'hq' ? 'flac' : 'mp3'}`}>{formatLabel}</span>
+                        {item.bpm != null ? <span className="tag-badge tag-badge-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="tag-badge tag-badge-bpm">… BPM</span> : null}
                         {item.source && <span className="wing-source">fonte: {item.source.replace(/^https?:\/\/(www\.)?/, '').slice(0, 24)}</span>}
                       </div>
                     </div>
                     <a
-                      className="link-underline-dark"
+                      className={`btn-save-local-cta ${isSaved ? 'is-saved' : ''}`}
                       href={fileUrl}
                       download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
                       onClick={(e) => {
@@ -3208,7 +3211,12 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                       title={`Scarica ${item.title}`}
                       aria-label={`Scarica ${item.title}`}
                     >
-                      <u>{isSaved ? '✓ Salvato in locale' : 'Salva in locale'}</u>
+                      <svg className="btn-dl-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      <span>{isSaved ? 'Salvato' : 'Salva'}</span>
                     </a>
                     <button
                       type="button"
@@ -3231,7 +3239,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       <DownloadArchiveModal
         isOpen={isArchiveOpen}
         onClose={() => setIsArchiveOpen(false)}
-        items={history}
+        items={availableHistory}
         onRequeue={requeueSingleUrl}
       />
     </div>

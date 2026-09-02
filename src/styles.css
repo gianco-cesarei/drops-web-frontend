@@ -7461,6 +7461,8 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex: 0 0 240px;
   min-width: 220px;
   max-width: 270px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 16px;
@@ -7469,6 +7471,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* RIGHT WING: PRONTI & REKORDBOX (10% proportion) */
@@ -7476,6 +7479,8 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex: 0 0 260px;
   min-width: 230px;
   max-width: 300px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 16px;
@@ -7484,6 +7489,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* CENTER WING: MAIN DOWNLOAD BOX (30% proportion) */
@@ -7494,6 +7500,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* WING DOCK TOGGLE BUTTONS ATTACHED TO BOX */
@@ -8760,30 +8767,131 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* ===================== SIDE PANEL TOGGLES (shared download + archivio) ===================== */
 .winged-side-toggle {
-  position: absolute;
+  position: sticky;
   top: 96px;
   z-index: 30;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 34px;
+  width: 36px;
   padding: 10px 0;
-  background: #1b1f27;
-  color: #e5e8ee;
-  border: 1px solid #39414d;
-  border-radius: 11px;
+  background: var(--color-surface, #1b1f27);
+  color: var(--color-text, #e5e8ee);
+  border: 1px solid var(--color-border-strong, #39414d);
+  border-radius: 12px;
   cursor: pointer;
   line-height: 1;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
-  transition: border-color 0.15s ease, background 0.15s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
 }
-.winged-side-toggle:hover { border-color: #3ecf8e; background: #21262f; }
-.winged-side-toggle.active { border-color: #3ecf8e; }
+.winged-side-toggle:hover {
+  border-color: #3ecf8e;
+  background: var(--color-surface-subtle, #21262f);
+  transform: scale(1.05);
+}
+.winged-side-toggle.active {
+  border-color: #3ecf8e;
+  box-shadow: 0 0 12px rgba(62, 207, 142, 0.3);
+}
 .winged-side-toggle.left { left: 4px; }
 .winged-side-toggle.right { right: 4px; }
 .winged-side-toggle .st-emoji { font-size: 15px; }
 .winged-side-toggle .st-arrow { font-size: 11px; font-weight: 800; color: #3ecf8e; }
+
+/* BADGES TAG PER FORMATO (MP3/FLAC), BPM E CHIAVE CAMELOT */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tag-badge-format {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.tag-badge-format.flac,
+.tag-badge-format.hq {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.tag-badge-bpm {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.tag-badge-key {
+  background: rgba(168, 85, 247, 0.12);
+  color: #9333ea;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+/* DESIGN PULSANTE SALVATAGGIO LOCALE MODERN CTA */
+.btn-save-local-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff !important;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  border: none;
+  cursor: pointer;
+  text-decoration: none !important;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-save-local-cta:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.42);
+  color: #ffffff !important;
+}
+
+.btn-save-local-cta:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+.btn-save-local-cta.is-saved {
+  background: rgba(34, 197, 94, 0.14);
+  color: #16a34a !important;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  box-shadow: none;
+}
+
+.btn-save-local-cta.is-saved:hover {
+  background: rgba(34, 197, 94, 0.22);
+  color: #15803d !important;
+  transform: translateY(-1px);
+}
+
+.btn-dl-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
 
 .wing-newfolder-row { margin-bottom: 8px; }
 .wing-newfolder-btn {

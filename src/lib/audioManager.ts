@@ -23,10 +23,13 @@ export function isAvailableTrack(track: TrackLike | null | undefined): boolean {
   // Check explicit availability boolean
   if (track.isAvailable === false) return false
 
-  // Check invalid/failed status
+  // Check status if specified (must be completed, complete, ready, or indexed)
   const status = typeof track.status === 'string' ? track.status.toLowerCase().trim() : ''
-  if (status === 'failed' || status === 'error' || status === 'unavailable' || status === 'invalid' || status === 'broken') {
-    return false
+  if (status) {
+    const validStatuses = ['completed', 'complete', 'ready', 'indexed']
+    if (!validStatuses.includes(status)) {
+      return false
+    }
   }
 
   // Check audio resource validity if present
@@ -37,6 +40,14 @@ export function isAvailableTrack(track: TrackLike | null | undefined): boolean {
   }
 
   return true
+}
+
+/**
+ * Filters a collection of tracks to strictly include only available, completed tracks with valid audio resources.
+ */
+export function filterAvailableTracks<T extends TrackLike>(tracks: T[] | null | undefined): T[] {
+  if (!Array.isArray(tracks)) return []
+  return tracks.filter(isAvailableTrack)
 }
 
 export interface CorsCheckResult {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest'
 import {
   isAvailableTrack,
+  filterAvailableTracks,
   verifyAndResolveBackendAudioUrl,
   stopAllOtherAudioExcept,
   registerAudioElement,
@@ -12,6 +13,8 @@ describe('audioManager', () => {
     it('ritorna true per tracce valide e scaricate', () => {
       expect(isAvailableTrack({ id: '1', title: 'Minimal Flow', isAvailable: true })).toBe(true)
       expect(isAvailableTrack({ id: '2', filename: 'Track_01.mp3' })).toBe(true)
+      expect(isAvailableTrack({ id: '3', title: 'Track', status: 'completed' })).toBe(true)
+      expect(isAvailableTrack({ id: '4', title: 'Track', status: 'ready' })).toBe(true)
     })
 
     it('ritorna false se la traccia è nulla, non ha titolo/filename, o è contrassegnata non disponibile', () => {
@@ -21,15 +24,33 @@ describe('audioManager', () => {
       expect(isAvailableTrack({ id: '2', title: 'Track', isAvailable: false })).toBe(false)
     })
 
-    it('ritorna false se lo status è failed, error, o unavailable', () => {
+    it('ritorna false se lo status non è completed/ready (es. failed, error, unavailable, downloading, queued, pending)', () => {
       expect(isAvailableTrack({ id: '1', title: 'Track 1', status: 'failed' })).toBe(false)
       expect(isAvailableTrack({ id: '2', title: 'Track 2', status: 'error' })).toBe(false)
       expect(isAvailableTrack({ id: '3', title: 'Track 3', status: 'unavailable' })).toBe(false)
+      expect(isAvailableTrack({ id: '4', title: 'Track 4', status: 'downloading' })).toBe(false)
+      expect(isAvailableTrack({ id: '5', title: 'Track 5', status: 'queued' })).toBe(false)
+      expect(isAvailableTrack({ id: '6', title: 'Track 6', status: 'pending' })).toBe(false)
     })
 
     it('ritorna false se audioUrl o sourceUrl indicano risorsa corrotta/non valida', () => {
       expect(isAvailableTrack({ id: '1', title: 'Track 1', audioUrl: 'invalid' })).toBe(false)
       expect(isAvailableTrack({ id: '2', title: 'Track 2', sourceUrl: 'broken' })).toBe(false)
+    })
+  })
+
+  describe('filterAvailableTracks', () => {
+    it('filtra tassativamente le tracce non completate o non disponibili sul server', () => {
+      const list = [
+        { id: '1', title: 'Track 1', status: 'completed' },
+        { id: '2', title: 'Track 2', status: 'downloading' },
+        { id: '3', title: 'Track 3', status: 'failed' },
+        { id: '4', title: 'Track 4', status: 'ready' },
+        { id: '5', title: 'Track 5', isAvailable: false },
+      ]
+      const filtered = filterAvailableTracks(list)
+      expect(filtered).toHaveLength(2)
+      expect(filtered.map((t) => t.id)).toEqual(['1', '4'])
     })
   })
 
