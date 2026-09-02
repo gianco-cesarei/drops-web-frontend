@@ -2667,425 +2667,406 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   }
 
   const [audioQuality, setAudioQuality] = useState<'mp3' | 'hq'>('mp3')
-  const [historyOpen, setHistoryOpen] = useState(true)
-  const [queueOpen, setQueueOpen] = useState(true)
-  const [savedOpen, setSavedOpen] = useState(true)
+  const [isArchiveWingOpen, setIsArchiveWingOpen] = useState(false)
+  const [isReadyWingOpen, setIsReadyWingOpen] = useState(true)
+  const [selectedFolderIdForActions, setSelectedFolderIdForActions] = useState<string | null>(null)
 
-  const savedInFolderItems = history.filter((h) => downloadedIds.has(h.id))
+  const activeFolder = foldersList.find((f) => f.id === activeMainFolderId) || foldersList[0]
+  const activeFolderName = activeFolder?.name || 'Musica Principale'
+
+  const handleDeleteWingFolder = (folderId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (folderId === 'main_default' || folderId === 'main') return
+    try {
+      const raw = window.localStorage.getItem('drops.folders.v1')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        const filtered = parsed.filter((f: { id: string }) => f.id !== folderId)
+        window.localStorage.setItem('drops.folders.v1', JSON.stringify(filtered))
+      }
+      api.deleteFolder(folderId).catch(() => {})
+    } catch {}
+    setFoldersList(getSavedFolders())
+    if (activeMainFolderId === folderId) {
+      setActiveMainFolderId('main_default')
+      setMainFolder('main_default')
+    }
+    setSelectedFolderIdForActions(null)
+  }
+
+  const handleBatchRekordboxExport = () => {
+    const readyTracks = history.filter((h) => h.id)
+    if (!readyTracks.length) return
+    const lines = ['#EXTM3U', `#PLAYLIST:${activeFolderName}`]
+    readyTracks.forEach((t) => {
+      const artist = t.artist || 'Unknown'
+      const title = t.title || 'Track'
+      lines.push(`#EXTINF:-1,${artist} - ${title}`)
+      lines.push(`${artist} - ${title}.mp3`)
+    })
+    const blob = new Blob([lines.join('\n')], { type: 'audio/x-mpegurl;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${activeFolderName.replace(/[^a-zA-Z0-9_\-]/g, '_')}_Rekordbox.m3u`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   return (
-    <div className="workspace download-workspace-grid">
-      {/* Left/Main Column: Input, Pronti/Scaricati prima, poi In Coda */}
-      <section className="card hero-card download-hero">
-        <div className="download-hero-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
-          <div>
-            <span className="eyebrow">DOWNLOAD PRIVATO &middot; DROP AGENT</span>
-            <p className="lead">Area personale di {who}. Incolla uno o più link (YouTube/SoundCloud/Spotify) o carica audio per l'ingestione.</p>
+    <div className="download-winged-layout">
+      {/* SCOMPARTO SINISTRO: ARCHIVIO (10% desktop proportion) */}
+      {isArchiveWingOpen && (
+        <aside className="download-wing-left">
+          <div className="wing-header">
+            <div className="wing-header-title">
+              <span className="wing-title">📁 ARCHIVIO</span>
+              <span className="wing-count">{foldersList.length} cartelle</span>
+            </div>
+            <button
+              type="button"
+              className="wing-close-btn"
+              onClick={() => setIsArchiveWingOpen(false)}
+              title="Chiudi scomparto Archivio"
+            >
+              ✕
+            </button>
           </div>
-          <a
-            href="/app/archive"
-            className="btn-primary"
-            style={{ fontSize: '13px', padding: '8px 16px', textDecoration: 'none', background: '#22c55e', color: '#05230f', fontWeight: 800, borderRadius: '8px', boxShadow: '0 4px 14px rgba(34, 197, 94, 0.35)', whiteSpace: 'nowrap' }}
-            title="Vedi tutte le uscite e i brani curati nell'Archivio"
+
+          <div className="wing-folder-list">
+            {foldersList.map((f) => {
+              const isDestActive = f.id === activeMainFolderId
+              const isSelected = selectedFolderIdForActions === f.id
+              return (
+                <div
+                  key={f.id}
+                  className={`wing-folder-item ${isDestActive ? 'is-active-dest' : ''} ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setSelectedFolderIdForActions(isSelected ? null : f.id)}
+                  onDoubleClick={() => {
+                    setActiveMainFolderId(f.id)
+                    setMainFolder(f.id)
+                    setSelectedFolderIdForActions(null)
+                  }}
+                  title="Clicca 1 volta per azioni (Elimina / Vai ad Archivio), doppio click per impostare come cartella di download"
+                >
+                  <div className="wing-folder-name-row">
+                    <span className="wing-folder-name">📁 {f.name}</span>
+                    {isDestActive && <span className="wing-active-badge">Attiva</span>}
+                  </div>
+                  <div className="wing-folder-meta">
+                    {f.trackCount || 0} brani
+                  </div>
+
+                  {isSelected && (
+                    <div className="wing-folder-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="wing-action-link"
+                        onClick={() => {
+                          if (onSwitchToArchive) onSwitchToArchive()
+                          else window.location.assign('/app/archive')
+                        }}
+                        title="Apri questa cartella nell'Archivio completo"
+                      >
+                        <u>↗️ Vai alla cartella</u>
+                      </button>
+                      {f.id !== 'main_default' && f.id !== 'main' && (
+                        <button
+                          type="button"
+                          className="wing-action-link danger"
+                          onClick={(e) => handleDeleteWingFolder(f.id, e)}
+                          title="Elimina questa cartella"
+                        >
+                          <u>🗑️ Elimina</u>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </aside>
+      )}
+
+      {/* BOX CENTRALE: DOWNLOAD PRINCIPALE (30% desktop proportion) */}
+      <main className="download-wing-center">
+        {/* TOGGLE DOCK BUTTONS ATTACHED TO DOWNLOAD BOX */}
+        <div className="wing-dock-bar">
+          <button
+            type="button"
+            className={`wing-dock-btn ${isArchiveWingOpen ? 'active' : ''}`}
+            onClick={() => setIsArchiveWingOpen((v) => !v)}
+            title="Apri/chiudi lo scomparto Archivio a sinistra"
           >
-            📁 Apri Archivio / Libreria &rarr;
-          </a>
+            📁 Archivio ({foldersList.length} cartelle) {isArchiveWingOpen ? '◀' : '▶'}
+          </button>
+          <button
+            type="button"
+            className={`wing-dock-btn ${isReadyWingOpen ? 'active' : ''}`}
+            onClick={() => setIsReadyWingOpen((v) => !v)}
+            title="Apri/chiudi lo scomparto Download Pronti a destra"
+          >
+            📥 Pronti ({history.length} brani) {isReadyWingOpen ? '▶' : '◀'}
+          </button>
         </div>
 
-        {/* SELETTORE QUALITA' MP3 vs LOSSLESS MASTER */}
-        <div className="download-quality-selector-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '4px 0 14px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '11px', fontWeight: '800', color: '#9ca3af', letterSpacing: '0.05em' }}>FORMATO AUDIO:</span>
-          <div style={{ display: 'inline-flex', gap: '6px' }}>
-            <button
-              type="button"
-              className={`btn-sort-pill ${audioQuality === 'mp3' ? 'active' : ''}`}
-              onClick={() => setAudioQuality('mp3')}
-              title="MP3 a 320 kbps (Formato standard, compresso ad alta fedeltà)"
-              style={{ fontSize: '12px', padding: '5px 14px', fontWeight: 700 }}
-            >
-              MP3 &middot; 320 kbps
-            </button>
-            <button
-              type="button"
-              className={`btn-sort-pill ${audioQuality === 'hq' ? 'active' : ''}`}
-              onClick={() => setAudioQuality('hq')}
-              title="Lossless Master (FLAC / WAV - Massima risoluzione nativa)"
-              style={{ fontSize: '12px', padding: '5px 14px', fontWeight: 700 }}
-            >
-              Lossless Master &middot; WAV / FLAC
-            </button>
-          </div>
-        </div>
+        {/* MAIN INPUT CARD */}
+        <section className="card hero-card download-hero-card">
+          <form onSubmit={handleAdd} className="download-form-clean">
+            <div className="dl-field-header">
+              <label htmlFor="download-url" className="dl-field-eyebrow" style={{ cursor: 'pointer', display: 'block' }}>
+                Link brano, playlist o set
+              </label>
+              <p className="dl-field-sub">Incolla qui i tuoi link musicali per scaricarli direttamente in locale.</p>
+            </div>
 
-        {/* CARTELLA MAIN ARCHIVIO DI DESTINAZIONE INTERATTIVA */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 14px', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 auto', minWidth: '220px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap' }}>📁 Salva in:</span>
-            {isRenamingFolder ? (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flex: '1 1 auto' }}>
-                <input
-                  type="text"
-                  value={renamingName}
-                  onChange={(e) => setRenamingName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      if (renameMainFolder(activeMainFolderId, renamingName)) {
-                        setFoldersList(getSavedFolders())
-                        setIsRenamingFolder(false)
-                      }
-                    } else if (e.key === 'Escape') {
-                      setIsRenamingFolder(false)
-                    }
-                  }}
-                  style={{ height: '30px', padding: '0 8px', fontSize: '13px', background: '#0a0f0c', border: '1px solid #22c55e', color: '#fff', borderRadius: '6px', outline: 'none' }}
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  className="btn-sort-pill active"
-                  style={{ height: '30px', padding: '0 10px', fontSize: '12px' }}
-                  onClick={() => {
-                    if (renameMainFolder(activeMainFolderId, renamingName)) {
-                      setFoldersList(getSavedFolders())
-                      setIsRenamingFolder(false)
-                    }
-                  }}
-                >
-                  ✓ Salva
-                </button>
-                <button
-                  type="button"
-                  className="btn-sort-pill"
-                  style={{ height: '30px', padding: '0 8px', fontSize: '12px' }}
-                  onClick={() => setIsRenamingFolder(false)}
-                >
-                  ✕
-                </button>
-              </div>
-            ) : isCreatingFolder ? (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flex: '1 1 auto' }}>
-                <input
-                  type="text"
-                  placeholder="Nome nuova cartella..."
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newFolderName.trim()) {
-                      const created = createNewArchiveFolder(newFolderName)
-                      setFoldersList(getSavedFolders())
-                      setActiveMainFolderId(created.id)
-                      setIsCreatingFolder(false)
-                      setNewFolderName('')
-                    } else if (e.key === 'Escape') {
-                      setIsCreatingFolder(false)
-                    }
-                  }}
-                  style={{ height: '30px', padding: '0 8px', fontSize: '13px', background: '#0a0f0c', border: '1px solid #22c55e', color: '#fff', borderRadius: '6px', outline: 'none' }}
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  className="btn-sort-pill active"
-                  style={{ height: '30px', padding: '0 10px', fontSize: '12px' }}
-                  onClick={() => {
-                    if (newFolderName.trim()) {
-                      const created = createNewArchiveFolder(newFolderName)
-                      setFoldersList(getSavedFolders())
-                      setActiveMainFolderId(created.id)
-                      setIsCreatingFolder(false)
-                      setNewFolderName('')
-                    }
-                  }}
-                >
-                  + Crea
-                </button>
-                <button
-                  type="button"
-                  className="btn-sort-pill"
-                  style={{ height: '30px', padding: '0 8px', fontSize: '12px' }}
-                  onClick={() => setIsCreatingFolder(false)}
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <textarea
+              id="download-url"
+              className="download-textarea-clean"
+              placeholder={'Un link per riga · YouTube o SoundCloud / Le playlist e i set chiedono conferma delle tracce'}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && input.trim()) {
+                  e.preventDefault()
+                  const form = e.currentTarget.form
+                  if (form) form.requestSubmit()
+                }
+              }}
+              spellCheck={false}
+              rows={3}
+            />
+
+            {/* CONTROL ROW: SALVA IN + FORMATO AUDIO */}
+            <div className="dl-control-bar">
+              <div className="dl-select-wrap">
+                <span className="dl-select-label">Salva in:</span>
                 <select
                   value={activeMainFolderId}
                   onChange={(e) => {
                     setActiveMainFolderId(e.target.value)
                     setMainFolder(e.target.value)
                   }}
-                  style={{ height: '30px', padding: '0 10px', fontSize: '13px', fontWeight: '700', background: '#0a0f0c', border: '1px solid rgba(255,255,255,0.18)', color: '#00d26a', borderRadius: '6px', outline: 'none', cursor: 'pointer' }}
+                  className="dl-folder-select-clean"
+                  title="Cartella cloud di salvataggio"
                 >
                   {foldersList.map((f) => (
-                    <option key={f.id} value={f.id} style={{ background: '#121814', color: '#f1f5f9' }}>
+                    <option key={f.id} value={f.id}>
                       📁 {f.name} ({f.trackCount || 0} brani)
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* SELETTORE FORMATO AUDIO DISCRETO */}
+              <div className="dl-format-toggle">
                 <button
                   type="button"
-                  className="btn-sort-pill"
-                  style={{ height: '28px', padding: '0 8px', fontSize: '11px' }}
-                  onClick={() => {
-                    const currentFolder = foldersList.find((f) => f.id === activeMainFolderId)
-                    setRenamingName(currentFolder?.name || '')
-                    setIsRenamingFolder(true)
-                  }}
-                  title="Rinomina questa cartella di salvataggio"
+                  className={`dl-format-btn ${audioQuality === 'mp3' ? 'active' : ''}`}
+                  onClick={() => setAudioQuality('mp3')}
                 >
-                  ✏️ Rinomina
+                  MP3 320k
                 </button>
+                <span className="dl-format-divider">|</span>
                 <button
                   type="button"
-                  className="btn-sort-pill"
-                  style={{ height: '28px', padding: '0 8px', fontSize: '11px' }}
-                  onClick={() => {
-                    setNewFolderName('')
-                    setIsCreatingFolder(true)
-                  }}
-                  title="Crea una nuova cartella"
+                  className={`dl-format-btn ${audioQuality === 'hq' ? 'active' : ''}`}
+                  onClick={() => setAudioQuality('hq')}
                 >
-                  + Nuova Cartella
+                  Lossless FLAC
                 </button>
-              </div>
-            )}
-          </div>
-          {onSwitchToArchive && (
-            <button
-              type="button"
-              className="btn-sort-pill"
-              onClick={onSwitchToArchive}
-              style={{ fontSize: '11px', padding: '3px 10px', borderColor: 'rgba(255,255,255,0.15)' }}
-              title="Vedi tutte le cartelle e i brani nell'Archivio"
-            >
-              Vai all'Archivio &rarr;
-            </button>
-          )}
-        </div>
-
-        <form onSubmit={handleAdd} className="download-form">
-          <label htmlFor="download-url">Link brano, playlist o set</label>
-          <textarea
-            id="download-url"
-            className="download-textarea"
-            placeholder={'Un link per riga · YouTube o SoundCloud\nLe playlist e i set chiedono conferma delle tracce'}
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && input.trim()) {
-                e.preventDefault()
-                const form = e.currentTarget.form
-                if (form) form.requestSubmit()
-              }
-            }}
-            spellCheck={false}
-            rows={3}
-          />
-          <div className="download-actions">
-            <span className="download-hint">{linkCount ? `${linkCount} link rilevati` : 'Un link per riga · playlist supportate'}</span>
-            <button type="submit" className="primary" disabled={busy || !input.trim()}>{busy ? 'Analisi…' : 'Aggiungi alla coda'}</button>
-          </div>
-        </form>
-        {error && <div className="alert" role="alert">{error}</div>}
-
-        {/* DRAG & DROP ZONE PER FILE AUDIO LOCALI */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
-          onDragLeave={() => setIsDraggingFile(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setIsDraggingFile(false);
-            if (e.dataTransfer.files) handleAudioFiles(e.dataTransfer.files);
-          }}
-          className={`download-dropzone ${isDraggingFile ? 'dragging' : ''}`}
-          style={{
-            margin: '12px 0 16px',
-            padding: '14px 18px',
-            borderRadius: '12px',
-            border: isDraggingFile ? '2px dashed #00d26a' : '1px dashed rgba(255,255,255,0.18)',
-            background: isDraggingFile ? 'rgba(0, 210, 106, 0.08)' : 'rgba(255,255,255,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            accept="audio/*,.mp3,.wav,.aiff,.flac,.m4a,.ogg"
-            multiple
-            onChange={(e) => {
-              if (e.target.files) handleAudioFiles(e.target.files);
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '22px' }}>📥</span>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#f1f5f9' }}>
-                Trascina qui file audio dal Mac (.mp3, .wav, .aiff, .flac)
-              </div>
-              <div style={{ fontSize: '11px', color: '#9ca3af' }}>
-                Analisi BPM istantanea, tag ID3 e salvataggio automatico nella cartella attiva
               </div>
             </div>
-          </div>
-          <button
-            type="button"
-            className="btn-sort-pill active"
-            style={{ fontSize: '11px', padding: '5px 12px', pointerEvents: 'none' }}
+
+            {/* UNICO PULSANTONE VERDE */}
+            <button
+              type="submit"
+              className="primary dl-btn-submit-green"
+              disabled={busy || !input.trim()}
+            >
+              {busy ? 'Analisi…' : 'Aggiungi alla coda'}
+            </button>
+          </form>
+
+          {error && <div className="alert" role="alert" style={{ marginTop: '12px' }}>{error}</div>}
+
+          {/* DRAG & DROP ZONE PER FILE AUDIO LOCALI */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+            onDragLeave={() => setIsDraggingFile(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDraggingFile(false);
+              if (e.dataTransfer.files) handleAudioFiles(e.dataTransfer.files);
+            }}
+            className={`download-dropzone ${isDraggingFile ? 'dragging' : ''}`}
+            onClick={() => fileInputRef.current?.click()}
           >
-            + Sfoglia File
-          </button>
-        </div>
-
-        {/* Sotto l'input: 1. PRONTI / SCARICATI (ACCORDION) */}
-        <div className="dl-section-block">
-          <div className="dl-history-head" style={{ cursor: 'pointer' }} onClick={() => setHistoryOpen((v) => !v)}>
-            <div className="dl-sec-title-wrap">
-              <span className="eyebrow">Pronti per il salvataggio</span>
-              <span className="dl-count">{history.length} tracce pronte</span>
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept="audio/*,.mp3,.wav,.aiff,.flac,.m4a,.ogg"
+              multiple
+              onChange={(e) => {
+                if (e.target.files) handleAudioFiles(e.target.files);
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '18px' }}>📥</span>
+              <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>
+                Trascina qui file audio dal Mac (.mp3, .wav, .flac) per l&apos;ingestione istantanea
+              </span>
             </div>
-            <div className="dl-history-actions" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                className="preset-chip-btn"
-                onClick={handleOpenArchive}
-                title="Visualizza tutti i link e lo storico completo"
-              >
-                📋 Archivio Link &amp; Export ({history.length})
-              </button>
-              {onSwitchToArchive && (
-                <button
-                  type="button"
-                  className="preset-chip-btn"
-                  onClick={onSwitchToArchive}
-                  title="Vai all'Archivio per gestire le cartelle e le sessioni"
-                >
-                  📁 Gestione Cartelle Cloud
-                </button>
-              )}
-              {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()); saveSavedDownloadedIds(new Set()) }}>Svuota</button>}
-              <button
-                type="button"
-                className="btn-sort-pill"
-                onClick={() => setHistoryOpen((v) => !v)}
-                style={{ fontSize: '11px', padding: '3px 8px' }}
-              >
-                {historyOpen ? '▲ Riduci' : '▼ Espandi'}
-              </button>
-            </div>
+            <span className="dl-browse-link"><u>Sfoglia</u></span>
           </div>
+        </section>
 
-          {historyOpen && (
-            history.length === 0
-              ? <div className="empty dl-empty-inline"><span>♪</span><p>Nessun brano pronto</p><small>I brani convertiti e taggati appariranno qui pronti da salvare.</small></div>
-              : <div className="dl-history">{history.map((item) => (
-                  <HistoryRow
-                    key={item.id}
-                    item={item}
-                    playing={playingUrl === api.fileUrl(item.id)}
-                    onToggleAudio={toggleAudio}
-                    onDownloaded={() => markDownloaded(item.id)}
-                    onRemove={() => handleRemoveHistory(item.id)}
-                    onRequeue={requeueSingleUrl}
-                    onError={setError}
-                    isSaved={downloadedIds.has(item.id)}
-                  />
-                ))}</div>
-          )}
-        </div>
-
-        {/* Sotto i pronti: 2. IN CODA / IN CORSO (ACCORDION) */}
+        {/* CODA IN CORSO */}
         {queue.length > 0 && (
-          <div className="dl-section-block dl-queue-block">
-            <div className="dl-queue-head" style={{ cursor: 'pointer' }} onClick={() => setQueueOpen((v) => !v)}>
-              <span className="eyebrow">In corso / Coda</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="dl-count">{activeCount} attivi · {queue.length} in lista</span>
-                <button
-                  type="button"
-                  className="btn-sort-pill"
-                  onClick={(e) => { e.stopPropagation(); setQueueOpen((v) => !v) }}
-                  style={{ fontSize: '11px', padding: '3px 8px' }}
-                >
-                  {queueOpen ? '▲ Riduci' : '▼ Espandi'}
-                </button>
-              </div>
+          <section className="card download-queue-card">
+            <div className="dl-queue-header-clean">
+              <span className="eyebrow">CODA &amp; BRANI IN CORSO ({queue.length})</span>
+              <span className="dl-count">{activeCount} attivi</span>
             </div>
-            {queueOpen && (
-              <div className="dl-queue-list">
-                {queue.map((job) => (
-                  <QueueRow
-                    key={job.key}
-                    job={job}
-                    onRetry={() => handleRetryJob(job)}
-                    onRemove={() => handleRemoveJob(job.key)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+            <div className="dl-queue-list-clean">
+              {queue.map((job) => {
+                const ready = readyStatuses.has(job.status)
+                const failed = failedStatuses.has(job.status)
+                const pct = Math.min(100, Math.round(Math.max(job.optimistic, job.progress)))
+                return (
+                  <div key={job.key} className={`dl-queue-item-clean ${ready ? 'ready' : failed ? 'failed' : ''}`}>
+                    <div className="dl-queue-info">
+                      <span className="dl-queue-icon">{failed ? '⚠️' : ready ? '✓' : '◷'}</span>
+                      <div className="dl-queue-text">
+                        <span className="dl-queue-title">{job.title ?? job.url}</span>
+                        <span className="dl-queue-detail">{failed ? (job.message ?? 'Errore') : ready ? 'Completato' : queueStatusLabel(job.status)}</span>
+                      </div>
+                    </div>
 
-      {/* Right Column: Download effettuati (ACCORDION) */}
-      <aside className="card dl-folder-destination-card">
-        <div className="dl-folder-contents-head" style={{ cursor: 'pointer' }} onClick={() => setSavedOpen((v) => !v)}>
-          <span className="eyebrow">Download effettuati</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="dl-count">{savedInFolderItems.length} file</span>
+                    {!failed && !ready && (
+                      <div className="dl-progress-track">
+                        <div className="dl-progress-bar" style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+
+                    <span className="dl-queue-pct">{ready ? '100%' : failed ? '!' : `${pct}%`}</span>
+
+                    {failed ? (
+                      <button type="button" className="dl-queue-retry" onClick={() => handleRetryJob(job)} title="Riprova">
+                        🔄
+                      </button>
+                    ) : (
+                      <button type="button" className="dl-queue-remove" onClick={() => handleRemoveJob(job.key)} title="Rimuovi dalla coda">
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* SCOMPARTO DESTRO: DOWNLOAD PRONTI & REKORDBOX (10% desktop proportion) */}
+      {isReadyWingOpen && (
+        <aside className="download-wing-right">
+          <div className="wing-header">
+            <div className="wing-header-title">
+              <span className="wing-title">📥 PRONTI</span>
+              <span className="wing-count">{history.length} tracce</span>
+            </div>
             <button
               type="button"
-              className="btn-sort-pill"
-              onClick={(e) => { e.stopPropagation(); setSavedOpen((v) => !v) }}
-              style={{ fontSize: '11px', padding: '3px 8px' }}
+              className="wing-close-btn"
+              onClick={() => setIsReadyWingOpen(false)}
+              title="Chiudi scomparto Pronti"
             >
-              {savedOpen ? '▲' : '▼'}
+              ✕
             </button>
           </div>
-        </div>
 
-        {savedOpen && (
-          savedInFolderItems.length === 0 ? (
-            <div className="dl-folder-empty-state">
-              <div className="dl-folder-dash-box">
-                <span className="dl-folder-arrow">↓</span>
-                <p>Ancora nessun download</p>
-                <small>I brani che scarichi appariranno qui, pronti da riscaricare.</small>
+          {/* CLOUD DESTINATION NOTICE */}
+          <div className="wing-cloud-box">
+            <span className="wing-cloud-label">SALVATO IN CLOUD:</span>
+            <strong className="wing-cloud-folder">📁 {activeFolderName}</strong>
+          </div>
+
+          {/* BATCH REKORDBOX DOWNLOAD BUTTON */}
+          {history.length > 0 && (
+            <button
+              type="button"
+              className="btn-rekordbox-batch"
+              onClick={handleBatchRekordboxExport}
+              title="Esporta playlist M3U per chiavetta Rekordbox / CDJ Pioneer"
+            >
+              ⚡ Scarica pronta per Rekordbox
+            </button>
+          )}
+
+          {/* LISTA BRANI PRONTI */}
+          <div className="wing-ready-list">
+            {history.length === 0 ? (
+              <div className="wing-ready-empty">
+                <span>🎵</span>
+                <p>Nessun brano pronto</p>
+                <small>I file convertiti e salvati nel cloud appariranno qui, pronti per il download locale.</small>
               </div>
-            </div>
-          ) : (
-            <div className="dl-folder-file-list">
-              {savedInFolderItems.map((item) => (
-                <div key={`done-${item.id}`} className="dl-folder-file-item">
-                  <span className="dl-file-icon">🎵</span>
-                  <div className="dl-file-info">
-                    <span className="dl-file-name">{item.artist ? `${item.artist} - ` : ''}{item.title}</span>
-                    {item.bpm != null ? <span className="dl-file-meta">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="dl-file-meta">… BPM</span> : null}
+            ) : (
+              history.map((item) => {
+                const fileUrl = api.fileUrl(item.id)
+                const isPlaying = playingUrl === fileUrl
+                const isSaved = downloadedIds.has(item.id)
+                return (
+                  <div key={item.id} className="wing-ready-item">
+                    <button
+                      type="button"
+                      className={`wing-mini-play ${isPlaying ? 'playing' : ''}`}
+                      onClick={() => toggleAudio(fileUrl)}
+                      title={isPlaying ? 'Pausa anteprima' : 'Ascolta anteprima'}
+                    >
+                      {isPlaying ? '⏸' : '▶'}
+                    </button>
+                    <div className="wing-track-info">
+                      <span className="wing-track-title" title={item.title}>{item.title}</span>
+                      <div className="wing-track-meta">
+                        {item.artist && <span className="wing-artist">{item.artist}</span>}
+                        {item.bpm != null ? <span className="wing-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="wing-bpm">… BPM</span> : null}
+                        {item.source && <span className="wing-source">fonte: {item.source.replace(/^https?:\/\/(www\.)?/, '').slice(0, 24)}</span>}
+                      </div>
+                    </div>
+                    <a
+                      className="link-underline-dark"
+                      href={fileUrl}
+                      download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        triggerResilientDownload(item, () => markDownloaded(item.id), requeueSingleUrl, setError)
+                      }}
+                      title={`Scarica ${item.title}`}
+                      aria-label={`Scarica ${item.title}`}
+                    >
+                      <u>{isSaved ? '✓ Scaricato' : 'Scarica MP3'}</u>
+                    </a>
+                    <button
+                      type="button"
+                      className="wing-item-remove"
+                      onClick={() => handleRemoveHistory(item.id)}
+                      title="Rimuovi dalla lista"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <a
-                    className="dl-redownload-btn"
-                    href={api.fileUrl(item.id)}
-                    download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
-                    onClick={(e) => { e.preventDefault(); triggerResilientDownload(item, undefined, requeueSingleUrl, setError) }}
-                    title={`Riscarica ${item.title}`}
-                    aria-label={`Riscarica ${item.title}`}
-                  >
-                    ↻ Riscarica
-                  </a>
-                </div>
-              ))}
-            </div>
-          )
-        )}
-      </aside>
+                )
+              })
+            )}
+          </div>
+        </aside>
+      )}
 
       {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
       {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
