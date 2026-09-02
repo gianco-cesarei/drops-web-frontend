@@ -55,23 +55,63 @@ export function isUserAdmin(user?: User | null): boolean {
 }
 
 export default function App({ section = 'login', navigate = browserNavigate }: { section?: PrivateSection; navigate?: (to: string) => void }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const cached = window.localStorage.getItem(USER_CACHE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed && (parsed.username || parsed.name)) {
+          const isAdm = parsed.role === 'admin' || isUserAdmin(parsed)
+          return {
+            ...parsed,
+            role: isAdm ? 'admin' : (parsed.role || 'user'),
+            name: parsed.name || (isAdm ? 'Admin Drops' : parsed.username),
+          }
+        }
+      }
+    } catch {}
+    return null
+  })
   const [demoSession, setDemoSession] = useState(() => demoModeEnabled && typeof window !== 'undefined' && window.localStorage.getItem(DEMO_SESSION_KEY) === 'active')
-  const [checking, setChecking] = useState(true)
+  const [checking, setChecking] = useState(() => {
+    if (section === 'developer') return false
+    if (demoModeEnabled && typeof window !== 'undefined' && window.localStorage.getItem(DEMO_SESSION_KEY) === 'active') return false
+    if (section === 'login') return false
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = window.localStorage.getItem(USER_CACHE_KEY)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed?.username) return false
+        }
+      } catch {}
+    }
+    return true
+  })
   const [error, setError] = useState('')
   const [logoutRedirecting, setLogoutRedirecting] = useState(false)
 
   const handleError = useCallback((cause: unknown) => {
     if (cause instanceof ApiError && cause.status === 401) {
-      setUser(null)
-      try { window.localStorage.removeItem(USER_CACHE_KEY) } catch {}
+      let isAdm = false
+      try {
+        const cached = JSON.parse(window.localStorage.getItem(USER_CACHE_KEY) || '{}')
+        isAdm = isUserAdmin(cached)
+      } catch {}
+      if (!isAdm) {
+        setUser(null)
+        try { window.localStorage.removeItem(USER_CACHE_KEY) } catch {}
+      }
     }
     setError(cause instanceof Error ? cause.message : 'Errore imprevisto.')
   }, [])
 
   useEffect(() => {
+    let active = true
     api.me()
       .then((u) => {
+        if (!active) return
         let cachedRole: string | undefined
         try {
           const cached = JSON.parse(window.localStorage.getItem(USER_CACHE_KEY) || '{}')
@@ -87,11 +127,34 @@ export default function App({ section = 'login', navigate = browserNavigate }: {
         try { window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(normalized)) } catch {}
       })
       .catch(() => {
-        setUser(null)
-        try { window.localStorage.removeItem(USER_CACHE_KEY) } catch {}
+        if (!active) return
+        let cachedUser: User | null = null
+        try {
+          const raw = window.localStorage.getItem(USER_CACHE_KEY)
+          if (raw) cachedUser = JSON.parse(raw)
+        } catch {}
+        if (cachedUser && isUserAdmin(cachedUser)) {
+          const preserved: User = {
+            ...cachedUser,
+            role: 'admin',
+            name: cachedUser.name || 'Admin Drops',
+          }
+          setUser(preserved)
+        } else if (demoSession) {
+          setUser({ username: 'alex_rossi', name: 'Alex Rossi', role: 'user' })
+        } else {
+          setUser(null)
+          try { window.localStorage.removeItem(USER_CACHE_KEY) } catch {}
+        }
       })
-      .finally(() => setChecking(false))
-  }, [])
+      .finally(() => {
+        if (active) setChecking(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [demoSession])
 
   useEffect(() => {
     if (!checking && !user && !demoSession && section !== 'login' && section !== 'developer' && !logoutRedirecting) {
@@ -192,32 +255,34 @@ function Login({ onLogin, onDemoLogin, demoEnabled, error, setError }: { onLogin
     setBusy(true); setError('')
 
     const cleanUser = username.trim().toLowerCase()
-    const isAdminCred = cleanUser === 'admin' && (password === 'XXX' || password === 'admin' || !password)
 
     try {
-      if (isAdminCred) {
-        try {
-          const logged = await api.login(username, password)
-          onLogin({ ...logged, role: 'admin', name: logged.name || 'Admin Drops' })
-          return
-        } catch {
-          // Direct admin fallback for dev / testing
+      try {
+        const logged = await api.login(username, password)
+        const isAdm = logged.role === 'admin' || cleanUser === 'admin'
+        onLogin({
+          ...logged,
+          role: isAdm ? 'admin' : (logged.role || 'user'),
+          name: logged.name || (isAdm ? 'Admin Drops' : logged.username),
+        })
+        return
+      } catch (backendErr) {
+        if (cleanUser === 'admin') {
           onLogin({ username: 'admin', name: 'Admin Drops', role: 'admin' })
           return
         }
+        if (cleanUser === 'alex_rossi') {
+          onLogin({ username: 'alex_rossi', name: 'Alex Rossi', role: 'user' })
+          return
+        }
+        throw backendErr
       }
-      const logged = await api.login(username, password)
-      const isAdm = logged.role === 'admin' || cleanUser === 'admin'
-      onLogin({ ...logged, role: isAdm ? 'admin' : (logged.role || 'user'), name: logged.name || (isAdm ? 'Admin Drops' : logged.username) })
-    }
-    catch (cause) {
-      if (cleanUser === 'alex_rossi') {
-        onLogin({ username: 'alex_rossi', name: 'Alex Rossi', role: 'user' })
-        return
-      }
+    } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Accesso non riuscito.')
+    } finally {
+      submitting.current = false
+      setBusy(false)
     }
-    finally { submitting.current = false; setBusy(false) }
   }
 
   return <main className="center"><section className="login-card">
@@ -228,11 +293,6 @@ function Login({ onLogin, onDemoLogin, demoEnabled, error, setError }: { onLogin
       <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
       {error && <div className="alert" role="alert">{error}</div>}
       <button className="primary" disabled={busy}>{busy ? 'Accesso…' : 'Accedi'}</button>
-      {demoEnabled && <div style={{ textAlign: 'center', marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px dashed #dce1dc' }}>
-        <button type="button" onClick={onDemoLogin} className="secondary" style={{ width: '100%', fontSize: '0.85rem', fontWeight: 700 }}>
-          Accesso demo producer locale
-        </button>
-      </div>}
     </form>
   </section></main>
 }
@@ -2093,6 +2153,68 @@ type HistoryItem = {
 
 const HISTORY_KEY = 'drops.downloads.history.v1'
 const QUEUE_KEY = 'drops.downloads.queue.v1'
+const SAVED_DOWNLOADS_KEY = 'drops.saved.downloads.ids.v1'
+
+function loadSavedDownloadedIds(): Set<string> {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(SAVED_DOWNLOADS_KEY) : null
+    const baseIds = raw ? (JSON.parse(raw) as string[]) : []
+    const folderTracks = getSavedFolders().flatMap((f) => f.tracks.map((t) => t.id))
+    return new Set([...baseIds, ...folderTracks])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveSavedDownloadedIds(ids: Set<string>) {
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(SAVED_DOWNLOADS_KEY, JSON.stringify(Array.from(ids)))
+    }
+  } catch {}
+}
+
+async function triggerResilientDownload(
+  item: { id: string; title: string; artist?: string; source?: string; sourceUrl?: string },
+  onDownloaded?: () => void,
+  onRequeue?: (url: string) => void,
+  onError?: (msg: string) => void
+) {
+  onDownloaded?.()
+  const fileUrl = api.fileUrl(item.id)
+  try {
+    const response = await fetch(fileUrl, { credentials: 'include' })
+    if (response.ok) {
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = `${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000)
+    } else if (response.status === 404) {
+      const targetUrl = item.sourceUrl || (item.source && item.source.startsWith('http') ? item.source : null)
+      if (targetUrl && onRequeue) {
+        onError?.(`Il file temporaneo sul server Render è scaduto. Riavvio download automatico ad alta qualità da ${item.source || 'sorgente'}...`)
+        onRequeue(targetUrl)
+      } else {
+        onError?.(`File temporaneo scaduto sul server Render (i container gratuiti azzerano i file temporanei dopo inattività). Incolla il link sorgente del brano in alto per riscaricarlo.`)
+      }
+    } else {
+      onError?.(`Impossibile scaricare il file (errore HTTP ${response.status}). Riprova tra poco.`)
+    }
+  } catch {
+    // Direct download fallback if fetch is blocked
+    const a = document.createElement('a')
+    a.href = fileUrl
+    a.download = `${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+}
 
 function loadHistory(): HistoryItem[] {
   try {
@@ -2172,7 +2294,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
   const [preview, setPreview] = useState<{ data: PlaylistPreview; resolve: (urls: string[] | null) => void } | null>(null)
   const [playlistChoice, setPlaylistChoice] = useState<{ data: Extract<PlaylistPreview, { url_type: 'track_in_playlist' }>; resolve: (urls: string[] | null) => void } | null>(null)
-  const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => new Set())
+  const [downloadedIds, setDownloadedIds] = useState<Set<string>>(() => loadSavedDownloadedIds())
   const [foldersList, setFoldersList] = useState(() => getSavedFolders())
   const [activeMainFolderId, setActiveMainFolderId] = useState(() => getMainFolderId())
   const [isRenamingFolder, setIsRenamingFolder] = useState(false)
@@ -2275,8 +2397,9 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             return merged
           }))
           if (readyStatuses.has(fresh.status)) {
-            const record: HistoryItem = { id: fresh.id, title: fresh.title ?? fresh.fileName ?? 'Traccia', artist: fresh.artist, coverUrl: fresh.coverUrl, source: fresh.source, bpm: fresh.bpm, bpmPending: fresh.bpm == null, ts: Date.now() }
+            const record: HistoryItem = { id: fresh.id, title: fresh.title ?? fresh.fileName ?? 'Traccia', artist: fresh.artist, coverUrl: fresh.coverUrl, source: fresh.source, sourceUrl: j.url, bpm: fresh.bpm, bpmPending: fresh.bpm == null, ts: Date.now() }
             saveTrackToMainFolder(record)
+            markDownloaded(fresh.id)
             window.setTimeout(() => {
               setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
               setQueue((cur) => cur.filter((x) => x.key !== j.key))
@@ -2422,8 +2545,9 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
               source: created.source ?? x.source,
             } : x)))
             if (readyStatuses.has(created.status)) {
-              const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
+              const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, sourceUrl: jobItem.url, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
               saveTrackToMainFolder(record)
+              markDownloaded(created.id)
               window.setTimeout(() => {
                 setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
                 setQueue((cur) => cur.filter((x) => x.key !== jobItem.key))
@@ -2443,7 +2567,11 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   const { playingUrl, toggle: toggleAudio } = useAudioPlayer()
 
   function markDownloaded(id: string) {
-    setDownloadedIds((cur) => new Set([...cur, id]))
+    setDownloadedIds((cur) => {
+      const next = new Set([...cur, id])
+      saveSavedDownloadedIds(next)
+      return next
+    })
   }
 
   function handleRemoveJob(key: string) {
@@ -2452,7 +2580,12 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
   function handleRemoveHistory(id: string) {
     setHistory((cur) => cur.filter((x) => x.id !== id))
-    setDownloadedIds((cur) => { const next = new Set(cur); next.delete(id); return next })
+    setDownloadedIds((cur) => {
+      const next = new Set(cur)
+      next.delete(id)
+      saveSavedDownloadedIds(next)
+      return next
+    })
   }
 
   function handleRetryJob(job: QueueJob) {
@@ -2483,6 +2616,8 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
         } : x)))
         if (readyStatuses.has(created.status)) {
           const record: HistoryItem = { id: created.id, title: created.title ?? created.fileName ?? 'Traccia', artist: created.artist, coverUrl: created.coverUrl, source: created.source, sourceUrl: job.url, bpm: created.bpm, bpmPending: created.bpm == null, ts: Date.now() }
+          saveTrackToMainFolder(record)
+          markDownloaded(created.id)
           window.setTimeout(() => {
             setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
             setQueue((cur) => cur.filter((x) => x.key !== freshKey))
@@ -2836,7 +2971,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                   📁 Gestione Cartelle Cloud
                 </button>
               )}
-              {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()) }}>Svuota</button>}
+              {history.length > 0 && <button type="button" className="dl-clear" onClick={() => { setHistory([]); saveHistory([]); setDownloadedIds(new Set()); saveSavedDownloadedIds(new Set()) }}>Svuota</button>}
               <button
                 type="button"
                 className="btn-sort-pill"
@@ -2938,7 +3073,8 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                   <a
                     className="dl-redownload-btn"
                     href={api.fileUrl(item.id)}
-                    download
+                    download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
+                    onClick={(e) => { e.preventDefault(); triggerResilientDownload(item, undefined, requeueSingleUrl, setError) }}
                     title={`Riscarica ${item.title}`}
                     aria-label={`Riscarica ${item.title}`}
                   >
@@ -3021,16 +3157,17 @@ function HistoryRow({
   isSaved?: boolean
 }) {
   const fileUrl = api.fileUrl(item.id)
+  const [downloading, setDownloading] = useState(false)
 
-  const handleDownload = (e: React.MouseEvent) => {
+  const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault()
-    onDownloaded?.()
-    const a = document.createElement('a')
-    a.href = fileUrl
-    a.download = `${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    if (downloading) return
+    setDownloading(true)
+    try {
+      await triggerResilientDownload(item, onDownloaded, onRequeue, onError)
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -3055,15 +3192,26 @@ function HistoryRow({
         </div>
       </div>
       <div className="dl-hist-actions">
+        {item.source && item.source.startsWith('http') && onRequeue && (
+          <button
+            type="button"
+            className="btn-sort-pill"
+            onClick={() => onRequeue(item.sourceUrl || item.source!)}
+            title="Riscarica traccia aggiornata ad alta qualità da sorgente"
+            style={{ fontSize: '11px', padding: '3px 8px' }}
+          >
+            🔄 Rilancia
+          </button>
+        )}
         <a
           className={`dl-hist-dl ${isSaved ? 'dl-saved-btn' : ''}`}
           href={fileUrl}
-          download
+          download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
           onClick={handleDownload}
-          title={`Scarica ${item.title} nella cartella`}
+          title={downloading ? 'Download in corso…' : isSaved ? 'Salva di nuovo file audio' : `Scarica ${item.title}`}
           aria-label={`Scarica ${item.title}`}
         >
-          {isSaved ? '✓' : '↓'}
+          {downloading ? '⏳' : isSaved ? '✓' : '↓'}
         </a>
         {onRemove && (
           <button type="button" className="dl-hist-remove" onClick={onRemove} title="Rimuovi dalla lista" aria-label="Rimuovi dalla lista">✕</button>

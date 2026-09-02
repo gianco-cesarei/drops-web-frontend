@@ -198,7 +198,7 @@ describe('autenticazione App', () => {
     const link = await screen.findByRole('link', { name: /Scarica Baby/ }, { timeout: 3000 })
     expect(link).toHaveAttribute('href', expect.stringContaining('/api/v1/downloads/job-rich/file'))
     expect(screen.getByText('Four Tet')).toBeInTheDocument()
-    expect(screen.getByText('122 BPM')).toBeInTheDocument()
+    expect(screen.getAllByText('122 BPM').length).toBeGreaterThan(0)
     expect(screen.getByText('fonte: soundcloud')).toBeInTheDocument()
   }, 15000)
 

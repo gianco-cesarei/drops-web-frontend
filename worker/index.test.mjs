@@ -62,3 +62,21 @@ test('accepts only HTTPS origin configuration without path', () => {
   assert.throws(() => apiOrigin({ API_ORIGIN: 'http://api.example.test' }))
   assert.throws(() => apiOrigin({ API_ORIGIN: 'https://api.example.test/route' }))
 })
+
+test('scheduled handler pings upstream /health endpoint', async () => {
+  const originalFetch = globalThis.fetch
+  let capturedUrl = ''
+  let capturedHeaders = null
+  globalThis.fetch = async (url, options) => {
+    capturedUrl = String(url)
+    capturedHeaders = options?.headers
+    return new Response(JSON.stringify({ status: 'ok' }), { status: 200 })
+  }
+  try {
+    await worker.scheduled({}, env())
+    assert.equal(capturedUrl, 'https://mp3-ytb.onrender.com/health')
+    assert.equal(capturedHeaders?.['User-Agent'], 'Drops-KeepAlive-Worker/1.0')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})

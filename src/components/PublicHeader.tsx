@@ -3,14 +3,35 @@ import { api } from '../api'
 import { publicNavigation } from '../lib/routes'
 
 export default function PublicHeader({ pathname = '/' }: { pathname?: string }) {
-  const [authenticated, setAuthenticated] = useState(false)
+  const [authenticated, setAuthenticated] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const cached = window.localStorage.getItem('drops.user.v1')
+      const demo = window.localStorage.getItem('drops.demo-session.v1')
+      return Boolean(cached || demo === 'active')
+    } catch {
+      return false
+    }
+  })
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     let active = true
     api.me()
       .then(() => { if (active) setAuthenticated(true) })
-      .catch(() => { if (active) setAuthenticated(false) })
+      .catch(() => {
+        if (active) {
+          try {
+            const cached = window.localStorage.getItem('drops.user.v1')
+            const demo = window.localStorage.getItem('drops.demo-session.v1')
+            if (cached || demo === 'active') {
+              setAuthenticated(true)
+              return
+            }
+          } catch {}
+          setAuthenticated(false)
+        }
+      })
       .finally(() => { if (active) setChecking(false) })
     return () => { active = false }
   }, [])

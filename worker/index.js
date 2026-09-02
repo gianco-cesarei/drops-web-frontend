@@ -51,6 +51,21 @@ export default {
 
     return env.ASSETS.fetch(request)
   },
+
+  async scheduled(event, env, ctx) {
+    try {
+      const target = new URL('/health', apiOrigin(env))
+      const res = await fetch(target.toString(), {
+        headers: {
+          'User-Agent': 'Drops-KeepAlive-Worker/1.0',
+          Accept: 'application/json',
+        },
+      })
+      console.log(`[KeepAlive] Pinged ${target.origin}/health - status: ${res.status}`)
+    } catch (err) {
+      console.warn('[KeepAlive] Ping failed:', err && err.message ? err.message : err)
+    }
+  },
 }
 
 export { DEFAULT_API_ORIGIN, WORKER_ORIGIN, apiOrigin, shouldProxy, upstreamRequest }
