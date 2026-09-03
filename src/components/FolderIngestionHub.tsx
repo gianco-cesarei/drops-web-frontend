@@ -120,9 +120,11 @@ const DEMO_FOLDERS: IndexedFolder[] = [
 function loadFolders(): IndexedFolder[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEMO_FOLDERS
-    const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) && parsed.length > 0 ? (parsed as IndexedFolder[]) : DEMO_FOLDERS
+    if (raw !== null) {
+      const parsed = JSON.parse(raw) as unknown
+      if (Array.isArray(parsed)) return parsed as IndexedFolder[]
+    }
+    return DEMO_FOLDERS
   } catch {
     return DEMO_FOLDERS
   }
@@ -495,9 +497,9 @@ export default function FolderIngestionHub() {
       await api.clearCatalog()
     } catch {}
     try {
-      window.localStorage.removeItem(STORAGE_KEY)
-      window.localStorage.removeItem(HISTORY_KEY)
-      window.localStorage.removeItem('drops_downloads')
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify([]))
+      window.localStorage.setItem(HISTORY_KEY, JSON.stringify([]))
+      window.localStorage.setItem('drops_downloads', JSON.stringify([]))
     } catch {}
     setFolders([])
     setSelectedFolderId('__all__')
