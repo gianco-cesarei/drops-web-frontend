@@ -7457,7 +7457,8 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 .download-winged-layout {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) 640px minmax(220px, 270px);
   justify-content: center;
   align-items: flex-start;
   gap: 16px;
@@ -7469,9 +7470,8 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* LEFT WING: ARCHIVIO (10% proportion) */
 .download-wing-left {
-  flex: 0 0 240px;
-  min-width: 220px;
-  max-width: 270px;
+  grid-column: 1;
+  width: 100%;
   max-height: calc(100vh - 110px);
   overflow-y: auto;
   background: var(--color-surface, #ffffff);
@@ -7487,9 +7487,8 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* RIGHT WING: PRONTI & REKORDBOX (10% proportion) */
 .download-wing-right {
-  flex: 0 0 260px;
-  min-width: 230px;
-  max-width: 300px;
+  grid-column: 3;
+  width: 100%;
   max-height: calc(100vh - 110px);
   overflow-y: auto;
   background: var(--color-surface, #ffffff);
@@ -7505,11 +7504,10 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* CENTER WING: MAIN DOWNLOAD BOX (30% proportion) */
 .download-wing-center {
+  grid-column: 2;
   position: relative;
-  flex: 0 0 640px;
-  width: 640px;
+  width: 100%;
   max-width: 640px;
-  min-width: 320px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -8362,12 +8360,13 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   --a-danger: #ef6d6d;
 
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) 640px minmax(220px, 270px);
   justify-content: center;
   align-items: flex-start;
   gap: 16px;
   width: 100%;
-  max-width: 1600px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 20px 16px;
   color: var(--a-text);
@@ -8382,7 +8381,6 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 /* PANELS */
 .arch-wing-left,
 .arch-wing-right {
-  flex: 0 0 auto;
   align-self: flex-start;
   background: var(--a-panel);
   border: 1px solid var(--a-border);
@@ -8397,15 +8395,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   top: 16px;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.arch-wing-left { flex: 0 0 240px; min-width: 210px; max-width: 340px; }
-.arch-wing-right { flex: 0 0 260px; min-width: 250px; max-width: 360px; }
+.arch-wing-left { grid-column: 1; width: 100%; }
+.arch-wing-right { grid-column: 3; width: 100%; }
 
 .arch-wing-center {
+  grid-column: 2;
   position: relative;
-  flex: 0 0 640px;
-  width: 640px;
+  width: 100%;
   max-width: 640px;
-  min-width: 320px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
