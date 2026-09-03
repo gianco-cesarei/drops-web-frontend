@@ -100,30 +100,22 @@ export async function verifyAndResolveBackendAudioUrl(
     return { ok: true, url: providedUrl }
   }
 
-  const isBackendUrl = !providedUrl || providedUrl.includes('/api/v1/downloads/')
-
   try {
-    const directFileUrl = api.fileUrl(id)
-    const targetUrl = providedUrl || directFileUrl
+    // Obtain signed token URL (/api/v1/downloads/{id}/file-url) for cross-origin audio playback
+    const resolvedUrl = await api.resolveFileUrl(id)
+    const targetUrl = resolvedUrl || providedUrl || api.fileUrl(id)
 
-    // 1. Check if backend endpoint responds cleanly (Backend Deployed Check)
     let res: Response | null = null
     try {
       res = await fetch(targetUrl, {
         method: 'HEAD',
-        headers: {
-          Accept: 'application/json, audio/*',
-        },
+        headers: { Accept: 'application/json, audio/*' },
       })
     } catch {
-      // Retry with GET if HEAD is not supported by CORS/Worker
       try {
         res = await fetch(targetUrl, {
           method: 'GET',
-          headers: {
-            Range: 'bytes=0-1',
-            Accept: 'application/json, audio/*',
-          },
+          headers: { Range: 'bytes=0-1', Accept: 'application/json, audio/*' },
         })
       } catch {
         res = null
@@ -131,65 +123,37 @@ export async function verifyAndResolveBackendAudioUrl(
     }
 
     if (!res) {
-      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
-      return {
-        ok: false,
-        url: '',
-        error: 'Backend /file-url non raggiungibile o non deployato.',
+      if (providedUrl && !targetUrl.includes('/api/v1/downloads/')) {
+        return { ok: true, url: providedUrl }
       }
+      return { ok: false, url: '', error: 'Backend /file-url non raggiungibile o non deployato.' }
     }
 
     if (!res.ok && (res.status === 404 || res.status >= 500)) {
-      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
-      return {
-        ok: false,
-        url: '',
-        error: `Backend /file-url non deployato o non disponibile (HTTP ${res.status}).`,
+      if (providedUrl && !targetUrl.includes('/api/v1/downloads/')) {
+        return { ok: true, url: providedUrl }
       }
+      return { ok: false, url: '', error: `Backend /file-url non disponibile (HTTP ${res.status}).` }
     }
 
-    // 2. Controllo CORS 1 & 2: Origin e Access-Control-Allow-Origin
     const acao = res.headers.get('access-control-allow-origin')
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
     const corsPassed = !acao || acao === '*' || (currentOrigin && (acao.includes(currentOrigin) || currentOrigin.includes(acao)))
 
     if (!corsPassed) {
-      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
-      return {
-        ok: false,
-        url: '',
-        error: 'Controllo CORS (Access-Control-Allow-Origin) fallito per la risorsa audio.',
+      if (providedUrl && !targetUrl.includes('/api/v1/downloads/')) {
+        return { ok: true, url: providedUrl }
       }
+      return { ok: false, url: '', error: 'Controllo CORS (Access-Control-Allow-Origin) fallito.' }
     }
 
-    // 3. Controllo CORS 3: Content-Type
-    const contentType = (res.headers.get('content-type') || '').toLowerCase()
-    const isAudioType =
-      contentType.includes('audio/') ||
-      contentType.includes('application/octet-stream') ||
-      contentType.includes('application/json') ||
-      contentType.includes('application/x-mpegurl') ||
-      contentType === '' // Some Workers return empty content-type on HEAD
-
-    if (!isAudioType) {
-      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
-      return {
-        ok: false,
-        url: '',
-        error: `Controllo Content-Type fallito: il server ha restituito "${contentType}".`,
-      }
-    }
-
-    const resolved = await api.resolveFileUrl(id)
-    return { ok: true, url: resolved || targetUrl }
+    return { ok: true, url: targetUrl }
   } catch (err: unknown) {
-    if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
-    const message = err instanceof Error ? err.message : 'Errore smentito o rete non disponibile'
-    return {
-      ok: false,
-      url: '',
-      error: `Verifica CORS / Backend fallita: ${message}`,
+    if (providedUrl && !providedUrl.includes('/api/v1/downloads/')) {
+      return { ok: true, url: providedUrl }
     }
+    const message = err instanceof Error ? err.message : 'Errore rete o sessione scaduta'
+    return { ok: false, url: '', error: message }
   }
 }
 
