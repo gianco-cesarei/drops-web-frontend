@@ -8,13 +8,15 @@ interface Props {
   title: string
   description?: string
   bodyClass?: string
+  hideHeader?: boolean
 }
 
-const { title, description = 'Drops — discovery musicale editoriale.', bodyClass = '' } = Astro.props
+const { title, description = 'Drops — discovery musicale editoriale.', bodyClass = '', hideHeader = false } = Astro.props
+const isLanding = Astro.url.pathname === '/' || bodyClass.includes('landing-page-body') || hideHeader
 ---
 
 <!doctype html>
-<html lang="it">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -26,7 +28,7 @@ const { title, description = 'Drops — discovery musicale editoriale.', bodyCla
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body class={bodyClass}>
-    <PublicHeader pathname={Astro.url.pathname} />
+    {!isLanding && <PublicHeader pathname={Astro.url.pathname} />}
     <slot />
     <GlobalAudioPlayer client:load />
   </body>
