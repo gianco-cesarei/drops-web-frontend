@@ -69,6 +69,8 @@ export async function verifyAndResolveBackendAudioUrl(
     return { ok: true, url: providedUrl }
   }
 
+  const isBackendUrl = !providedUrl || providedUrl.includes('/api/v1/downloads/')
+
   try {
     const directFileUrl = api.fileUrl(id)
     const targetUrl = providedUrl || directFileUrl
@@ -98,6 +100,7 @@ export async function verifyAndResolveBackendAudioUrl(
     }
 
     if (!res) {
+      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
       return {
         ok: false,
         url: '',
@@ -106,6 +109,7 @@ export async function verifyAndResolveBackendAudioUrl(
     }
 
     if (!res.ok && (res.status === 404 || res.status >= 500)) {
+      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
       return {
         ok: false,
         url: '',
@@ -119,6 +123,7 @@ export async function verifyAndResolveBackendAudioUrl(
     const corsPassed = !acao || acao === '*' || (currentOrigin && (acao.includes(currentOrigin) || currentOrigin.includes(acao)))
 
     if (!corsPassed) {
+      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
       return {
         ok: false,
         url: '',
@@ -136,6 +141,7 @@ export async function verifyAndResolveBackendAudioUrl(
       contentType === '' // Some Workers return empty content-type on HEAD
 
     if (!isAudioType) {
+      if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
       return {
         ok: false,
         url: '',
@@ -146,6 +152,7 @@ export async function verifyAndResolveBackendAudioUrl(
     const resolved = await api.resolveFileUrl(id)
     return { ok: true, url: resolved || targetUrl }
   } catch (err: unknown) {
+    if (providedUrl && !isBackendUrl) return { ok: true, url: providedUrl }
     const message = err instanceof Error ? err.message : 'Errore smentito o rete non disponibile'
     return {
       ok: false,
