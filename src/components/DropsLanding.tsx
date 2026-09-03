@@ -146,8 +146,6 @@ export default function DropsLanding() {
           Drops<span className="logo-dot">.</span>
         </div>
         <nav className="landing-elite-nav">
-          <a href="#agent" className="nav-item">Drop Agent</a>
-          <a href="#features" className="nav-item">Features</a>
           {user ? (
             <a href="/app/download" className="nav-btn-primary">
               Console &rarr;
@@ -215,7 +213,7 @@ export default function DropsLanding() {
                     onClick={openSignUp}
                     className="landing-btn landing-btn-primary"
                   >
-                    Sign Up &mdash; Free 1,000 Tracks
+                    Sign Up
                   </button>
                 </div>
               )}
