@@ -290,7 +290,7 @@ export default function DropsLanding() {
           {/* 03: DESKTOP APP */}
           <div className="modality-card modality-card-soon">
             <div className="modality-num">03</div>
-            <div className="modality-badge-soon">COMING SOON &middot; TAURI</div>
+            <div className="modality-badge-soon">COMING SOON</div>
             <h3 className="modality-title">Desktop App</h3>
             <p className="modality-desc">
               Manage your local music collection with an ultra-fluid interface and export prepared playlists directly to your Pioneer CDJ and AlphaTheta USB drives with one click.
