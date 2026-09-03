@@ -487,6 +487,24 @@ export default function FolderIngestionHub() {
     setTimeout(() => setNotice(null), 2500)
   }
 
+  const handleResetServerCatalog = async () => {
+    if (!window.confirm('Sei sicuro di voler azzerare il catalogo sul server? Le cartelle locali e i file audio in data/audio NON verranno modificati.')) {
+      return
+    }
+    try {
+      await api.clearCatalog()
+    } catch {}
+    try {
+      window.localStorage.removeItem(STORAGE_KEY)
+      window.localStorage.removeItem(HISTORY_KEY)
+      window.localStorage.removeItem('drops_downloads')
+    } catch {}
+    setFolders([])
+    setSelectedFolderId('__all__')
+    setNotice('✓ Catalogo server azzerato con successo! Ricominciamo da zero.')
+    setTimeout(() => setNotice(null), 4000)
+  }
+
   const handleCreateNewSession = () => {
     const sessionNumbers = folders
       .map((f) => {
@@ -928,7 +946,10 @@ export default function FolderIngestionHub() {
                 <button type="button" className="arch-newfolder-cancel" onClick={() => { setCreatingFolder(false); setNewArchFolderName('') }} title="Annulla">✕</button>
               </div>
             ) : (
-              <button type="button" className="arch-btn-ghost" onClick={() => { setCreatingFolder(true); setNewArchFolderName('') }} title="Crea una nuova cartella con nome">+ Nuova Cartella</button>
+              <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
+                <button type="button" className="arch-btn-ghost" style={{ flex: 1 }} onClick={() => { setCreatingFolder(true); setNewArchFolderName('') }} title="Crea una nuova cartella con nome">+ Nuova Cartella</button>
+                <button type="button" className="arch-btn-ghost" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)', flex: 1 }} onClick={handleResetServerCatalog} title="Azzera tutto il catalogo sul server (non tocca data/audio)">🔄 Azzera</button>
+              </div>
             )}
           </div>
 

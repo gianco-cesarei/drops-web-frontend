@@ -203,6 +203,7 @@ export const api = {
     }).then(normalizeJob),
   getDownload: (id: string) => request<unknown>(`/api/v1/downloads/${encodeURIComponent(id)}`).then(normalizeJob),
   listDownloads: (limit = 100) => request<{ downloads: unknown[] }>(`/api/v1/downloads?limit=${limit}`).then((res) => ({ downloads: (res?.downloads ?? []).map(normalizeJob) })),
+  clearCatalog: () => request<{ status: string }>('/api/v1/downloads/clear', { method: 'POST' }),
   fileUrl: (id: string) => `${apiUrl()}/api/v1/downloads/${encodeURIComponent(id)}/file`,
   // Prefer a short-lived signed URL (CORS-friendly, no cookies) so audio can flow through Web Audio (EQ) and be zipped;
   // falls back to the direct /file URL until the backend exposes /file-url.
