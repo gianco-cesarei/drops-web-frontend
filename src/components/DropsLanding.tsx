@@ -77,7 +77,7 @@ export default function DropsLanding() {
     const cleanPassword = loginPassword.trim()
 
     if (!cleanUsername || !cleanPassword) {
-      setErrorMessage('Inserisci username e password.')
+      setErrorMessage('Please enter username and password.')
       return
     }
 
@@ -114,77 +114,92 @@ export default function DropsLanding() {
           window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(loggedUser))
         } catch {}
         setUser(loggedUser)
-        setSuccessMessage('Accesso effettuato. Reindirizzamento...')
+        setSuccessMessage('Access granted. Redirecting...')
         redirectTimerRef.current = setTimeout(() => {
           window.location.assign('/app/download')
         }, 700)
       }
     } catch {
-      setErrorMessage('Credenziali non valide.')
+      setErrorMessage('Invalid credentials.')
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="landing-elite-root">
-      {/* MINIMAL NAVIGATION */}
-      <header className="landing-elite-header">
-        <div className="landing-elite-logo">
-          Drops<span className="logo-dot">.</span>
+    <div className="landing-container">
+      {/* CAMPAIGN VISUAL HERO */}
+      <section className="discovery-hero-campaign landing-clean-hero" aria-label="Drops Campaign">
+        <div className="discovery-hero-media-wrap">
+          <picture className="discovery-hero-picture">
+            <source media="(max-width: 768px)" srcSet="/assets/cue-campaign-mobile.jpg" />
+            <img
+              src="/assets/cue-campaign-desktop.jpg"
+              alt="Manage your music world in cloud"
+              className="discovery-hero-img"
+              loading="eager"
+            />
+          </picture>
+
+          <div className="discovery-hero-headline-clean">
+            <h1 className="discovery-hero-claim-clean">
+              Manage your <br />
+              music world <br />
+              in cloud.
+            </h1>
+          </div>
+
+          <div className="discovery-hero-brand-clean" aria-label="Logo Drops">
+            Drops<span className="hero-logo-dot">.</span>
+          </div>
+
+          <div className="landing-clean-hero-cta">
+            {user ? (
+              <div className="landing-hero-btn-row">
+                <a href="/app/download" className="landing-btn landing-btn-primary">
+                  Open Downloader
+                </a>
+                <a href="/app/archive" className="landing-btn landing-btn-secondary">
+                  Archive
+                </a>
+              </div>
+            ) : (
+              <div className="landing-hero-btn-row">
+                <button
+                  type="button"
+                  onClick={openLogin}
+                  className="landing-btn landing-btn-primary"
+                >
+                  Enter Vault &rarr;
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="discovery-hero-fade" />
         </div>
-        <nav className="landing-elite-nav">
-          <a href="#cli" className="nav-item">Agent CLI</a>
-          <a href="#modalities" className="nav-item">Modalità</a>
-          <a href="#specs" className="nav-item">Specs</a>
-          {user ? (
-            <a href="/app/download" className="nav-btn-primary">
-              Apri Console &rarr;
-            </a>
-          ) : (
-            <button type="button" onClick={openLogin} className="nav-btn-secondary">
-              Accedi
-            </button>
-          )}
-        </nav>
-      </header>
+      </section>
 
-      {/* HERO SECTION */}
-      <section className="landing-elite-hero">
-        <div className="elite-badge">
-          <span className="badge-pulse" />
-          <span>AUTONOMOUS MUSIC CURATION & SELECTOR ENGINE</span>
-        </div>
-
-        <h1 className="elite-hero-title">
-          Suono curato. Velocità nativa.<br />
-          <em>Pronto per la console.</em>
-        </h1>
-
-        <p className="elite-hero-lead">
-          Curatela audio ad alta precisione, intelligenza armonica Camelot Wheel e preparazione 
-          diretta per Rekordbox USB. Se sai a cosa serve, sei nel posto giusto.
-        </p>
-
-        {/* TERMINAL CLI ONE-LINER */}
-        <div className="elite-terminal-card" id="cli">
+      {/* TERMINAL CARD & MODALITIES CONTAINER */}
+      <section className="landing-elite-modalities" style={{ paddingTop: '24px' }}>
+        {/* INTERACTIVE TERMINAL BOX */}
+        <div className="elite-terminal-card" style={{ margin: '0 auto 40px auto' }}>
           <div className="terminal-header">
             <div className="terminal-dots">
               <span className="dot dot-red" />
               <span className="dot dot-yellow" />
               <span className="dot dot-green" />
             </div>
-            <span className="terminal-title">drop-agent &mdash; interactive assistant</span>
+            <span className="terminal-title">drop-agent &mdash; interactive selector bot</span>
             <button type="button" onClick={copyCli} className="terminal-copy-btn">
-              {copiedCode ? '✓ Copiato' : 'Copia Comando'}
+              {copiedCode ? '✓ Copied' : 'Copy Command'}
             </button>
           </div>
           <div className="terminal-body" onClick={copyCli}>
             <span className="terminal-prompt">$</span>
             <code className="terminal-code">{cliCommand}</code>
           </div>
-          <div className="terminal-specs-bar" id="specs">
-            <span className="spec-tag">Prompt Interattivo</span>
+          <div className="terminal-specs-bar">
+            <span className="spec-tag">Interactive Bot Prompt</span>
             <span className="spec-divider">&bull;</span>
             <span className="spec-tag">RAM &lt; 120MB</span>
             <span className="spec-divider">&bull;</span>
@@ -196,71 +211,46 @@ export default function DropsLanding() {
           </div>
         </div>
 
-        <div className="elite-hero-actions">
-          {user ? (
-            <div className="hero-logged-row">
-              <a href="/app/download" className="elite-btn-primary">
-                🎛️ Apri Downloader
-              </a>
-              <a href="/app/archive" className="elite-btn-secondary">
-                📁 Archivio Tracce
-              </a>
-            </div>
-          ) : (
-            <div className="hero-unlogged-row">
-              <button type="button" onClick={openLogin} className="elite-btn-primary">
-                Entra nel Cloud Vault &rarr;
-              </button>
-              <a href="#modalities" className="elite-btn-secondary">
-                Esplora le 3 Modalità
-              </a>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 3 UNCOMPROMISING MODALITIES */}
-      <section className="landing-elite-modalities" id="modalities">
+        {/* 3 SHARP MODALITIES */}
         <div className="modalities-grid">
           {/* 01: DROP AGENT CLI */}
           <div className="modality-card">
             <div className="modality-num">01</div>
-            <div className="modality-badge-active">DISPONIBILE SUBITO</div>
+            <div className="modality-badge-active">AVAILABLE NOW</div>
             <h3 className="modality-title">Drop Agent</h3>
             <p className="modality-desc">
-              Assistente locale in Python &amp; FFmpeg. Lanci il comando e l&apos;agente ti chiede cosa fare: incollagli 
-              un link YouTube/SoundCloud da scaricare e analizzare, oppure seleziona una cartella già sul tuo computer per 
-              calcolare chiavi Camelot, BPM ed esportare i file per Rekordbox.
+              Standalone local Python &amp; FFmpeg bot. Paste any DJ set or playlist URL to fetch 100+ tracks in 
+              minutes, or point it to any local folder on your disk to compute Camelot keys, BPM, and Rekordbox XML exports.
             </p>
             <div className="modality-meta">
-              <span>Esecuzione locale guidata</span>
-              <span>Velocità fibra nativa</span>
+              <span>Local Native Execution</span>
+              <span>Direct Fiber Speed</span>
             </div>
           </div>
 
-          {/* 02: CLOUD VAULT */}
+          {/* 02: CLOUD WORKSPACE */}
           <div className="modality-card">
             <div className="modality-num">02</div>
             <div className="modality-badge-active">LIVE ON CLOUD</div>
             <h3 className="modality-title">Cloud Workspace</h3>
             <p className="modality-desc">
-              Streaming privato ad alta fedeltà su storage Cloudflare R2, gestione delle crate per tonalità e BPM, 
-              e accesso immediato ai set storici digitalizzati.
+              High-fidelity private audio streaming on Cloudflare R2 object storage. Browse curated continuous mixes, 
+              organize harmonic crates, and preview tracks with headphone Cue routing.
             </p>
             <div className="modality-meta">
               <span>Cloudflare R2 &amp; Supabase</span>
-              <span>Private Streaming</span>
+              <span>Private Vault</span>
             </div>
           </div>
 
           {/* 03: DESKTOP APP */}
           <div className="modality-card modality-card-soon">
             <div className="modality-num">03</div>
-            <div className="modality-badge-soon">IN ARRIVO &middot; TAURI v2</div>
+            <div className="modality-badge-soon">COMING SOON &middot; TAURI v2</div>
             <h3 className="modality-title">Desktop App</h3>
             <p className="modality-desc">
-              Applicazione nativa macOS e Windows. Unisce la potenza dell&apos;agente locale con una UI fluida 
-              per esportare crate direttamente sulle chiavette USB per CDJ Pioneer e AlphaTheta.
+              Native lightweight app for macOS and Windows. Combines local agent performance with a fluid UI 
+              to sync your crates directly onto Pioneer CDJ and AlphaTheta USB drives with 1 click.
             </p>
             <div className="modality-meta">
               <span>Standalone App</span>
@@ -279,7 +269,7 @@ export default function DropsLanding() {
           <div className="footer-links">
             <button type="button" onClick={openLogin}>Vault Login</button>
             <a href="https://github.com/gianco-cesarei/Drops" target="_blank" rel="noreferrer">GitHub</a>
-            <a href="/app/archive">Archivio</a>
+            <a href="/app/archive">Archive</a>
           </div>
         </div>
       </footer>
@@ -289,7 +279,7 @@ export default function DropsLanding() {
         <div className="elite-auth-backdrop" onClick={() => setIsAuthModalOpen(false)}>
           <div className="elite-auth-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="auth-dialog-header">
-              <h3>Accesso Vault</h3>
+              <h3>Vault Access</h3>
               <button type="button" onClick={() => setIsAuthModalOpen(false)} className="dialog-close-btn">&times;</button>
             </div>
 
@@ -298,7 +288,7 @@ export default function DropsLanding() {
                 Username
                 <input
                   type="text"
-                  placeholder="Username o admin"
+                  placeholder="Username or admin"
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   required
@@ -320,7 +310,7 @@ export default function DropsLanding() {
               {successMessage && <div className="auth-success-pill">{successMessage}</div>}
 
               <button type="submit" disabled={busy} className="auth-submit-btn">
-                {busy ? 'Verifica in corso...' : 'Entra in Drops'}
+                {busy ? 'Verifying...' : 'Enter Drops'}
               </button>
             </form>
           </div>
