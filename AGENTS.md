@@ -44,3 +44,17 @@ Berlin Techno (Dub/Deep) · Detroit Techno.
 EDM commerciale/mainstage.
 **Stile:** underground, minimalista, elegante, dark mode alto contrasto · foto autentiche, flyer
 reali, artwork di release — NO poster generici da AI.
+
+---
+
+## 6. REGOLE ARCHITETTURALI IMMUTABILI (PROTECTED CORE)
+Tutti gli agenti AI (Claude, Codex, Gemini, Cursor) DEVONO RISPETTARE TASSATIVAMENTE QUESTE REGOLE:
+
+1. **PERSISTENZA ARCHIVIO E CARTELLI VUOTE**:
+   - In `FolderIngestionHub.tsx`, `loadFolders()` deve accettare l'array vuoto `[]` quando l'utente cancella le cartelle o azzera l'archivio. Non deve MAI forzare le cartelle demo `DEMO_FOLDERS` sopra uno stato vuoto esplicito.
+
+2. **PLAYBACK AUDIO CON TOKEN FIRMATO**:
+   - `playReal` in `GlobalAudioPlayer.tsx` deve risolvere l'URL con token firmato (`api.resolveFileUrl(id)` / `verifyAndResolveBackendAudioUrl`) prima di passarlo al tag `<audio crossOrigin="anonymous">`. Non rimuovere mai la risoluzione del token.
+
+3. **SINGLE-INSTANCE PLAYER AUDIO**:
+   - Deve sempre essere attiva la funzione `stopAllOtherAudioExcept` per evitare che più brani suonino contemporaneamente.
