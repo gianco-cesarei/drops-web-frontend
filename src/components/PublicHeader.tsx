@@ -47,8 +47,8 @@ export default function PublicHeader({ pathname = '/' }: { pathname?: string }) 
           Drops<span>.</span>
         </a>
         <div className="public-header-nav" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <a href="/app/download" className="public-nav-link" style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>Download</a>
           <a href="/app/archive" className="public-nav-link" style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>Archivio</a>
+          <a href="/app/download" className="public-nav-link" style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>Download</a>
         </div>
         <div className="public-header-right">
           {accountLink}

@@ -28,4 +28,11 @@ describe('PublicHeader', () => {
     const link = await screen.findByRole('link', { name: 'Area privata' })
     expect(link).toHaveAttribute('href', '/app/download')
   })
+
+  it('mostra i link di navigazione con Archivio per primo e Download per secondo', () => {
+    render(<PublicHeader />)
+    const links = screen.getAllByRole('link', { name: /Archivio|Download/ })
+    const hrefs = links.map((link) => link.getAttribute('href'))
+    expect(hrefs).toEqual(['/app/archive', '/app/download'])
+  })
 })

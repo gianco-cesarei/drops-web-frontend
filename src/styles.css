@@ -7506,9 +7506,11 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 /* CENTER WING: MAIN DOWNLOAD BOX (30% proportion) */
 .download-wing-center {
   position: relative;
-  flex: 1 1 540px;
+  flex: 0 0 640px;
+  width: 640px;
+  max-width: 640px;
   min-width: 320px;
-  max-width: 620px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -8189,7 +8191,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: #dcfce7;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .download-winged-layout {
     flex-direction: column;
     align-items: center;
@@ -8198,7 +8200,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   .download-wing-right,
   .download-wing-center {
     width: 100%;
-    max-width: 580px;
+    max-width: 100%;
     flex: 1 1 auto;
   }
 }
@@ -8400,10 +8402,10 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 .arch-wing-center {
   position: relative;
-  flex: 1 1 60%;
-  min-width: 0;
-  max-width: 680px;
-  width: 100%;
+  flex: 0 0 640px;
+  width: 640px;
+  max-width: 640px;
+  min-width: 320px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -8796,9 +8798,9 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .arch-drop-badge p { color: var(--a-text2); font-size: 12px; margin: 0; }
 
 /* RESPONSIVE: panels stack under the library on narrow screens */
-@media (max-width: 1100px) {
+@media (max-width: 768px) {
   .arch-winged-layout { flex-direction: column; align-items: stretch; }
-  .arch-wing-left, .arch-wing-right { width: 100%; position: static; max-height: none; }
+  .arch-wing-left, .arch-wing-right, .arch-wing-center { width: 100%; max-width: 100%; flex: 1 1 auto; position: static; max-height: none; }
 }
 
 

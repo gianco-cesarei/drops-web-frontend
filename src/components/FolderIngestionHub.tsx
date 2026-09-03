@@ -375,7 +375,7 @@ export default function FolderIngestionHub() {
   const [eqHigh, setEqHigh] = useState<number>(50)
   const [master, setMaster] = useState<number>(80)
   const [leftOpen, setLeftOpen] = useState<boolean>(true)
-  const [consoleOpen, setConsoleOpen] = useState<boolean>(true)
+  const [consoleOpen, setConsoleOpen] = useState<boolean>(false)
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
   const [newArchFolderName, setNewArchFolderName] = useState<string>('')
 

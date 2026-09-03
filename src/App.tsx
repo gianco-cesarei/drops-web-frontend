@@ -344,8 +344,8 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
         <header className="private-header" ref={headerRef}>
           <a href="/" className="logo" aria-label="Discovery">Drops<span>.</span></a>
           <nav aria-label="Area privata">
-            <a href="/app/download" className={['download', 'mymusic'].includes(section) ? 'active' : ''}>Download</a>
             <a href="/app/archive" className={section === 'archive' ? 'active' : ''}>Archivio</a>
+            <a href="/app/download" className={['download', 'mymusic'].includes(section) ? 'active' : ''}>Download</a>
             {isAdmin && (
               <button
                 type="button"

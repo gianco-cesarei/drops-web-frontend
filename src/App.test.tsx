@@ -320,7 +320,7 @@ describe('autenticazione App', () => {
     render(<App section="download" navigate={vi.fn()} />)
     const nav = await screen.findByRole('navigation', { name: 'Area privata' })
     const links = within(nav).getAllByRole('link')
-    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/app/download', '/app/archive'])
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/app/archive', '/app/download'])
     expect(within(nav).queryByText(/Admin Console/i)).not.toBeInTheDocument()
     expect(within(nav).queryByText(/Beta/i)).not.toBeInTheDocument()
     expect(within(nav).queryByText(/Brain/i)).not.toBeInTheDocument()
