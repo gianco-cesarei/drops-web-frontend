@@ -8361,15 +8361,16 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
   position: relative;
   display: flex;
-  align-items: stretch;
   justify-content: center;
-  gap: 14px;
+  align-items: flex-start;
+  gap: 16px;
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 20px 16px;
   color: var(--a-text);
   font-size: 13px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .arch-winged-layout *::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -8389,11 +8390,13 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-direction: column;
   gap: 10px;
   max-height: calc(100vh - 150px);
+  overflow-y: auto;
   position: sticky;
   top: 16px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.arch-wing-left { flex: 0 0 20%; min-width: 210px; max-width: 340px; }
-.arch-wing-right { flex: 0 0 20%; min-width: 250px; max-width: 360px; }
+.arch-wing-left { flex: 0 0 240px; min-width: 210px; max-width: 340px; }
+.arch-wing-right { flex: 0 0 260px; min-width: 250px; max-width: 360px; }
 
 .arch-wing-center {
   position: relative;
@@ -8405,6 +8408,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* WING HEADER */
@@ -8568,10 +8572,10 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .arch-track-head,
 .arch-track-row {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 76px 54px 100px;
+  grid-template-columns: 32px minmax(0, 1fr) 82px 56px 125px;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 6px 14px;
 }
 .arch-track-head {
   font-size: 10px; font-weight: 800; letter-spacing: 0.05em;
@@ -8580,11 +8584,11 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: var(--a-panel2);
   text-align: left;
 }
-.arch-track-head .c-idx,
-.arch-track-head .c-title,
-.arch-track-head .c-bpm,
-.arch-track-head .c-key,
-.arch-track-head .c-act { text-align: left; }
+.arch-track-head .c-idx { display: flex; align-items: center; justify-content: center; text-align: center; }
+.arch-track-head .c-title { display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+.arch-track-head .c-bpm { display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+.arch-track-head .c-key { display: flex; align-items: center; justify-content: flex-start; text-align: left; }
+.arch-track-head .c-act { display: flex; align-items: center; justify-content: flex-start; text-align: left; }
 .arch-track-body { max-height: calc(100vh - 360px); overflow-y: auto; }
 .arch-track-row {
   border-bottom: 1px solid rgba(43, 49, 59, 0.6);
@@ -8621,17 +8625,6 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%; text-align: left;
 }
-.arch-track-row:hover .arch-t-name,
-.arch-track-row:hover .arch-t-artist {
-  overflow: visible; text-overflow: clip;
-}
-.arch-track-row:hover .arch-t-name {
-  position: relative; z-index: 3;
-  display: inline-block; width: max-content; max-width: 460px;
-  background: var(--a-elev); border-radius: 6px; padding: 1px 6px; margin: -1px -6px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-  white-space: normal;
-}
 .c-bpm, .c-key {
   display: flex; align-items: center; justify-content: flex-start; text-align: left;
 }
@@ -8651,7 +8644,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 2px 7px; border-radius: 6px;
 }
-.arch-row-act { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.arch-row-act { display: flex; align-items: center; justify-content: flex-start; gap: 5px; }
 .arch-mini {
   width: 26px; height: 26px; border-radius: 7px;
   display: inline-flex; align-items: center; justify-content: center;

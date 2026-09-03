@@ -18,7 +18,8 @@ describe("DropsLanding Campaign Hero", () => {
     expect(screen.getByRole("heading", { level: 3, name: /Drop Agent/i })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 3, name: /Cloud Library/i })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 3, name: /Desktop App/i })).toBeInTheDocument()
-    expect(screen.getAllByText(/FREE 1,000 TRACKS/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/FREE 4 EVER/i)).toBeInTheDocument()
+    expect(screen.getByText(/SIGN UP FREE/i)).toBeInTheDocument()
   })
 
   it("opens login and register modals when clicking Login or Sign Up", async () => {

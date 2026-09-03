@@ -259,12 +259,26 @@ export default function GlobalAudioPlayer() {
   const handleTogglePlay = () => {
     if (!activeTrack) return
     if (usingSynth) {
-      if (isPlaying) { stopSynth(); setIsPlaying(false) } else { startSynth(activeTrack.bpm || 124, activeTrack.title || activeTrack.id || ''); setIsPlaying(true) }
+      if (isPlaying) {
+        stopSynth()
+        setIsPlaying(false)
+        window.dispatchEvent(new CustomEvent('drops-audio-paused'))
+      } else {
+        startSynth(activeTrack.bpm || 124, activeTrack.title || activeTrack.id || '')
+        setIsPlaying(true)
+      }
       return
     }
     const a = audioRef.current
     if (!a) return
-    if (isPlaying) { a.pause(); setIsPlaying(false) } else { a.play().catch(() => {}); setIsPlaying(true) }
+    if (isPlaying) {
+      a.pause()
+      setIsPlaying(false)
+      window.dispatchEvent(new CustomEvent('drops-audio-paused'))
+    } else {
+      a.play().catch(() => {})
+      setIsPlaying(true)
+    }
   }
 
   const seekTo = (value: number) => {

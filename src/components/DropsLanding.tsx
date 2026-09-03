@@ -245,45 +245,45 @@ export default function DropsLanding() {
             <code className="terminal-code">{cliCommand}</code>
           </div>
           <div className="terminal-specs-bar">
-            <span className="spec-tag">Prompt Interattivo</span>
+            <span className="spec-tag">Interactive Bot Prompt</span>
             <span className="spec-divider">&bull;</span>
             <span className="spec-tag">RAM &lt; 120MB</span>
             <span className="spec-divider">&bull;</span>
-            <span className="spec-tag">Velocità Nativa</span>
+            <span className="spec-tag">Native Speed</span>
             <span className="spec-divider">&bull;</span>
             <span className="spec-tag">Camelot 1A-12B &amp; BPM</span>
             <span className="spec-divider">&bull;</span>
-            <span className="spec-tag">Export Rekordbox &amp; Traktor</span>
+            <span className="spec-tag">Rekordbox &amp; Traktor Export</span>
           </div>
         </div>
 
-        {/* 3 OUTCOME-FOCUSED BOXES: WHAT YOU CAN ACTUALLY DO */}
+        {/* 3 OUTCOME-FOCUSED BOXES: WHAT YOU CAN ACTUALLY DO (100% ENGLISH) */}
         <div className="modalities-grid" id="features">
           {/* 01: DROP AGENT CLI */}
           <div className="modality-card">
             <div className="modality-num">01</div>
-            <div className="modality-badge-active">AVAILABLE NOW</div>
+            <div className="modality-badge-active">FREE 4 EVER</div>
             <h3 className="modality-title">Drop Agent</h3>
             <p className="modality-desc">
-              Scarica per intero DJ set e playlist da oltre 100 tracce a 320kbps in pochi minuti. Oppure seleziona una cartella già sul tuo computer per estrarre in automatico le chiavi Camelot, i BPM e creare all&apos;istante i file pronti per Rekordbox e Traktor.
+              Download entire DJ sets and 100+ track playlists at true 320kbps in minutes. Or point the bot to any local music folder on your computer to automatically compute Camelot keys, BPM, and generate ready-to-use Rekordbox &amp; Traktor files.
             </p>
             <div className="modality-meta">
-              <span>Download &amp; Tag Automatici</span>
-              <span>Preparazione USB Rekordbox</span>
+              <span>Instant Download &amp; Tagging</span>
+              <span>Rekordbox USB Prep</span>
             </div>
           </div>
 
           {/* 02: CLOUD MUSIC HUB */}
           <div className="modality-card">
             <div className="modality-num">02</div>
-            <div className="modality-badge-active">FREE 1,000 TRACKS</div>
+            <div className="modality-badge-active">SIGN UP FREE</div>
             <h3 className="modality-title">Cloud Library</h3>
             <p className="modality-desc">
-              Archivia, organizza e ascolta in streaming tutta la tua musica da qualsiasi browser o smartphone senza occupare memoria sul telefono. Fino a 1.000 tracce gratuite previa registrazione.
+              Store, organize, and stream your private music collection in high quality from any browser or phone without using storage on your device. Free up to 1,000 tracks upon registration.
             </p>
             <div className="modality-meta">
-              <span>Zero Memoria Occupata</span>
-              <span>Streaming Privato HD</span>
+              <span>Zero Device Storage</span>
+              <span>Private HD Streaming</span>
             </div>
           </div>
 
@@ -293,11 +293,11 @@ export default function DropsLanding() {
             <div className="modality-badge-soon">COMING SOON &middot; TAURI</div>
             <h3 className="modality-title">Desktop App</h3>
             <p className="modality-desc">
-              Gestisci la tua collezione locale con un&apos;interfaccia ultra-fluida ed esporta le playlist preparate direttamente sulle tue chiavette USB per CDJ Pioneer e AlphaTheta con un solo click.
+              Manage your local music collection with an ultra-fluid interface and export prepared playlists directly to your Pioneer CDJ and AlphaTheta USB drives with one click.
             </p>
             <div className="modality-meta">
-              <span>Export USB 1-Click</span>
-              <span>Leggero &amp; Veloce</span>
+              <span>1-Click USB Export</span>
+              <span>Ultra-Light &amp; Fast</span>
             </div>
           </div>
         </div>

@@ -150,8 +150,8 @@ export default function DownloadArchiveModal({
                     <tr key={it.id}>
                       <td>
                         <div className="track-title-cell">
-                          <strong style={{ fontSize: '0.85rem', color: '#f8fafc' }}>{it.title}</strong>
-                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{it.artist || 'Artista sconosciuto'}</span>
+                          <strong style={{ fontSize: '0.85rem', color: '#f8fafc' }} title={it.title}>{it.title}</strong>
+                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }} title={it.artist || 'Artista sconosciuto'}>{it.artist || 'Artista sconosciuto'}</span>
                         </div>
                       </td>
                       <td>

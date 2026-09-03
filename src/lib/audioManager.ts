@@ -198,3 +198,19 @@ export function registerAudioElement(el: HTMLAudioElement) {
 export function unregisterAudioElement(el: HTMLAudioElement) {
   registeredAudioElements.delete(el)
 }
+
+/**
+ * Stops/pauses all active audio playback globally (DOM audio elements & global player synth/audio).
+ */
+export function stopAllAudio() {
+  stopAllOtherAudioExcept(null)
+}
+
+export const AudioPlayerManager = {
+  stopAllAudio,
+  stopAllOtherAudioExcept,
+  isAvailableTrack,
+  filterAvailableTracks,
+  verifyAndResolveBackendAudioUrl,
+}
+
