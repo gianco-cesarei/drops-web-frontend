@@ -836,14 +836,6 @@ export default function FolderIngestionHub() {
       onDragLeave={() => setIsDraggingOver(false)}
       onDrop={handleDrop}
     >
-      <button type="button" className={`winged-side-toggle left ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle" aria-label="Mostra/nascondi cartelle">
-        <span className="st-emoji">📁</span>
-        <span className="st-arrow">{leftOpen ? '◀' : '▶'}</span>
-      </button>
-      <button type="button" className={`winged-side-toggle right ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console" aria-label="Mostra/nascondi console">
-        <span className="st-emoji">🎛️</span>
-        <span className="st-arrow">{consoleOpen ? '▶' : '◀'}</span>
-      </button>
       {isDraggingOver && (
         <div className="arch-drop-overlay">
           <div className="arch-drop-badge">
@@ -966,6 +958,14 @@ export default function FolderIngestionHub() {
 
       {/* CENTER: LIBRERIA */}
       <main className="arch-wing-center">
+        <button type="button" className={`winged-side-toggle left ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle" aria-label="Mostra/nascondi cartelle">
+          <span className="st-emoji">📁</span>
+          <span className="st-arrow">{leftOpen ? '◀' : '▶'}</span>
+        </button>
+        <button type="button" className={`winged-side-toggle right ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console" aria-label="Mostra/nascondi console">
+          <span className="st-emoji">🎛️</span>
+          <span className="st-arrow">{consoleOpen ? '▶' : '◀'}</span>
+        </button>
         {selectedFolder ? (
           <div className="arch-folder-view">
             <div className="arch-hero">
@@ -977,7 +977,7 @@ export default function FolderIngestionHub() {
                 {editingFolderId === selectedFolder.id && selectedFolder.id !== '__all__' ? (
                   <div className="arch-rename hero">
                     <input type="text" className="arch-rename-input" value={editingName} onChange={(e) => setEditingName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(selectedFolder.id); if (e.key === 'Escape') setEditingFolderId(null) }} autoFocus />
-                    <button type="button" className="arch-rename-ok" onClick={() => handleSaveRename(selectedFolder.id)}>Salva</button>
+                    <button type="button" className="arch-rename-ok" onClick={() => handleSaveRename(selectedFolder.id)}>Conferma</button>
                   </div>
                 ) : (
                   <div className="arch-hero-title-row">
@@ -995,7 +995,7 @@ export default function FolderIngestionHub() {
                       {mainFolderId === selectedFolder.id ? '★ Cartella Main' : '☆ Imposta Main'}
                     </button>
                   )}
-                  <button type="button" className="arch-act" onClick={() => { navigator.clipboard.writeText(selectedFolder.tracks.map((t) => `${t.bpm ? `[${Math.round(t.bpm)} BPM] ` : ''}${t.artist || ''} - ${t.title}`).join('\n')); setNotice('✓ Tracklist copiata!'); setTimeout(() => setNotice(null), 2500) }}>📋 Copia</button>
+                  <button type="button" className="arch-act" onClick={() => { navigator.clipboard.writeText(selectedFolder.tracks.map((t) => `${t.bpm ? `[${Math.round(t.bpm)} BPM]` : ''} ${t.artist || ''} - ${t.title}`).join('\n')); setNotice('✓ Tracklist copiata!'); setTimeout(() => setNotice(null), 2500) }}>📋 Copia</button>
                 </div>
               </div>
             </div>
@@ -1009,7 +1009,7 @@ export default function FolderIngestionHub() {
               <div className="arch-track-head">
                 <span className="c-idx">#</span>
                 <span className="c-title">Titolo & Artista</span>
-                <span className="c-bpm">BPM & Tag</span>
+                <span className="c-bpm">BPM</span>
                 <span className="c-key">Chiave</span>
                 <span className="c-act">Azioni</span>
               </div>
@@ -1019,8 +1019,6 @@ export default function FolderIngestionHub() {
                 ) : (
                   filteredTracks.map((track, idx) => {
                     const isThisPlaying = playingTrackId === track.id
-                    const ext = track.filename?.split('.').pop()?.toLowerCase() || 'mp3'
-                    const formatLabel = ext === 'flac' || ext === 'wav' ? ext.toUpperCase() : 'MP3 320k'
                     return (
                       <div key={track.id} className={`arch-track-row ${isThisPlaying ? 'is-playing' : ''}`} onDoubleClick={() => playFromList(filteredTracks, idx)}>
                         <button type="button" className="c-idx arch-idx-btn" onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">
@@ -1032,10 +1030,11 @@ export default function FolderIngestionHub() {
                           <span className="arch-t-artist" title={track.artist || 'Artista Sconosciuto'}>{track.artist || 'Artista Sconosciuto'}</span>
                         </span>
                         <span className="c-bpm">
-                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <span className={`tag-badge tag-badge-format ${ext === 'flac' || ext === 'wav' ? 'flac' : ''}`}>{formatLabel}</span>
-                            {track.bpm ? <span className="tag-badge tag-badge-bpm"><span className="arch-bpm">{Math.round(track.bpm)}</span> BPM</span> : null}
-                          </div>
+                          {track.bpm ? (
+                            <span className="tag-badge tag-badge-bpm"><span className="arch-bpm">{Math.round(track.bpm)}</span> BPM</span>
+                          ) : (
+                            <span className="tag-badge tag-badge-bpm muted">BPM -</span>
+                          )}
                         </span>
                         <span className="c-key">
                           {track.keySignature ? <span className="tag-badge tag-badge-key">{track.keySignature}</span> : <span style={{ color: '#7c8592' }}>—</span>}
@@ -1049,14 +1048,14 @@ export default function FolderIngestionHub() {
                               style={{ padding: '4px 8px', fontSize: '0.7rem' }}
                               href={track.audioUrl}
                               download={track.filename || `${track.title}.mp3`}
-                              title="Salva in locale"
+                              title="Scarica in locale"
                             >
                               <svg className="btn-dl-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                               </svg>
-                              <span>Salva</span>
+                              <span>Scarica</span>
                             </a>
                           )}
                         </span>

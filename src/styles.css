@@ -5890,11 +5890,17 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-wrap: wrap;
 }
 
-.archive-table-wrapper {
-  overflow-y: auto;
-  padding: 12px 20px;
-  max-height: 420px;
+.download-archive-modal-card .sync-tracks-table th {
+  text-align: center;
 }
+.download-archive-modal-card .sync-tracks-table td {
+  text-align: center;
+}
+.download-archive-modal-card .track-title-cell {
+  align-items: center;
+  text-align: center;
+}
+
 .archive-source-link {
   font-size: 0.75rem;
   color: #86efac;
@@ -7494,6 +7500,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* CENTER WING: MAIN DOWNLOAD BOX (30% proportion) */
 .download-wing-center {
+  position: relative;
   flex: 1 1 540px;
   min-width: 320px;
   max-width: 620px;
@@ -8378,6 +8385,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .arch-wing-right { flex: 0 0 20%; min-width: 250px; max-width: 360px; }
 
 .arch-wing-center {
+  position: relative;
   flex: 1 1 60%;
   min-width: 0;
   display: flex;
@@ -8546,19 +8554,23 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .arch-track-head,
 .arch-track-row {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) 58px 52px 108px;
+  grid-template-columns: 38px minmax(0, 1fr) 76px 54px 100px;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 6px 10px;
 }
 .arch-track-head {
   font-size: 10px; font-weight: 800; letter-spacing: 0.05em;
   color: var(--a-muted); text-transform: uppercase;
   border-bottom: 1px solid var(--a-border);
   background: var(--a-panel2);
+  text-align: center;
 }
-.arch-track-head .c-idx, .arch-track-head .c-bpm, .arch-track-head .c-key { text-align: center; }
-.arch-track-head .c-act { text-align: right; }
+.arch-track-head .c-idx,
+.arch-track-head .c-title,
+.arch-track-head .c-bpm,
+.arch-track-head .c-key,
+.arch-track-head .c-act { text-align: center; }
 .arch-track-body { max-height: calc(100vh - 360px); overflow-y: auto; }
 .arch-track-row {
   border-bottom: 1px solid rgba(43, 49, 59, 0.6);
@@ -8579,14 +8591,19 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .arch-track-row.is-playing .arch-idx-n { display: none; }
 .arch-track-row.is-playing .arch-idx-p { display: inline; }
 
-.arch-title-cell { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.arch-title-cell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; min-width: 0; gap: 1px;
+}
 .arch-t-name {
   font-size: 12.5px; font-weight: 700; color: var(--a-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%; text-align: center;
 }
 .arch-t-artist {
   font-size: 11px; color: var(--a-text2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%; text-align: center;
 }
 .arch-track-row:hover .arch-t-name,
 .arch-track-row:hover .arch-t-artist {
@@ -8599,17 +8616,24 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   box-shadow: 0 4px 14px rgba(0,0,0,0.4);
   white-space: normal;
 }
-.c-bpm, .c-key { text-align: center; }
+.c-bpm, .c-key {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
 .arch-bpm {
   font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
   color: var(--a-accent); background: var(--a-accent-soft);
   padding: 2px 7px; border-radius: 8px;
 }
+.tag-badge-bpm.muted {
+  color: var(--a-muted, #7c8592);
+  background: var(--a-elev, #262c37);
+  opacity: 0.7;
+}
 .arch-key {
   font-size: 11px; font-weight: 700; color: var(--a-text2);
   background: var(--a-elev); padding: 2px 7px; border-radius: 8px;
 }
-.arch-row-act { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+.arch-row-act { display: flex; align-items: center; justify-content: center; gap: 5px; }
 .arch-mini {
   width: 26px; height: 26px; border-radius: 7px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -8767,38 +8791,63 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* ===================== SIDE PANEL TOGGLES (shared download + archivio) ===================== */
 .winged-side-toggle {
-  position: sticky;
-  top: 96px;
-  z-index: 30;
+  position: absolute;
+  top: 16px;
+  z-index: 35;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  width: 36px;
-  padding: 10px 0;
+  justify-content: center;
+  gap: 3px;
+  width: 32px;
+  padding: 8px 0;
   background: var(--color-surface, #1b1f27);
   color: var(--color-text, #e5e8ee);
   border: 1px solid var(--color-border-strong, #39414d);
-  border-radius: 12px;
   cursor: pointer;
   line-height: 1;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
+  user-select: none;
 }
 .winged-side-toggle:hover {
   border-color: #3ecf8e;
   background: var(--color-surface-subtle, #21262f);
-  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 .winged-side-toggle.active {
   border-color: #3ecf8e;
-  box-shadow: 0 0 12px rgba(62, 207, 142, 0.3);
+  background: var(--color-surface-subtle, #21262f);
+  box-shadow: 0 0 12px rgba(62, 207, 142, 0.35);
 }
-.winged-side-toggle.left { left: 4px; }
-.winged-side-toggle.right { right: 4px; }
+.winged-side-toggle.left {
+  left: -16px;
+  border-radius: 10px 0 0 10px;
+}
+.winged-side-toggle.right {
+  right: -16px;
+  border-radius: 0 10px 10px 0;
+}
+.winged-side-toggle.left:hover {
+  transform: translateX(-2px) scale(1.04);
+}
+.winged-side-toggle.right:hover {
+  transform: translateX(2px) scale(1.04);
+}
 .winged-side-toggle .st-emoji { font-size: 15px; }
 .winged-side-toggle .st-arrow { font-size: 11px; font-weight: 800; color: #3ecf8e; }
+
+@media (max-width: 768px) {
+  .winged-side-toggle.left {
+    left: 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .winged-side-toggle.right {
+    right: 0;
+    border-radius: 8px 0 0 8px;
+  }
+}
 
 /* BADGES TAG PER FORMATO (MP3/FLAC), BPM E CHIAVE CAMELOT */
 .tag-badge {

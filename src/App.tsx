@@ -2870,14 +2870,6 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
   return (
     <div className="download-winged-layout">
-      <button type="button" className={`winged-side-toggle left ${isArchiveWingOpen ? 'active' : ''}`} onClick={() => setIsArchiveWingOpen((v) => !v)} title="Apri/chiudi Archivio" aria-label="Apri/chiudi Archivio">
-        <span className="st-emoji">📁</span>
-        <span className="st-arrow">{isArchiveWingOpen ? '◀' : '▶'}</span>
-      </button>
-      <button type="button" className={`winged-side-toggle right ${isReadyWingOpen ? 'active' : ''}`} onClick={() => setIsReadyWingOpen((v) => !v)} title="Apri/chiudi Pronti" aria-label="Apri/chiudi Pronti">
-        <span className="st-emoji">📥</span>
-        <span className="st-arrow">{isReadyWingOpen ? '▶' : '◀'}</span>
-      </button>
       {/* SCOMPARTO SINISTRO: ARCHIVIO (10% desktop proportion) */}
       {isArchiveWingOpen && (
         <aside className="download-wing-left">
@@ -2966,6 +2958,26 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
       {/* BOX CENTRALE: DOWNLOAD PRINCIPALE (30% desktop proportion) */}
       <main className="download-wing-center">
+        <button
+          type="button"
+          className={`winged-side-toggle left ${isArchiveWingOpen ? 'active' : ''}`}
+          onClick={() => setIsArchiveWingOpen((v) => !v)}
+          title={isArchiveWingOpen ? 'Chiudi Archivio' : 'Apri Archivio'}
+          aria-label={isArchiveWingOpen ? 'Chiudi Archivio' : 'Apri Archivio'}
+        >
+          <span className="st-emoji">📁</span>
+          <span className="st-arrow">{isArchiveWingOpen ? '◀' : '▶'}</span>
+        </button>
+        <button
+          type="button"
+          className={`winged-side-toggle right ${isReadyWingOpen ? 'active' : ''}`}
+          onClick={() => setIsReadyWingOpen((v) => !v)}
+          title={isReadyWingOpen ? 'Chiudi Pronti' : 'Apri Pronti'}
+          aria-label={isReadyWingOpen ? 'Chiudi Pronti' : 'Apri Pronti'}
+        >
+          <span className="st-emoji">📥</span>
+          <span className="st-arrow">{isReadyWingOpen ? '▶' : '◀'}</span>
+        </button>
         {/* MAIN INPUT CARD */}
         <section className="card hero-card download-hero-card">
           <form onSubmit={handleAdd} className="download-form-clean">
@@ -2993,10 +3005,10 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
               rows={3}
             />
 
-            {/* CONTROL ROW: SALVA IN + FORMATO AUDIO */}
+            {/* CONTROL ROW: SCARICA IN + FORMATO AUDIO */}
             <div className="dl-control-bar">
               <div className="dl-select-wrap">
-                <span className="dl-select-label">Salva in:</span>
+                <span className="dl-select-label">Scarica in:</span>
                 {isCreatingFolder ? (
                   <div className="dl-newfolder-inline">
                     <input
@@ -3222,7 +3234,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                       </svg>
-                      <span>{isSaved ? 'Salvato' : 'Salva'}</span>
+                      <span>{isSaved ? 'Scaricato' : 'Scarica'}</span>
                     </a>
                     <button
                       type="button"
@@ -3361,7 +3373,7 @@ function HistoryRow({
           href={fileUrl}
           download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
           onClick={handleDownload}
-          title={downloading ? 'Download in corso…' : isSaved ? 'Salva di nuovo file audio' : `Scarica ${item.title}`}
+          title={downloading ? 'Download in corso…' : isSaved ? 'Scarica di nuovo file audio' : `Scarica ${item.title}`}
           aria-label={`Scarica ${item.title}`}
         >
           {downloading ? '⏳' : isSaved ? '✓' : '↓'}

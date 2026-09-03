@@ -130,7 +130,7 @@ export default function DownloadArchiveModal({
             <thead>
               <tr>
                 <th>Titolo & Artista</th>
-                <th>BPM & Tag</th>
+                <th>BPM</th>
                 <th>Link Sorgente</th>
                 <th>Azioni</th>
               </tr>
@@ -155,12 +155,11 @@ export default function DownloadArchiveModal({
                         </div>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <span className="tag-badge tag-badge-format">MP3 320k</span>
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                           {it.bpm ? (
                             <span className="tag-badge tag-badge-bpm">{Math.round(it.bpm)} BPM</span>
                           ) : (
-                            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>—</span>
+                            <span className="tag-badge tag-badge-bpm muted">BPM -</span>
                           )}
                         </div>
                       </td>
