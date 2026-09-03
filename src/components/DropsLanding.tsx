@@ -352,7 +352,7 @@ export default function DropsLanding() {
                     borderBottom: authMode === 'register' ? '2px solid #22c55e' : '2px solid transparent'
                   }}
                 >
-                  Sign Up (Free 1k Tracks)
+                  Iscriviti
                 </button>
               </div>
               <button type="button" onClick={() => setIsAuthModalOpen(false)} className="dialog-close-btn">&times;</button>
