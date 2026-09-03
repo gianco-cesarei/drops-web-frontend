@@ -199,7 +199,6 @@ describe('autenticazione App', () => {
     expect(link).toHaveAttribute('href', expect.stringContaining('/api/v1/downloads/job-rich/file'))
     expect(screen.getByText('Four Tet')).toBeInTheDocument()
     expect(screen.getAllByText('122 BPM').length).toBeGreaterThan(0)
-    expect(screen.getByText('fonte: soundcloud')).toBeInTheDocument()
   }, 15000)
 
   it('url_type track continua download singolo senza dialogo', async () => {

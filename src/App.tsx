@@ -3215,7 +3215,6 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                         {item.artist && <span className="wing-artist">{item.artist}</span>}
                         <span className={`tag-badge tag-badge-format ${audioQuality === 'hq' ? 'flac' : 'mp3'}`}>{formatLabel}</span>
                         {item.bpm != null ? <span className="tag-badge tag-badge-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="tag-badge tag-badge-bpm">… BPM</span> : null}
-                        {item.source && <span className="wing-source">fonte: {item.source.replace(/^https?:\/\/(www\.)?/, '').slice(0, 24)}</span>}
                       </div>
                     </div>
                     <a
@@ -3281,11 +3280,11 @@ function QueueRow({
       <div className="dl-job-cover" aria-hidden="true">{job.coverUrl ? <img src={job.coverUrl} alt="" /> : <span>♪</span>}</div>
       <div className="dl-job-main">
         <div className="dl-job-title">{job.title ?? job.url}</div>
-        <div className="dl-job-detail">{failed ? (job.message ?? 'Errore') : ready ? 'Completato' : queueStatusLabel(job.status)}{job.source ? ` · ${job.source}` : ''}</div>
+        <div className="dl-job-detail">{failed ? (job.message ?? 'Errore') : ready ? 'Completato' : queueStatusLabel(job.status)}</div>
         {!failed && <div className="progress"><span style={{ width: `${ready ? 100 : pct}%` }} /></div>}
         {failed && (
           <div className="dl-job-failed-actions">
-            <button type="button" className="dl-retry-btn" onClick={onRetry} title="Riprova download con ricerca SoundCloud / YouTube">
+            <button type="button" className="dl-retry-btn" onClick={onRetry} title="Riprova download con ricerca avanzata">
               🔄 Riprova
             </button>
             <button type="button" className="dl-remove-btn" onClick={onRemove} title="Rimuovi dalla lista">
@@ -3352,7 +3351,6 @@ function HistoryRow({
         {item.artist && <div className="dl-job-detail">{item.artist}</div>}
         <div className="dl-hist-chips">
           {item.bpm != null ? <span className="track-chip track-chip-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="track-chip track-chip-bpm calculating">… BPM</span> : null}
-          {item.source && <span className="dl-hist-source">fonte: {item.source.replace(/^https?:\/\/(www\.)?/, '').slice(0, 24)}</span>}
           {isSaved && <span className="dl-saved-chip">✓ in cartella</span>}
         </div>
       </div>
