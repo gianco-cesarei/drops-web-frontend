@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
+  purgeUnavailableTrackFromStorage,
   registerAudioElement,
   stopAllOtherAudioExcept,
   unregisterAudioElement,
@@ -26,12 +27,12 @@ const FADE_SECONDS = 1.4
 
 export default function GlobalAudioPlayer() {
   const [activeTrack, setActiveTrack] = useState<ActiveTrack | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
+  const [currentTime, setCurrentTime] = useState<number>(0)
+  const [duration, setDuration] = useState<number>(180)
+  const [isMuted, setIsMuted] = useState<boolean>(false)
+  const [volume, setVolume] = useState<number>(85)
   const [usingSynth, setUsingSynth] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(180)
-  const [volume, setVolume] = useState(80)
-  const [isMuted, setIsMuted] = useState(false)
   const [corsError, setCorsError] = useState<string | null>(null)
 
   // Single-deck Web Audio graph:  source -> EQ(low>mid>high) -> program(fade) -> master(volume) -> destination
@@ -127,18 +128,25 @@ export default function GlobalAudioPlayer() {
   }
   const onEnded = () => { setIsPlaying(false); window.dispatchEvent(new CustomEvent('drops-track-ended')) }
   const onError = () => {
+    setCorsError(null)
     const a = audioRef.current
     const url = a?.getAttribute('data-src') || ''
     if (url && usingGraphRef.current) {
-      // Likely a CORS block (crossOrigin) or 404 -> retry once without the graph so audio still plays (EQ inert)
       usingGraphRef.current = false
       const plain = a as HTMLAudioElement
       plain.crossOrigin = ''
       plain.src = url
       plain.play().then(() => setIsPlaying(true)).catch(() => {
-        setCorsError('Impossibile riprodurre la traccia (CORS o risorsa audio non valida).')
-        setIsPlaying(false)
+        if (activeTrack) purgeUnavailableTrackFromStorage(activeTrack.id || activeTrack.title)
+        setUsingSynth(true)
+        startSynth(activeTrack?.bpm || 124, activeTrack?.title || activeTrack?.id || '')
+        setIsPlaying(true)
       })
+    } else {
+      if (activeTrack) purgeUnavailableTrackFromStorage(activeTrack.id || activeTrack.title)
+      setUsingSynth(true)
+      startSynth(activeTrack?.bpm || 124, activeTrack?.title || activeTrack?.id || '')
+      setIsPlaying(true)
     }
   }
 
@@ -158,8 +166,10 @@ export default function GlobalAudioPlayer() {
     if (track.id && (url?.includes('/api/v1/downloads/') || !url)) {
       const corsCheck = await verifyAndResolveBackendAudioUrl(track.id, url)
       if (!corsCheck.ok) {
-        setCorsError(`Playback bloccato: ${corsCheck.error}`)
-        setIsPlaying(false)
+        purgeUnavailableTrackFromStorage(track.id || track.title)
+        setUsingSynth(true)
+        startSynth(track.bpm || 124, track.title || track.id || '')
+        setIsPlaying(true)
         return
       }
       url = corsCheck.url

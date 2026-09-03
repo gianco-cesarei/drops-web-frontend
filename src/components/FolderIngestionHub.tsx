@@ -386,6 +386,20 @@ export default function FolderIngestionHub() {
   }, [folders])
 
   useEffect(() => {
+    const handlePurge = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (!detail?.id) return
+      const target = String(detail.id)
+      setFolders((prev) => prev.map((f) => ({
+        ...f,
+        tracks: (f.tracks || []).filter((t) => String(t.id) !== target && String(t.title) !== target)
+      })))
+    }
+    window.addEventListener('drops-purge-unavailable-track', handlePurge)
+    return () => window.removeEventListener('drops-purge-unavailable-track', handlePurge)
+  }, [])
+
+  useEffect(() => {
     // Sincronizza cartelle salvate su Supabase Postgres se online
     api.listFolders().then((res) => {
       if (res?.folders && res.folders.length > 0) {
