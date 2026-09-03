@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { api, batchProcess } from '../api'
 
 export interface ImportedTrack {
   id: string
@@ -106,9 +107,27 @@ export default function MultiSourceSync() {
       setSyncNotice('⚠️ Seleziona almeno una traccia da sincronizzare.')
       return
     }
+    const chosen = importedTracks.filter((t) => selectedTrackIds.has(t.id))
     setImportedTracks((prev) =>
       prev.map((t) => (selectedTrackIds.has(t.id) ? { ...t, status: 'synced' } : t))
     )
+
+    const downloadable = chosen.filter((t) => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')))
+    if (downloadable.length > 0) {
+      batchProcess(
+        downloadable,
+        async (t) => {
+          try {
+            await api.createDownload(t.url, { title: t.title, artist: t.artist })
+          } catch {
+            /* ignore individual errors */
+          }
+        },
+        3,
+        100
+      )
+    }
+
     setSyncNotice(`✓ ${selectedTrackIds.size} tracce sincronizzate nel Crate personale e disponibili per il DJ Lab / Rekordbox.`)
   }
 

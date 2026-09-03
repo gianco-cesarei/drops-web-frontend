@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { api } from '../api'
+import { api, batchProcess } from '../api'
 import { isAvailableTrack, verifyAndResolveBackendAudioUrl } from '../lib/audioManager'
 
 export interface IngestedTrack {

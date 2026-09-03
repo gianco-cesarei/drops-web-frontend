@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, SyntheticEvent } from 'react'
-import { api, ApiError } from './api'
+import { api, ApiError, batchProcess } from './api'
 import type { PlaylistEntry, PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
 import { postLoginRoute } from './lib/routes'
 import { isAvailableTrack, registerAudioElement, stopAllOtherAudioExcept, verifyAndResolveBackendAudioUrl } from './lib/audioManager'
@@ -750,7 +750,7 @@ function SpotifyLibrary({ onError, error }: { onError: (error: unknown) => void;
 
   async function calculateBpm() {
     const chosen = tracks.filter((track) => selected.has(track.id))
-    await Promise.all(chosen.map((track) => calculateSingleBpm(track)))
+    await batchProcess(chosen, (track) => calculateSingleBpm(track), 3, 100)
   }
 
   async function handleDownloadTrack(track: SpotifyTrack) {
@@ -784,7 +784,7 @@ function SpotifyLibrary({ onError, error }: { onError: (error: unknown) => void;
 
   async function handleDownloadSelected() {
     const chosen = tracks.filter((t) => selected.has(t.id))
-    await Promise.all(chosen.map((t) => handleDownloadTrack(t)))
+    await batchProcess(chosen, (t) => handleDownloadTrack(t), 3, 100)
   }
 
   if (!status) return <main className="spotify-workspace">{error ? <div className="alert" role="alert">{error}</div> : <p className="spotify-state" role="status">Controllo Spotify…</p>}</main>
@@ -2611,9 +2611,11 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       const newJobs: QueueJob[] = unique.map((url) => ({ key: makeKey(), id: null, url, status: 'starting', progress: 0, optimistic: 8 }))
       setQueue((cur) => [...newJobs, ...cur])
       setInput('')
-      newJobs.forEach((jobItem) => {
-        api.createDownload(jobItem.url, { quality: audioQuality })
-          .then((created) => {
+      batchProcess(
+        newJobs,
+        async (jobItem) => {
+          try {
+            const created = await api.createDownload(jobItem.url, { quality: audioQuality })
             setQueue((cur) => cur.map((x) => (x.key === jobItem.key ? {
               ...x,
               id: created.id,
@@ -2632,9 +2634,13 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                 setQueue((cur) => cur.filter((x) => x.key !== jobItem.key))
               }, 1000)
             }
-          })
-          .catch((cause) => setQueue((cur) => cur.map((x) => (x.key === jobItem.key ? { ...x, status: 'failed', message: cause instanceof ApiError ? cause.message : 'Avvio non riuscito' } : x))))
-      })
+          } catch (cause) {
+            setQueue((cur) => cur.map((x) => (x.key === jobItem.key ? { ...x, status: 'failed', message: cause instanceof ApiError ? cause.message : 'Avvio non riuscito' } : x)))
+          }
+        },
+        3,
+        100
+      )
     }
     if (errors.length) setError(errors.join(' · '))
     setBusy(false)

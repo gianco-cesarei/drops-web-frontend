@@ -96,9 +96,40 @@ const errorMessage = (status: number, payload: unknown, context: RequestContext)
   if (status === 429) return 'Troppe richieste. Attendi qualche minuto e riprova.'
   if (status === 400 || status === 422) return 'Controlla i dati inseriti e riprova.'
   if (status === 404) return 'Contenuto non trovato.'
+  if (status === 502 || status === 504) return 'Il server è in fase di avvio o sovraccarico temporaneo. Riprova tra poco.'
   if (status >= 500) return 'Servizio temporaneamente non disponibile. Riprova più tardi.'
   void payload
   return 'Operazione non riuscita. Riprova.'
+}
+
+/**
+ * Esegue in parallelo controllato (concorrenza + ritardo tra chiamate) l'accodamento o l'esecuzione di task.
+ * Evita di saturare il proxy quando si inviano molte richieste HTTP (es. POST /api/v1/downloads).
+ */
+export async function batchProcess<T, R>(
+  items: T[],
+  fn: (item: T, index: number) => Promise<R>,
+  concurrency = 3,
+  delayMs = 100
+): Promise<R[]> {
+  if (!items.length) return []
+  const results: R[] = new Array(items.length)
+  let index = 0
+
+  async function worker() {
+    while (index < items.length) {
+      const i = index++
+      results[i] = await fn(items[i], i)
+      if (delayMs > 0 && index < items.length) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+      }
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length)
+  const workers = Array.from({ length: workerCount }, () => worker())
+  await Promise.all(workers)
+  return results
 }
 
 async function request<T>(path: string, options: RequestInit = {}, context: RequestContext = 'default'): Promise<T> {
@@ -213,4 +244,6 @@ export const api = {
     request<any>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
   deleteFolder: (id: string) =>
     request<void>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  enqueueBatch: <T, R>(items: T[], fn: (item: T, index: number) => Promise<R>, concurrency = 3, delayMs = 100) =>
+    batchProcess(items, fn, concurrency, delayMs),
 }

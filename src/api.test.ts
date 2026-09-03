@@ -4,7 +4,13 @@ import { api, ApiError, normalizeJob, resolveApiUrl } from './api'
 describe('API client', () => {
   beforeEach(() => vi.stubEnv('PUBLIC_API_URL', 'https://api.drops.test'))
 
-  it.each([[401, 'Sessione scaduta'], [403, 'permessi'], [429, 'Troppe richieste']])('mappa errore HTTP %i', async (status, message) => {
+  it.each([
+    [401, 'Sessione scaduta'],
+    [403, 'permessi'],
+    [429, 'Troppe richieste'],
+    [502, 'Il server è in fase di avvio o sovraccarico temporaneo'],
+    [504, 'Il server è in fase di avvio o sovraccarico temporaneo'],
+  ])('mappa errore HTTP %i', async (status, message) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status, headers: { 'content-type': 'application/json' } })))
     await expect(api.me()).rejects.toMatchObject({ status, message: expect.stringContaining(message) } satisfies Partial<ApiError>)
   })
@@ -17,6 +23,28 @@ describe('API client', () => {
   it('traduce errore di rete', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
     await expect(api.login('dj', 'secret')).rejects.toMatchObject({ status: 0, message: expect.stringContaining('Non riusciamo a contattare il servizio') })
+  })
+
+  it('esegue batchProcess controllando la concorrenza massima', async () => {
+    const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    let active = 0
+    let maxActive = 0
+
+    const results = await api.enqueueBatch(
+      items,
+      async (item) => {
+        active++
+        if (active > maxActive) maxActive = active
+        await new Promise((r) => setTimeout(r, 10))
+        active--
+        return item * 2
+      },
+      3,
+      5
+    )
+
+    expect(results).toEqual([2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+    expect(maxActive).toBeLessThanOrEqual(3)
   })
 
   it('non usa fallback ambiguo fuori ambiente locale', () => {
