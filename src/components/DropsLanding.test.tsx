@@ -1,91 +1,67 @@
-import { render, screen, waitFor, within } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { api } from "../api"
 import DropsLanding from "./DropsLanding"
 
-describe("DropsLanding", () => {
+describe("DropsLanding Elite Minimalist", () => {
   beforeEach(() => {
     window.localStorage.clear()
     vi.restoreAllMocks()
   })
 
-  it("renders hero headline and CTA buttons when anonymous", () => {
+  it("renders elite hero headline, CLI terminal, and 3 modalities", () => {
     render(<DropsLanding />)
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Manage your/i)
-    expect(screen.getAllByRole("button", { name: /^Iscriviti$/i }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole("button", { name: /^Accedi$/i }).length).toBeGreaterThan(0)
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Suono curato. Velocità nativa/i)
+    expect(screen.getByText(/AUTONOMOUS MUSIC CURATION & SELECTOR ENGINE/i)).toBeInTheDocument()
+    expect(screen.getByText(/git clone https:\/\/github.com\/gianco-cesarei\/Drops.git && python3 drops-agent\/drop_agent.py/i)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Copia Comando/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 3, name: /Drop Agent/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 3, name: /Cloud Workspace/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 3, name: /Desktop App/i })).toBeInTheDocument()
   })
 
-  it("opens registration modal when clicking Iscriviti", async () => {
+  it("opens login modal when clicking Accedi or Entra nel Cloud Vault", async () => {
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    const registerBtns = screen.getAllByRole("button", { name: /^Iscriviti$/i })
-    await user.click(registerBtns[0])
+    const loginBtns = screen.getAllByRole("button", { name: /Accedi|Entra nel Cloud Vault/i })
+    await user.click(loginBtns[0])
 
-    const dialog = screen.getByRole("dialog")
-    expect(dialog).toBeInTheDocument()
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Crea il tuo Account/i })).toBeInTheDocument()
-    expect(within(dialog).getByLabelText(/^Email/i)).toBeInTheDocument()
-    expect(within(dialog).getByLabelText(/^Username/i)).toBeInTheDocument()
-    expect(within(dialog).getByLabelText(/^Password/i)).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 3, name: /Accesso Vault/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Username/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Password/i)).toBeInTheDocument()
   })
 
-  it("validates registration form and registers user into localStorage with success feedback", async () => {
-    vi.spyOn(api, "login").mockResolvedValueOnce({ username: "dj_neon", name: "dj_neon", role: "user" })
+  it("authenticates user and redirects to /app/download", async () => {
+    vi.spyOn(api, "login").mockResolvedValueOnce({ username: "selector_one", name: "Selector One", role: "user" })
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    const registerBtns = screen.getAllByRole("button", { name: /^Iscriviti$/i })
-    await user.click(registerBtns[0])
-    const dialog = screen.getByRole("dialog")
+    const loginBtns = screen.getAllByRole("button", { name: /Accedi|Entra nel Cloud Vault/i })
+    await user.click(loginBtns[0])
 
-    // Fill form
-    await user.type(within(dialog).getByLabelText(/^Email/i), "dj_neon@test.com")
-    await user.type(within(dialog).getByLabelText(/^Username/i), "dj_neon")
-    await user.type(within(dialog).getByLabelText(/^Password/i), "superpass")
+    await user.type(screen.getByLabelText(/^Username/i), "selector_one")
+    await user.type(screen.getByLabelText(/^Password/i), "secret123")
 
-    // Click submit
-    const submitBtn = dialog.querySelector('button[type="submit"]') as HTMLButtonElement
+    const submitBtn = screen.getByRole("button", { name: /Entra in Drops/i })
     await user.click(submitBtn)
 
     await waitFor(() => {
-      expect(within(dialog).getByText(/Benvenuto a bordo, dj_neon!/i)).toBeInTheDocument()
+      expect(screen.getByText(/Accesso effettuato/i)).toBeInTheDocument()
     })
 
     const stored = window.localStorage.getItem("drops.user.v1")
     expect(stored).not.toBeNull()
     const parsed = JSON.parse(stored!)
-    expect(parsed.username).toBe("dj_neon")
-    expect(parsed.email).toBe("dj_neon@test.com")
-  })
-
-  it("allows switching between register and login tabs inside modal", async () => {
-    const user = userEvent.setup()
-    render(<DropsLanding />)
-
-    const registerBtns = screen.getAllByRole("button", { name: /^Iscriviti$/i })
-    await user.click(registerBtns[0])
-    const dialog = screen.getByRole("dialog")
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Crea il tuo Account/i })).toBeInTheDocument()
-
-    // Switch to login tab
-    const tabs = within(dialog).getAllByRole("button", { name: /^Accedi$/i })
-    await user.click(tabs[0])
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Accedi a Drops/i })).toBeInTheDocument()
-
-    // Switch back to register tab
-    const regTabs = within(dialog).getAllByRole("button", { name: /^Iscriviti$/i })
-    await user.click(regTabs[0])
-    expect(within(dialog).getByRole("heading", { level: 3, name: /Crea il tuo Account/i })).toBeInTheDocument()
+    expect(parsed.username).toBe("selector_one")
   })
 
   it("renders Downloader and Archive buttons when user is already logged in", () => {
     window.localStorage.setItem("drops.user.v1", JSON.stringify({ username: "solaris", name: "DJ Solaris" }))
     render(<DropsLanding />)
 
-    const downloadLinks = screen.getAllByRole("link", { name: /Apri Downloader/i })
+    const downloadLinks = screen.getAllByRole("link", { name: /Apri Downloader|Apri Console/i })
     expect(downloadLinks.length).toBeGreaterThan(0)
     expect(downloadLinks[0]).toHaveAttribute("href", "/app/download")
 
