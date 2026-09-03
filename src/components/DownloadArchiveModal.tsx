@@ -155,7 +155,7 @@ export default function DownloadArchiveModal({
                         </div>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                           {it.bpm ? (
                             <span className="tag-badge tag-badge-bpm">{Math.round(it.bpm)} BPM</span>
                           ) : (
