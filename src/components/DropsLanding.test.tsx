@@ -10,24 +10,25 @@ describe("DropsLanding Campaign Hero", () => {
     vi.restoreAllMocks()
   })
 
-  it("renders campaign hero headline in English, CLI terminal, and 3 modalities", () => {
+  it("renders campaign hero headline in English, CLI terminal, and 3 outcome modalities", () => {
     render(<DropsLanding />)
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Manage your\s+music world\s+in cloud/i)
     expect(screen.getByText(/git clone https:\/\/github.com\/gianco-cesarei\/Drops.git && python3 drops-agent\/drop_agent.py/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /Copy Command/i })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 3, name: /Drop Agent/i })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { level: 3, name: /Cloud Workspace/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 3, name: /Cloud Library/i })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 3, name: /Desktop App/i })).toBeInTheDocument()
+    expect(screen.getAllByText(/FREE 1,000 TRACKS/i).length).toBeGreaterThan(0)
   })
 
-  it("opens login modal when clicking Enter Vault", async () => {
+  it("opens login and register modals when clicking Login or Sign Up", async () => {
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    const loginBtns = screen.getAllByRole("button", { name: /Enter Vault|Vault Login/i })
+    const loginBtns = screen.getAllByRole("button", { name: /^Login$/i })
     await user.click(loginBtns[0])
 
-    expect(screen.getByRole("heading", { level: 3, name: /Vault Access/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Login to Drops/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Username/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^Password/i)).toBeInTheDocument()
   })
@@ -37,17 +38,17 @@ describe("DropsLanding Campaign Hero", () => {
     const user = userEvent.setup()
     render(<DropsLanding />)
 
-    const loginBtns = screen.getAllByRole("button", { name: /Enter Vault|Vault Login/i })
+    const loginBtns = screen.getAllByRole("button", { name: /^Login$/i })
     await user.click(loginBtns[0])
 
     await user.type(screen.getByLabelText(/^Username/i), "selector_one")
     await user.type(screen.getByLabelText(/^Password/i), "secret123")
 
-    const submitBtn = screen.getByRole("button", { name: /Enter Drops/i })
+    const submitBtn = screen.getByRole("button", { name: /Login to Drops/i })
     await user.click(submitBtn)
 
     await waitFor(() => {
-      expect(screen.getByText(/Access granted/i)).toBeInTheDocument()
+      expect(screen.getByText(/Login successful/i)).toBeInTheDocument()
     })
 
     const stored = window.localStorage.getItem("drops.user.v1")
@@ -60,11 +61,11 @@ describe("DropsLanding Campaign Hero", () => {
     window.localStorage.setItem("drops.user.v1", JSON.stringify({ username: "solaris", name: "DJ Solaris" }))
     render(<DropsLanding />)
 
-    const downloadLinks = screen.getAllByRole("link", { name: /Open Downloader/i })
+    const downloadLinks = screen.getAllByRole("link", { name: /Open Downloader|Console/i })
     expect(downloadLinks.length).toBeGreaterThan(0)
     expect(downloadLinks[0]).toHaveAttribute("href", "/app/download")
 
-    const archiveLinks = screen.getAllByRole("link", { name: /Archive/i })
+    const archiveLinks = screen.getAllByRole("link", { name: /Library Archive|Archive/i })
     expect(archiveLinks.length).toBeGreaterThan(0)
     expect(archiveLinks[0]).toHaveAttribute("href", "/app/archive")
   })

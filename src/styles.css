@@ -9014,6 +9014,19 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.landing-hero-wrapper-contained {
+  max-width: 1200px;
+  width: 100%;
+  margin: 20px auto 0 auto;
+  padding: 0 24px;
+}
+
+.landing-hero-wrapper-contained .discovery-hero-campaign {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .landing-elite-logo {
   font-size: 20px;
   font-weight: 800;
