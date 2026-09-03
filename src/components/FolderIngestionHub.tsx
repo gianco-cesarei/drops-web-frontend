@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { api, batchProcess } from '../api'
-import { isAvailableTrack, verifyAndResolveBackendAudioUrl } from '../lib/audioManager'
+import { isAvailableTrack, stopAllAudio, verifyAndResolveBackendAudioUrl } from '../lib/audioManager'
 
 export interface IngestedTrack {
   id: string
@@ -658,7 +658,7 @@ export default function FolderIngestionHub() {
       return
     }
 
-    let audioUrl = track.audioUrl && track.audioUrl !== DEMO_AUDIO_PREVIEW ? track.audioUrl : undefined
+    let audioUrl = track.audioUrl
     // For real backend files, upgrade to a signed/CORS URL and verify backend deployment + 3 CORS checks
     if (track.id && (audioUrl?.includes('/api/v1/downloads/') || !audioUrl)) {
       const corsCheck = await verifyAndResolveBackendAudioUrl(track.id, audioUrl)
@@ -681,6 +681,19 @@ export default function FolderIngestionHub() {
         genre: track.genre,
         audioUrl,
       })
+    }
+  }
+
+  const stopTrack = () => {
+    stopAllAudio()
+    setPlayingTrackId(null)
+  }
+
+  const handleToggleTrackPlay = (track: IngestedTrack, idx: number) => {
+    if (playingTrackId === track.id) {
+      stopTrack()
+    } else {
+      playFromList(filteredTracks, idx)
     }
   }
 
@@ -823,10 +836,21 @@ export default function FolderIngestionHub() {
         const ni = queueIndex + 1
         setQueueIndex(ni)
         handlePlayTrack(queue[ni])
+      } else {
+        setPlayingTrackId(null)
       }
     }
+    const onAudioStopped = () => {
+      setPlayingTrackId(null)
+    }
     window.addEventListener('drops-track-ended', onEnded)
-    return () => window.removeEventListener('drops-track-ended', onEnded)
+    window.addEventListener('drops-stop-all-audio', onAudioStopped)
+    window.addEventListener('drops-audio-paused', onAudioStopped)
+    return () => {
+      window.removeEventListener('drops-track-ended', onEnded)
+      window.removeEventListener('drops-stop-all-audio', onAudioStopped)
+      window.removeEventListener('drops-audio-paused', onAudioStopped)
+    }
   }, [queue, queueIndex])
 
   return (
@@ -1020,8 +1044,8 @@ export default function FolderIngestionHub() {
                   filteredTracks.map((track, idx) => {
                     const isThisPlaying = playingTrackId === track.id
                     return (
-                      <div key={track.id} className={`arch-track-row ${isThisPlaying ? 'is-playing' : ''}`} onDoubleClick={() => playFromList(filteredTracks, idx)}>
-                        <button type="button" className="c-idx arch-idx-btn" onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">
+                      <div key={track.id} className={`arch-track-row ${isThisPlaying ? 'is-playing' : ''}`} onDoubleClick={() => handleToggleTrackPlay(track, idx)}>
+                        <button type="button" className="c-idx arch-idx-btn" onClick={() => handleToggleTrackPlay(track, idx)} title={isThisPlaying ? 'Metti in pausa' : 'Riproduci'}>
                           <span className="arch-idx-n">{(idx + 1).toString().padStart(2, '0')}</span>
                           <span className="arch-idx-p">{isThisPlaying ? '❚❚' : '▶'}</span>
                         </button>
@@ -1040,7 +1064,6 @@ export default function FolderIngestionHub() {
                           {track.keySignature ? <span className="tag-badge tag-badge-key">{track.keySignature}</span> : <span style={{ color: '#7c8592' }}>—</span>}
                         </span>
                         <span className="c-act arch-row-act">
-                          <button type="button" className={`arch-mini ${isThisPlaying ? 'on' : ''}`} onClick={() => playFromList(filteredTracks, idx)} title="Riproduci">{isThisPlaying ? '❚❚' : '▶'}</button>
                           <button type="button" className="arch-mini" onClick={() => addToQueue(track)} title="Aggiungi alla coda">＋</button>
                           {track.audioUrl && (
                             <a
@@ -1105,7 +1128,24 @@ export default function FolderIngestionHub() {
 
           <div className="arch-transport">
             <button type="button" className="arch-tp" onClick={playPrev} disabled={!queue.length} title="Precedente">⏮</button>
-            <button type="button" className="arch-tp big" onClick={() => { if (nowPlaying) handlePlayTrack(nowPlaying); else if (filteredTracks.length) playFromList(filteredTracks, 0) }} title="Play">▶</button>
+            <button
+              type="button"
+              className="arch-tp big"
+              onClick={() => {
+                if (nowPlaying) {
+                  if (playingTrackId === nowPlaying.id) {
+                    stopTrack()
+                  } else {
+                    handlePlayTrack(nowPlaying)
+                  }
+                } else if (filteredTracks.length) {
+                  playFromList(filteredTracks, 0)
+                }
+              }}
+              title={nowPlaying && playingTrackId === nowPlaying.id ? 'Metti in pausa' : 'Play'}
+            >
+              {nowPlaying && playingTrackId === nowPlaying.id ? '❚❚' : '▶'}
+            </button>
             <button type="button" className="arch-tp" onClick={playNext} disabled={!queue.length} title="Successiva">⏭</button>
             <button type="button" className={`arch-xfade ${crossfade ? 'on' : ''}`} onClick={() => setCrossfade((v) => !v)} title="Attiva/disattiva dissolvenza automatica tra le tracce">
               <span className="arch-xfade-dot" /> Dissolvenza
@@ -1146,7 +1186,20 @@ export default function FolderIngestionHub() {
               ) : (
                 queue.map((t, i) => (
                   <div key={`${t.id}-${i}`} className={`arch-q-item ${i === queueIndex ? 'is-current' : ''}`} onDoubleClick={() => playIndex(i)}>
-                    <button type="button" className="arch-q-play" onClick={() => playIndex(i)} title="Riproduci">{i === queueIndex && playingTrackId === t.id ? '❚❚' : '▶'}</button>
+                    <button
+                      type="button"
+                      className="arch-q-play"
+                      onClick={() => {
+                        if (i === queueIndex && playingTrackId === t.id) {
+                          stopTrack()
+                        } else {
+                          playIndex(i)
+                        }
+                      }}
+                      title={i === queueIndex && playingTrackId === t.id ? 'Metti in pausa' : 'Riproduci'}
+                    >
+                      {i === queueIndex && playingTrackId === t.id ? '❚❚' : '▶'}
+                    </button>
                     <span className="arch-q-info">
                       <span className="arch-q-title" title={t.title}>{t.title}</span>
                       <span className="arch-q-artist" title={t.artist || ''}>{t.artist || 'Artista Sconosciuto'}{t.bpm ? ` · ${Math.round(t.bpm)} BPM` : ''}</span>

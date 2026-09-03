@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import FolderIngestionHub from './FolderIngestionHub'
@@ -37,5 +37,45 @@ describe('FolderIngestionHub', () => {
     await userEvent.type(input, 'Cartella Test 42{Enter}')
 
     expect(screen.getAllByText('Cartella Test 42').length).toBeGreaterThan(0)
+  })
+
+  it('non ha pulsante play duplicato nella colonna delle azioni (.arch-row-act)', async () => {
+    const { container } = render(<FolderIngestionHub />)
+    const folderCards = screen.getAllByText('Houghton Morning Session 2026')
+    await userEvent.click(folderCards[0])
+
+    const actionCols = container.querySelectorAll('.arch-row-act')
+    expect(actionCols.length).toBeGreaterThan(0)
+    actionCols.forEach((col) => {
+      // Non ci deve essere un pulsante con '▶' o '❚❚' dentro la colonna azioni
+      const buttons = col.querySelectorAll('button')
+      buttons.forEach((btn) => {
+        expect(btn.textContent).not.toContain('▶')
+        expect(btn.textContent).not.toContain('❚❚')
+      })
+    })
+  })
+
+  it('fai il toggle play/pause quando si clicca sul pulsante play/indice della traccia', async () => {
+    const { container } = render(<FolderIngestionHub />)
+    const folderCards = screen.getAllByText('Houghton Morning Session 2026')
+    await userEvent.click(folderCards[0])
+
+    const idxBtns = container.querySelectorAll('.arch-idx-btn')
+    expect(idxBtns.length).toBeGreaterThan(0)
+
+    // Clicca il primo per avviare la riproduzione
+    await userEvent.click(idxBtns[0])
+    await waitFor(() => {
+      const firstRow = container.querySelector('.arch-track-row')
+      expect(firstRow?.classList.contains('is-playing')).toBe(true)
+    })
+
+    // Clicca nuovamente lo stesso pulsante per mettere in PAUSA/STOP
+    await userEvent.click(idxBtns[0])
+    await waitFor(() => {
+      const firstRow = container.querySelector('.arch-track-row')
+      expect(firstRow?.classList.contains('is-playing')).toBe(false)
+    })
   })
 })
