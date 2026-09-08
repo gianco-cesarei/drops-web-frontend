@@ -59,12 +59,15 @@ export function purgeUnavailableTrackFromStorage(trackIdOrTitle?: string | numbe
     const target = String(trackIdOrTitle)
     window.dispatchEvent(new CustomEvent('drops-purge-unavailable-track', { detail: { id: target } }))
 
-    const historyRaw = window.localStorage.getItem('drops.history.v1')
-    if (historyRaw) {
-      const history = JSON.parse(historyRaw)
-      if (Array.isArray(history)) {
-        const cleaned = history.filter((t: any) => String(t.id) !== target && String(t.title) !== target)
-        window.localStorage.setItem('drops.history.v1', JSON.stringify(cleaned))
+    const historyKeys = ['drops.downloads.history.v1', 'drops.history.v1']
+    for (const key of historyKeys) {
+      const historyRaw = window.localStorage.getItem(key)
+      if (historyRaw) {
+        const history = JSON.parse(historyRaw)
+        if (Array.isArray(history)) {
+          const cleaned = history.filter((t: any) => String(t.id) !== target && String(t.title) !== target)
+          window.localStorage.setItem(key, JSON.stringify(cleaned))
+        }
       }
     }
     const foldersRaw = window.localStorage.getItem('drops.folders.v1')

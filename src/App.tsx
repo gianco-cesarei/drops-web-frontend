@@ -2406,6 +2406,17 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   useEffect(() => { saveHistory(history) }, [history])
   useEffect(() => { saveQueue(queue) }, [queue])
 
+  useEffect(() => {
+    const handlePurge = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (!detail?.id) return
+      const target = String(detail.id)
+      setHistory((prev) => prev.filter((t) => String(t.id) !== target && String(t.title) !== target))
+    }
+    window.addEventListener('drops-purge-unavailable-track', handlePurge)
+    return () => window.removeEventListener('drops-purge-unavailable-track', handlePurge)
+  }, [])
+
   const handleOpenArchive = () => {
     setIsArchiveOpen(true)
     api.listDownloads(100).then(({ downloads }) => {

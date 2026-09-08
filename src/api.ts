@@ -109,8 +109,8 @@ const errorMessage = (status: number, payload: unknown, context: RequestContext)
 export async function batchProcess<T, R>(
   items: T[],
   fn: (item: T, index: number) => Promise<R>,
-  concurrency = 3,
-  delayMs = 100
+  concurrency = 5,
+  delayMs = 150
 ): Promise<R[]> {
   if (!items.length) return []
   const results: R[] = new Array(items.length)
