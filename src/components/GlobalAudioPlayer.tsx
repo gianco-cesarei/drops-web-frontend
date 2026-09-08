@@ -15,6 +15,8 @@ export interface ActiveTrack {
   genre?: string
   coverUrl?: string
   audioUrl?: string
+  sourceUrl?: string
+  source?: string
 }
 
 declare global {
@@ -131,19 +133,25 @@ export default function GlobalAudioPlayer() {
     setCorsError(null)
     const a = audioRef.current
     const url = a?.getAttribute('data-src') || ''
+    if (activeTrack) {
+      purgeUnavailableTrackFromStorage(activeTrack.id || activeTrack.title)
+      const targetUrl = activeTrack.sourceUrl || (activeTrack.source && activeTrack.source.startsWith('http') ? activeTrack.source : null)
+      if (targetUrl) {
+        window.dispatchEvent(new CustomEvent('drops-requeue-url', { detail: { url: targetUrl, title: activeTrack.title } }))
+        window.dispatchEvent(new CustomEvent('drops-toast', { detail: { message: 'Traccia temporanea scaduta su Render — Avvio riscaricamento automatico ad alta qualità', type: 'info' } }))
+      }
+    }
     if (url && usingGraphRef.current) {
       usingGraphRef.current = false
       const plain = a as HTMLAudioElement
       plain.crossOrigin = ''
       plain.src = url
       plain.play().then(() => setIsPlaying(true)).catch(() => {
-        if (activeTrack) purgeUnavailableTrackFromStorage(activeTrack.id || activeTrack.title)
         setUsingSynth(true)
         startSynth(activeTrack?.bpm || 124, activeTrack?.title || activeTrack?.id || '')
         setIsPlaying(true)
       })
     } else {
-      if (activeTrack) purgeUnavailableTrackFromStorage(activeTrack.id || activeTrack.title)
       setUsingSynth(true)
       startSynth(activeTrack?.bpm || 124, activeTrack?.title || activeTrack?.id || '')
       setIsPlaying(true)
@@ -167,6 +175,11 @@ export default function GlobalAudioPlayer() {
       const corsCheck = await verifyAndResolveBackendAudioUrl(track.id, url)
       if (!corsCheck.ok) {
         purgeUnavailableTrackFromStorage(track.id || track.title)
+        const targetUrl = track.sourceUrl || (track.source && track.source.startsWith('http') ? track.source : null)
+        if (targetUrl) {
+          window.dispatchEvent(new CustomEvent('drops-requeue-url', { detail: { url: targetUrl, title: track.title } }))
+          window.dispatchEvent(new CustomEvent('drops-toast', { detail: { message: 'Traccia temporanea scaduta su Render — Avvio riscaricamento automatico ad alta qualità', type: 'info' } }))
+        }
         setUsingSynth(true)
         startSynth(track.bpm || 124, track.title || track.id || '')
         setIsPlaying(true)
@@ -383,9 +396,9 @@ export default function GlobalAudioPlayer() {
 
   return (
     <aside className="global-mini-player-bar" aria-label="Riproduttore Audio Globale">
-      {corsError && (
-        <div className="cors-error-banner" role="alert" style={{ background: '#7f1d1d', color: '#fef2f2', padding: '6px 12px', fontSize: '0.8rem', textAlign: 'center', width: '100%' }}>
-          ⚠️ {corsError}
+      {corsError && !corsError.includes('404') && !corsError.includes('/file-url') && (
+        <div className="cors-error-banner" role="alert" style={{ background: 'rgba(239, 68, 68, 0.25)', borderBottom: '1px solid rgba(239, 68, 68, 0.4)', color: '#fef2f2', padding: '5px 12px', fontSize: '0.78rem', textAlign: 'center', width: '100%' }}>
+          ℹ️ {corsError}
         </div>
       )}
       <div className="mini-player-track-info">
@@ -402,7 +415,37 @@ export default function GlobalAudioPlayer() {
             <strong className="mini-player-title">{activeTrack.title}</strong>
             {activeTrack.bpm && <span className="mini-player-bpm-pill">{activeTrack.bpm} BPM</span>}
           </div>
-          <span className="mini-player-artist">{activeTrack.artist}{usingSynth ? ' · anteprima' : ''}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="mini-player-artist">{activeTrack.artist}{usingSynth ? ' · anteprima sintetica' : ''}</span>
+            {usingSynth && (activeTrack.sourceUrl || (activeTrack.source && activeTrack.source.startsWith('http'))) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const targetUrl = activeTrack.sourceUrl || activeTrack.source
+                  if (targetUrl) {
+                    window.dispatchEvent(new CustomEvent('drops-requeue-url', { detail: { url: targetUrl, title: activeTrack.title } }))
+                    window.dispatchEvent(new CustomEvent('drops-toast', { detail: { message: 'Traccia temporanea scaduta su Render — Avvio riscaricamento automatico ad alta qualità', type: 'info' } }))
+                  }
+                }}
+                style={{
+                  background: '#10b981',
+                  border: 'none',
+                  color: '#ffffff',
+                  borderRadius: '4px',
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+                title="Rilancia download originale ad alta qualità"
+              >
+                ⬇️ Riscarica
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

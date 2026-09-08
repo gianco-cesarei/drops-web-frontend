@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { api, batchProcess } from '../api'
-import { isAvailableTrack, stopAllAudio, verifyAndResolveBackendAudioUrl } from '../lib/audioManager'
+import { isAvailableTrack, purgeUnavailableTrackFromStorage, stopAllAudio, verifyAndResolveBackendAudioUrl } from '../lib/audioManager'
 
 export interface IngestedTrack {
   id: string
@@ -697,8 +697,15 @@ export default function FolderIngestionHub() {
     if (track.id && (audioUrl?.includes('/api/v1/downloads/') || !audioUrl)) {
       const corsCheck = await verifyAndResolveBackendAudioUrl(track.id, audioUrl)
       if (!corsCheck.ok) {
-        setNotice(`⚠️ Playback bloccato: ${corsCheck.error}`)
-        setTimeout(() => setNotice(null), 4500)
+        purgeUnavailableTrackFromStorage(track.id || track.title)
+        const targetUrl = (track as any).sourceUrl || ((track as any).source?.startsWith('http') ? (track as any).source : null)
+        if (targetUrl) {
+          setNotice('Traccia temporanea scaduta su Render — Avvio riscaricamento automatico ad alta qualità')
+          window.dispatchEvent(new CustomEvent('drops-requeue-url', { detail: { url: targetUrl, title: track.title } }))
+        } else {
+          setNotice('Traccia temporanea non più presente sul server. Ricarica dalla sorgente.')
+        }
+        setTimeout(() => setNotice(null), 4000)
         setPlayingTrackId(null)
         return
       }
@@ -714,6 +721,8 @@ export default function FolderIngestionHub() {
         bpm: track.bpm,
         genre: track.genre,
         audioUrl,
+        sourceUrl: (track as any).sourceUrl,
+        source: (track as any).source,
       })
     }
   }

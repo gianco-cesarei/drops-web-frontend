@@ -3,7 +3,7 @@ import type { ReactNode, SyntheticEvent } from 'react'
 import { api, ApiError, batchProcess } from './api'
 import type { PlaylistEntry, PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
 import { postLoginRoute } from './lib/routes'
-import { isAvailableTrack, registerAudioElement, stopAllOtherAudioExcept, verifyAndResolveBackendAudioUrl } from './lib/audioManager'
+import { isAvailableTrack, purgeUnavailableTrackFromStorage, registerAudioElement, stopAllOtherAudioExcept, verifyAndResolveBackendAudioUrl } from './lib/audioManager'
 import { contentFields, contentStages, radarDevelopmentFixtures, radarLockedFixtures } from './data/private.fixture'
 import type { RadarFixture } from './data/private.fixture'
 import BrainGraph from './components/BrainGraph'
@@ -565,6 +565,7 @@ function useAudioPlayer() {
       if (id && (url.includes('/api/v1/downloads/') || !url)) {
         const corsCheck = await verifyAndResolveBackendAudioUrl(id, url)
         if (!corsCheck.ok) {
+          purgeUnavailableTrackFromStorage(id)
           setPlayingUrl(null)
           return
         }
@@ -2209,12 +2210,13 @@ async function triggerResilientDownload(
       document.body.removeChild(a)
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000)
     } else if (response.status === 404) {
+      purgeUnavailableTrackFromStorage(item.id || item.title)
       const targetUrl = item.sourceUrl || (item.source && item.source.startsWith('http') ? item.source : null)
       if (targetUrl && onRequeue) {
-        onError?.(`Il file temporaneo sul server Render è scaduto. Riavvio download automatico ad alta qualità da ${item.source || 'sorgente'}...`)
+        onError?.('Traccia temporanea scaduta su Render — Avvio riscaricamento automatico ad alta qualità...')
         onRequeue(targetUrl)
       } else {
-        onError?.(`File temporaneo scaduto sul server Render (i container gratuiti azzerano i file temporanei dopo inattività). Incolla il link sorgente del brano in alto per riscaricarlo.`)
+        onError?.('File temporaneo scaduto sul server Render. Incolla il link sorgente del brano in alto per riscaricarlo.')
       }
     } else {
       onError?.(`Impossibile scaricare il file (errore HTTP ${response.status}). Riprova tra poco.`)
@@ -2412,9 +2414,33 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       if (!detail?.id) return
       const target = String(detail.id)
       setHistory((prev) => prev.filter((t) => String(t.id) !== target && String(t.title) !== target))
+      setDownloadedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(target)
+        saveSavedDownloadedIds(next)
+        return next
+      })
+    }
+    const handleRequeue = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.url) {
+        requeueSingleUrl(detail.url)
+      }
+    }
+    const handleToast = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.message) {
+        setError(detail.message)
+      }
     }
     window.addEventListener('drops-purge-unavailable-track', handlePurge)
-    return () => window.removeEventListener('drops-purge-unavailable-track', handlePurge)
+    window.addEventListener('drops-requeue-url', handleRequeue)
+    window.addEventListener('drops-toast', handleToast)
+    return () => {
+      window.removeEventListener('drops-purge-unavailable-track', handlePurge)
+      window.removeEventListener('drops-requeue-url', handleRequeue)
+      window.removeEventListener('drops-toast', handleToast)
+    }
   }, [])
 
   const handleOpenArchive = () => {

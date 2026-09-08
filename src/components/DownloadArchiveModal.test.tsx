@@ -36,4 +36,18 @@ describe('DownloadArchiveModal', () => {
     expect(handleRequeue).toHaveBeenCalledWith('https://soundcloud.com/alex/flow')
     expect(handleClose).toHaveBeenCalled()
   })
+
+  it('mostra lo stato visivo delle tracce e supporta la copia del link', async () => {
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    })
+    render(<DownloadArchiveModal isOpen={true} onClose={vi.fn()} items={mockItems} />)
+    expect(screen.getAllByText('Archiviato').length).toBeGreaterThan(0)
+
+    const copyBtns = screen.getAllByRole('button', { name: /🔗 Copia/i })
+    await userEvent.click(copyBtns[0])
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://soundcloud.com/alex/flow')
+  })
 })

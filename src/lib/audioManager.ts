@@ -81,6 +81,14 @@ export function purgeUnavailableTrackFromStorage(trackIdOrTitle?: string | numbe
         window.localStorage.setItem('drops.folders.v1', JSON.stringify(cleaned))
       }
     }
+    const savedIdsRaw = window.localStorage.getItem('drops.saved.downloads.ids.v1')
+    if (savedIdsRaw) {
+      const ids = JSON.parse(savedIdsRaw)
+      if (Array.isArray(ids)) {
+        const cleaned = ids.filter((id: any) => String(id) !== target)
+        window.localStorage.setItem('drops.saved.downloads.ids.v1', JSON.stringify(cleaned))
+      }
+    }
   } catch {}
 }
 
@@ -88,6 +96,8 @@ export interface CorsCheckResult {
   ok: boolean
   url: string
   error?: string
+  status?: number
+  isNotFound?: boolean
 }
 
 /**
@@ -136,7 +146,15 @@ export async function verifyAndResolveBackendAudioUrl(
       if (providedUrl && !targetUrl.includes('/api/v1/downloads/')) {
         return { ok: true, url: providedUrl }
       }
-      return { ok: false, url: '', error: `Backend /file-url non disponibile (HTTP ${res.status}).` }
+      return {
+        ok: false,
+        url: '',
+        status: res.status,
+        isNotFound: res.status === 404,
+        error: res.status === 404
+          ? 'Traccia temporanea scaduta o non presente sul server Render.'
+          : `Backend non disponibile (HTTP ${res.status}).`,
+      }
     }
 
     const acao = res.headers.get('access-control-allow-origin')

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, afterEach } from 'vitest'
 import {
   isAvailableTrack,
   filterAvailableTracks,
+  purgeUnavailableTrackFromStorage,
   verifyAndResolveBackendAudioUrl,
   stopAllOtherAudioExcept,
   registerAudioElement,
@@ -54,6 +55,20 @@ describe('audioManager', () => {
     })
   })
 
+  describe('purgeUnavailableTrackFromStorage', () => {
+    it('elimina la traccia da history e da drops.saved.downloads.ids.v1', () => {
+      localStorage.setItem('drops.downloads.history.v1', JSON.stringify([{ id: 'trk-1', title: 'T1' }, { id: 'trk-2', title: 'T2' }]))
+      localStorage.setItem('drops.saved.downloads.ids.v1', JSON.stringify(['trk-1', 'trk-2']))
+      purgeUnavailableTrackFromStorage('trk-1')
+
+      const history = JSON.parse(localStorage.getItem('drops.downloads.history.v1') || '[]')
+      expect(history.map((t: any) => t.id)).toEqual(['trk-2'])
+
+      const saved = JSON.parse(localStorage.getItem('drops.saved.downloads.ids.v1') || '[]')
+      expect(saved).toEqual(['trk-2'])
+    })
+  })
+
   describe('verifyAndResolveBackendAudioUrl', () => {
     afterEach(() => {
       vi.restoreAllMocks()
@@ -101,6 +116,20 @@ describe('audioManager', () => {
       const res = await verifyAndResolveBackendAudioUrl('trk-1', 'https://drops.app/api/v1/downloads/trk-1/file')
       expect(res.ok).toBe(true)
       expect(res.url).toBeDefined()
+    })
+
+    it('segnala isNotFound: true senza stringa abrasiva quando il backend restituisce 404', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        headers: new Headers(),
+      }))
+
+      const res = await verifyAndResolveBackendAudioUrl('trk-404', 'https://drops.app/api/v1/downloads/trk-404/file')
+      expect(res.ok).toBe(false)
+      expect(res.isNotFound).toBe(true)
+      expect(res.status).toBe(404)
+      expect(res.error).not.toMatch(/Playback bloccato/i)
     })
   })
 

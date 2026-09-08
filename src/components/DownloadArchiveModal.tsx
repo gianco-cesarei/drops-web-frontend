@@ -131,6 +131,7 @@ export default function DownloadArchiveModal({
               <tr>
                 <th>Titolo & Artista</th>
                 <th>BPM</th>
+                <th>Stato</th>
                 <th>Link Sorgente</th>
                 <th>Azioni</th>
               </tr>
@@ -138,7 +139,7 @@ export default function DownloadArchiveModal({
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: '#9ca3af' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '24px', color: '#9ca3af' }}>
                     Nessun link o traccia trovata nell&apos;archivio.
                   </td>
                 </tr>
@@ -164,16 +165,58 @@ export default function DownloadArchiveModal({
                         </div>
                       </td>
                       <td>
+                        <span
+                          className="tag-badge tag-badge-status"
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            color: '#34d399',
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            fontSize: '0.72rem',
+                            fontWeight: 500,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
+                          {it.status === 'ready' || it.status === 'completed' ? 'Pronto' : 'Archiviato'}
+                        </span>
+                      </td>
+                      <td>
                         {isHttp ? (
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="archive-source-link"
-                            title={url}
-                          >
-                            {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40)}... ↗
-                          </a>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="archive-source-link"
+                              title={url}
+                            >
+                              {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 36)}... ↗
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(url)
+                                setCopySuccess(`✓ Link di "${it.title}" copiato!`)
+                                setTimeout(() => setCopySuccess(''), 2500)
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#94a3b8',
+                                cursor: 'pointer',
+                                padding: '2px 4px',
+                                fontSize: '0.75rem',
+                              }}
+                              title="Copia link rapido"
+                              aria-label={`Copia link per ${it.title}`}
+                            >
+                              📋
+                            </button>
+                          </div>
                         ) : (
                           <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>{url || 'N/A'}</span>
                         )}
@@ -184,14 +227,23 @@ export default function DownloadArchiveModal({
                             <button
                               type="button"
                               className="btn-save-local-cta"
-                              style={{ padding: '5px 10px', fontSize: '0.72rem' }}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: '#ffffff',
+                                border: 'none',
+                                boxShadow: '0 2px 4px rgba(16, 185, 129, 0.25)',
+                                cursor: 'pointer',
+                              }}
                               onClick={() => {
                                 onRequeue(url)
                                 onClose()
                               }}
-                              title="Rilancia il download di questa traccia in locale"
+                              title="Rilancia il download di questa traccia in locale ad alta qualità"
                             >
-                              <svg className="btn-dl-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <svg className="btn-dl-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
@@ -203,6 +255,7 @@ export default function DownloadArchiveModal({
                             <button
                               type="button"
                               className="btn-play-mini-row"
+                              style={{ padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
                               onClick={() => {
                                 navigator.clipboard.writeText(url)
                                 setCopySuccess(`✓ Link di "${it.title}" copiato!`)
