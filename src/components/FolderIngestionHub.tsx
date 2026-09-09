@@ -377,7 +377,7 @@ export default function FolderIngestionHub() {
   const [eqHigh, setEqHigh] = useState<number>(50)
   const [master, setMaster] = useState<number>(80)
   const [leftOpen, setLeftOpen] = useState<boolean>(true)
-  const [consoleOpen, setConsoleOpen] = useState<boolean>(false)
+  const [consoleTab, setConsoleTab] = useState<'folders' | 'console'>('folders')
   const [creatingFolder, setCreatingFolder] = useState<boolean>(false)
   const [newArchFolderName, setNewArchFolderName] = useState<string>('')
 
@@ -925,117 +925,281 @@ export default function FolderIngestionHub() {
         </div>
       )}
 
-      {/* LEFT WING: CARTELLE */}
+      {/* TOP NAVIGATION / HAMBURGER BAR */}
+      <div className="workspace-top-bar arch-top-nav">
+        <button
+          type="button"
+          className={`drops-hamburger-btn ${leftOpen ? 'is-active' : ''}`}
+          onClick={() => setLeftOpen((v) => !v)}
+          title={leftOpen ? 'Chiudi pannello laterale' : 'Apri Cartelle e Console'}
+          aria-label={leftOpen ? 'Chiudi pannello laterale' : 'Apri Cartelle e Console'}
+          aria-expanded={leftOpen}
+        >
+          <div className="drops-hamburger-icon">
+            <span className="ham-line ham-line-1" />
+            <span className="ham-line ham-line-2" />
+            <span className="ham-line ham-line-3" />
+          </div>
+          <span className="drops-hamburger-label">Cartelle &amp; Console</span>
+          {queue.length > 0 && (
+            <span className="drops-hamburger-badge" title={`${queue.length} brani in coda`}>
+              {queue.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {leftOpen && (
-        <aside className="arch-wing-left">
-          <div className="arch-wing-head">
-            <div className="arch-wing-head-title">
-              <span className="arch-wing-kicker">📁 CARTELLE</span>
-              <span className="arch-wing-sub">{folders.length} cartelle · {allTracks.length} brani</span>
+        <div
+          className="drops-sidebar-backdrop"
+          onClick={() => setLeftOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* UNIFIED LEFT SIDEBAR (CARTELLE + CONSOLE) */}
+      {leftOpen && (
+        <aside className="drops-unified-sidebar arch-wing-left" aria-label="Cartelle e Console">
+          <div className="sidebar-top-header">
+            <div className="sidebar-tabs-segmented">
+              <button
+                type="button"
+                className={`sidebar-tab-btn ${consoleTab === 'folders' ? 'active' : ''}`}
+                onClick={() => setConsoleTab('folders')}
+              >
+                📁 Cartelle ({folders.length})
+              </button>
+              <button
+                type="button"
+                className={`sidebar-tab-btn ${consoleTab === 'console' ? 'active' : ''}`}
+                onClick={() => setConsoleTab('console')}
+              >
+                🎛️ Console ({queue.length})
+              </button>
             </div>
-            <button type="button" className="arch-wing-close" onClick={() => setLeftOpen(false)} title="Chiudi pannello cartelle">✕</button>
+            <button
+              type="button"
+              className="sidebar-close-btn"
+              onClick={() => setLeftOpen(false)}
+              title="Chiudi pannello"
+              aria-label="Chiudi pannello"
+            >
+              ✕
+            </button>
           </div>
 
-          <div className="arch-left-actions">
-            <input
-              ref={fileInputRef}
-              type="file"
-              /* @ts-expect-error webkitdirectory is standard in browser engines */
-              webkitdirectory=""
-              directory=""
-              multiple
-              accept="audio/*,.mp3,.wav,.flac,.aiff,.m4a"
-              onChange={handleFolderUpload}
-              style={{ display: 'none' }}
-              id="am-folder-input-picker"
-            />
-            <label htmlFor="am-folder-input-picker" className="arch-btn-primary">⬆ Carica Cartella</label>
-            {creatingFolder ? (
-              <div className="arch-newfolder-inline">
-                <input type="text" className="arch-newfolder-input" placeholder="Nome nuova cartella" value={newArchFolderName} autoFocus onChange={(e) => setNewArchFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateNamedFolder(); if (e.key === 'Escape') { setCreatingFolder(false); setNewArchFolderName('') } }} />
-                <button type="button" className="arch-newfolder-ok" onClick={handleCreateNamedFolder} disabled={!newArchFolderName.trim()} title="Crea">✓</button>
-                <button type="button" className="arch-newfolder-cancel" onClick={() => { setCreatingFolder(false); setNewArchFolderName('') }} title="Annulla">✕</button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
-                <button type="button" className="arch-btn-ghost" style={{ flex: 1 }} onClick={() => { setCreatingFolder(true); setNewArchFolderName('') }} title="Crea una nuova cartella con nome">+ Nuova Cartella</button>
-                <button type="button" className="arch-btn-ghost" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)', flex: 1 }} onClick={handleResetServerCatalog} title="Azzera tutto il catalogo sul server (non tocca data/audio)">🔄 Azzera</button>
-              </div>
-            )}
-          </div>
-
-          <input
-            type="text"
-            className="arch-search"
-            placeholder="Cerca cartelle…"
-            value={filterQuery}
-            onChange={(e) => setFilterQuery(e.target.value)}
-          />
-
-          <button
-            type="button"
-            className={`arch-folder-row arch-all ${selectedFolderId === '__all__' ? 'is-active' : ''}`}
-            onClick={() => setSelectedFolderId('__all__')}
-          >
-            <span className="arch-folder-ic">🎧</span>
-            <span className="arch-folder-name">Tutti i Brani</span>
-            <span className="arch-folder-count">{allTracks.length}</span>
-          </button>
-
-          <div className="arch-folder-list">
-            {filteredFolders.length === 0 ? (
-              <div className="arch-empty">Nessuna cartella.</div>
-            ) : (
-              filteredFolders.map((folder) => {
-                const isSelected = selectedFolderId === folder.id
-                const isEditing = editingFolderId === folder.id
-                return (
-                  <div
-                    key={folder.id}
-                    className={`arch-folder-row ${isSelected ? 'is-active' : ''}`}
-                    onClick={() => setSelectedFolderId(folder.id)}
-                  >
-                    <span className="arch-folder-ic">📁</span>
-                    {isEditing ? (
-                      <div className="arch-rename" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          className="arch-rename-input"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(folder.id); if (e.key === 'Escape') setEditingFolderId(null) }}
-                          autoFocus
-                        />
-                        <button type="button" className="arch-rename-ok" onClick={() => handleSaveRename(folder.id)}>✓</button>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="arch-folder-name" title={folder.name}>{folder.name}</span>
-                        <span className="arch-folder-count">{(folder.tracks || []).filter(isAvailableTrack).length}</span>
-                        <span className="arch-folder-hover">
-                          <button type="button" className="arch-mini-ic" onClick={(e) => handleStartRename(folder, e)} title="Rinomina">✏️</button>
-                          <button type="button" className="arch-mini-ic danger" onClick={(e) => handleDeleteFolder(folder.id, e)} title="Elimina">✕</button>
-                        </span>
-                      </>
-                    )}
+          {/* TAB 1: CARTELLE */}
+          {consoleTab === 'folders' && (
+            <div className="sidebar-tab-content">
+              <div className="arch-left-actions">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  /* @ts-expect-error webkitdirectory is standard in browser engines */
+                  webkitdirectory=""
+                  directory=""
+                  multiple
+                  accept="audio/*,.mp3,.wav,.flac,.aiff,.m4a"
+                  onChange={handleFolderUpload}
+                  style={{ display: 'none' }}
+                  id="am-folder-input-picker"
+                />
+                <label htmlFor="am-folder-input-picker" className="arch-btn-primary">⬆ Carica Cartella</label>
+                {creatingFolder ? (
+                  <div className="arch-newfolder-inline">
+                    <input type="text" className="arch-newfolder-input" placeholder="Nome nuova cartella" value={newArchFolderName} autoFocus onChange={(e) => setNewArchFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateNamedFolder(); if (e.key === 'Escape') { setCreatingFolder(false); setNewArchFolderName('') } }} />
+                    <button type="button" className="arch-newfolder-ok" onClick={handleCreateNamedFolder} disabled={!newArchFolderName.trim()} title="Crea">✓</button>
+                    <button type="button" className="arch-newfolder-cancel" onClick={() => { setCreatingFolder(false); setNewArchFolderName('') }} title="Annulla">✕</button>
                   </div>
-                )
-              })
-            )}
-          </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
+                    <button type="button" className="arch-btn-ghost" style={{ flex: 1 }} onClick={() => { setCreatingFolder(true); setNewArchFolderName('') }} title="Crea una nuova cartella con nome">+ Nuova Cartella</button>
+                    <button type="button" className="arch-btn-ghost" style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)', flex: 1 }} onClick={handleResetServerCatalog} title="Azzera tutto il catalogo sul server (non tocca data/audio)">🔄 Azzera</button>
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="text"
+                className="arch-search"
+                placeholder="Cerca cartelle…"
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+              />
+
+              <button
+                type="button"
+                className={`arch-folder-row arch-all ${selectedFolderId === '__all__' ? 'is-active' : ''}`}
+                onClick={() => setSelectedFolderId('__all__')}
+              >
+                <span className="arch-folder-ic">🎧</span>
+                <span className="arch-folder-name">Tutti i Brani</span>
+                <span className="arch-folder-count">{allTracks.length}</span>
+              </button>
+
+              <div className="arch-folder-list">
+                {filteredFolders.length === 0 ? (
+                  <div className="arch-empty">Nessuna cartella.</div>
+                ) : (
+                  filteredFolders.map((folder) => {
+                    const isSelected = selectedFolderId === folder.id
+                    const isEditing = editingFolderId === folder.id
+                    return (
+                      <div
+                        key={folder.id}
+                        className={`arch-folder-row ${isSelected ? 'is-active' : ''}`}
+                        onClick={() => setSelectedFolderId(folder.id)}
+                      >
+                        <span className="arch-folder-ic">📁</span>
+                        {isEditing ? (
+                          <div className="arch-rename" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              className="arch-rename-input"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(folder.id); if (e.key === 'Escape') setEditingFolderId(null) }}
+                              autoFocus
+                            />
+                            <button type="button" className="arch-rename-ok" onClick={() => handleSaveRename(folder.id)}>✓</button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="arch-folder-name" title={folder.name}>{folder.name}</span>
+                            <span className="arch-folder-count">{(folder.tracks || []).filter(isAvailableTrack).length}</span>
+                            <span className="arch-folder-hover">
+                              <button type="button" className="arch-mini-ic" onClick={(e) => handleStartRename(folder, e)} title="Rinomina">✏️</button>
+                              <button type="button" className="arch-mini-ic danger" onClick={(e) => handleDeleteFolder(folder.id, e)} title="Elimina">✕</button>
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CONSOLE */}
+          {consoleTab === 'console' && (
+            <div className="sidebar-tab-content">
+              <div className="arch-now">
+                {nowPlaying ? (
+                  <>
+                    <div className="arch-now-art">
+                      <span>🎵</span>
+                      <div className="arch-now-eq"><span></span><span></span><span></span></div>
+                    </div>
+                    <div className="arch-now-info">
+                      <span className="arch-now-title" title={nowPlaying.title}>{nowPlaying.title}</span>
+                      <span className="arch-now-artist" title={nowPlaying.artist || ''}>{nowPlaying.artist || 'Artista Sconosciuto'}</span>
+                      <div className="arch-now-tags">
+                        {nowPlaying.bpm && <span className="arch-bpm">{Math.round(nowPlaying.bpm)} BPM</span>}
+                        {nowPlaying.keySignature && <span className="arch-key">{nowPlaying.keySignature}</span>}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="arch-now-empty">Nessuna traccia in riproduzione</div>
+                )}
+              </div>
+
+              <div className="arch-transport">
+                <button type="button" className="arch-tp" onClick={playPrev} disabled={!queue.length} title="Precedente">⏮</button>
+                <button
+                  type="button"
+                  className="arch-tp big"
+                  onClick={() => {
+                    if (nowPlaying) {
+                      if (playingTrackId === nowPlaying.id) {
+                        stopTrack()
+                      } else {
+                        handlePlayTrack(nowPlaying)
+                      }
+                    } else if (filteredTracks.length) {
+                      playFromList(filteredTracks, 0)
+                    }
+                  }}
+                  title={nowPlaying && playingTrackId === nowPlaying.id ? 'Metti in pausa' : 'Play'}
+                >
+                  {nowPlaying && playingTrackId === nowPlaying.id ? '❚❚' : '▶'}
+                </button>
+                <button type="button" className="arch-tp" onClick={playNext} disabled={!queue.length} title="Successiva">⏭</button>
+                <button type="button" className={`arch-xfade ${crossfade ? 'on' : ''}`} onClick={() => setCrossfade((v) => !v)} title="Attiva/disattiva dissolvenza automatica tra le tracce">
+                  <span className="arch-xfade-dot" /> Dissolvenza
+                </button>
+              </div>
+
+              <div className="arch-mixer">
+                <span className="arch-mixer-title">MIXER</span>
+                <div className="arch-eq">
+                  <div className="arch-eq-band">
+                    <input type="range" min="0" max="100" value={eqHigh} onChange={(e) => setEqHigh(Number(e.target.value))} className="arch-vslider" />
+                    <span className="arch-eq-lbl">HIGH</span>
+                  </div>
+                  <div className="arch-eq-band">
+                    <input type="range" min="0" max="100" value={eqMid} onChange={(e) => setEqMid(Number(e.target.value))} className="arch-vslider" />
+                    <span className="arch-eq-lbl">MID</span>
+                  </div>
+                  <div className="arch-eq-band">
+                    <input type="range" min="0" max="100" value={eqLow} onChange={(e) => setEqLow(Number(e.target.value))} className="arch-vslider" />
+                    <span className="arch-eq-lbl">LOW</span>
+                  </div>
+                </div>
+                <div className="arch-master">
+                  <span className="arch-master-lbl">🔊 Master</span>
+                  <input type="range" min="0" max="100" value={master} onChange={(e) => setMaster(Number(e.target.value))} className="arch-hslider" />
+                  <span className="arch-master-val">{master}</span>
+                </div>
+              </div>
+
+              <div className="arch-queue">
+                <div className="arch-queue-head">
+                  <span className="arch-queue-title">CODA ({queue.length})</span>
+                  {queue.length > 0 && <button type="button" className="arch-queue-clear" onClick={clearQueue} title="Svuota coda">🧹 Svuota</button>}
+                </div>
+                <div className="arch-queue-list">
+                  {queue.length === 0 ? (
+                    <div className="arch-empty pad small">Aggiungi brani con ＋ o premi Riproduci Tutto.</div>
+                  ) : (
+                    queue.map((t, i) => (
+                      <div key={`${t.id}-${i}`} className={`arch-q-item ${i === queueIndex ? 'is-current' : ''}`} onDoubleClick={() => playIndex(i)}>
+                        <button
+                          type="button"
+                          className="arch-q-play"
+                          onClick={() => {
+                            if (i === queueIndex && playingTrackId === t.id) {
+                              stopTrack()
+                            } else {
+                              playIndex(i)
+                            }
+                          }}
+                          title={i === queueIndex && playingTrackId === t.id ? 'Metti in pausa' : 'Riproduci'}
+                        >
+                          {i === queueIndex && playingTrackId === t.id ? '❚❚' : '▶'}
+                        </button>
+                        <span className="arch-q-info">
+                          <span className="arch-q-title" title={t.title}>{t.title}</span>
+                          <span className="arch-q-artist" title={t.artist || ''}>{t.artist || 'Artista Sconosciuto'}{t.bpm ? ` · ${Math.round(t.bpm)} BPM` : ''}</span>
+                        </span>
+                        <span className="arch-q-ctrl">
+                          <button type="button" className="arch-mini" onClick={() => moveInQueue(t.id, -1)} title="Su">▲</button>
+                          <button type="button" className="arch-mini" onClick={() => moveInQueue(t.id, 1)} title="Giù">▼</button>
+                          <button type="button" className="arch-mini danger" onClick={() => removeFromQueue(t.id)} title="Rimuovi">✕</button>
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
       )}
 
       {/* CENTER: LIBRERIA */}
       <main className="arch-wing-center">
-        <button type="button" className={`winged-side-toggle left ${leftOpen ? 'active' : ''}`} onClick={() => setLeftOpen((v) => !v)} title="Mostra/nascondi cartelle" aria-label="Mostra/nascondi cartelle">
-          <span className="st-emoji">📁</span>
-          <span className="st-arrow">{leftOpen ? '◀' : '▶'}</span>
-        </button>
-        <button type="button" className={`winged-side-toggle right ${consoleOpen ? 'active' : ''}`} onClick={() => setConsoleOpen((v) => !v)} title="Mostra/nascondi console" aria-label="Mostra/nascondi console">
-          <span className="st-emoji">🎛️</span>
-          <span className="st-arrow">{consoleOpen ? '▶' : '◀'}</span>
-        </button>
         {selectedFolder ? (
           <div className="arch-folder-view">
             <div className="arch-hero">
@@ -1139,129 +1303,6 @@ export default function FolderIngestionHub() {
           <div className="arch-no-sel"><span>📂</span><h3>Seleziona una cartella</h3></div>
         )}
       </main>
-
-      {/* RIGHT WING: CONSOLE / MINI PLAYER */}
-      {consoleOpen && (
-        <aside className="arch-wing-right">
-          <div className="arch-wing-head">
-            <div className="arch-wing-head-title">
-              <span className="arch-wing-kicker">🎛️ CONSOLE</span>
-              <span className="arch-wing-sub">Mixer & coda</span>
-            </div>
-            <button type="button" className="arch-wing-close" onClick={() => setConsoleOpen(false)} title="Chiudi console">✕</button>
-          </div>
-
-          <div className="arch-now">
-            {nowPlaying ? (
-              <>
-                <div className="arch-now-art">
-                  <span>🎵</span>
-                  <div className="arch-now-eq"><span></span><span></span><span></span></div>
-                </div>
-                <div className="arch-now-info">
-                  <span className="arch-now-title" title={nowPlaying.title}>{nowPlaying.title}</span>
-                  <span className="arch-now-artist" title={nowPlaying.artist || ''}>{nowPlaying.artist || 'Artista Sconosciuto'}</span>
-                  <div className="arch-now-tags">
-                    {nowPlaying.bpm && <span className="arch-bpm">{Math.round(nowPlaying.bpm)} BPM</span>}
-                    {nowPlaying.keySignature && <span className="arch-key">{nowPlaying.keySignature}</span>}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="arch-now-empty">Nessuna traccia in riproduzione</div>
-            )}
-          </div>
-
-          <div className="arch-transport">
-            <button type="button" className="arch-tp" onClick={playPrev} disabled={!queue.length} title="Precedente">⏮</button>
-            <button
-              type="button"
-              className="arch-tp big"
-              onClick={() => {
-                if (nowPlaying) {
-                  if (playingTrackId === nowPlaying.id) {
-                    stopTrack()
-                  } else {
-                    handlePlayTrack(nowPlaying)
-                  }
-                } else if (filteredTracks.length) {
-                  playFromList(filteredTracks, 0)
-                }
-              }}
-              title={nowPlaying && playingTrackId === nowPlaying.id ? 'Metti in pausa' : 'Play'}
-            >
-              {nowPlaying && playingTrackId === nowPlaying.id ? '❚❚' : '▶'}
-            </button>
-            <button type="button" className="arch-tp" onClick={playNext} disabled={!queue.length} title="Successiva">⏭</button>
-            <button type="button" className={`arch-xfade ${crossfade ? 'on' : ''}`} onClick={() => setCrossfade((v) => !v)} title="Attiva/disattiva dissolvenza automatica tra le tracce">
-              <span className="arch-xfade-dot" /> Dissolvenza
-            </button>
-          </div>
-
-          <div className="arch-mixer">
-            <span className="arch-mixer-title">MIXER</span>
-            <div className="arch-eq">
-              <div className="arch-eq-band">
-                <input type="range" min="0" max="100" value={eqHigh} onChange={(e) => setEqHigh(Number(e.target.value))} className="arch-vslider" />
-                <span className="arch-eq-lbl">HIGH</span>
-              </div>
-              <div className="arch-eq-band">
-                <input type="range" min="0" max="100" value={eqMid} onChange={(e) => setEqMid(Number(e.target.value))} className="arch-vslider" />
-                <span className="arch-eq-lbl">MID</span>
-              </div>
-              <div className="arch-eq-band">
-                <input type="range" min="0" max="100" value={eqLow} onChange={(e) => setEqLow(Number(e.target.value))} className="arch-vslider" />
-                <span className="arch-eq-lbl">LOW</span>
-              </div>
-            </div>
-            <div className="arch-master">
-              <span className="arch-master-lbl">🔊 Master</span>
-              <input type="range" min="0" max="100" value={master} onChange={(e) => setMaster(Number(e.target.value))} className="arch-hslider" />
-              <span className="arch-master-val">{master}</span>
-            </div>
-          </div>
-
-          <div className="arch-queue">
-            <div className="arch-queue-head">
-              <span className="arch-queue-title">CODA ({queue.length})</span>
-              {queue.length > 0 && <button type="button" className="arch-queue-clear" onClick={clearQueue} title="Svuota coda">🧹 Svuota</button>}
-            </div>
-            <div className="arch-queue-list">
-              {queue.length === 0 ? (
-                <div className="arch-empty pad small">Aggiungi brani con ＋ o premi Riproduci Tutto.</div>
-              ) : (
-                queue.map((t, i) => (
-                  <div key={`${t.id}-${i}`} className={`arch-q-item ${i === queueIndex ? 'is-current' : ''}`} onDoubleClick={() => playIndex(i)}>
-                    <button
-                      type="button"
-                      className="arch-q-play"
-                      onClick={() => {
-                        if (i === queueIndex && playingTrackId === t.id) {
-                          stopTrack()
-                        } else {
-                          playIndex(i)
-                        }
-                      }}
-                      title={i === queueIndex && playingTrackId === t.id ? 'Metti in pausa' : 'Riproduci'}
-                    >
-                      {i === queueIndex && playingTrackId === t.id ? '❚❚' : '▶'}
-                    </button>
-                    <span className="arch-q-info">
-                      <span className="arch-q-title" title={t.title}>{t.title}</span>
-                      <span className="arch-q-artist" title={t.artist || ''}>{t.artist || 'Artista Sconosciuto'}{t.bpm ? ` · ${Math.round(t.bpm)} BPM` : ''}</span>
-                    </span>
-                    <span className="arch-q-ctrl">
-                      <button type="button" className="arch-mini" onClick={() => moveInQueue(t.id, -1)} title="Su">▲</button>
-                      <button type="button" className="arch-mini" onClick={() => moveInQueue(t.id, 1)} title="Giù">▼</button>
-                      <button type="button" className="arch-mini danger" onClick={() => removeFromQueue(t.id)} title="Rimuovi">✕</button>
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </aside>
-      )}
     </div>
   )
 }

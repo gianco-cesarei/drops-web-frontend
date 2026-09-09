@@ -2788,9 +2788,9 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       })
   }
 
-  const [audioQuality, setAudioQuality] = useState<'mp3' | 'hq'>('mp3')
-  const [isArchiveWingOpen, setIsArchiveWingOpen] = useState(false)
-  const [isReadyWingOpen, setIsReadyWingOpen] = useState(true)
+  const [audioQuality] = useState<'mp3'>('mp3')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [sidebarTab, setSidebarTab] = useState<'ready' | 'archive'>('ready')
   const [selectedFolderIdForActions, setSelectedFolderIdForActions] = useState<string | null>(null)
 
   const activeFolder = foldersList.find((f) => f.id === activeMainFolderId) || foldersList[0]
@@ -2906,117 +2906,247 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   }
 
   return (
-    <div className="download-winged-layout">
-      {/* SCOMPARTO SINISTRO: ARCHIVIO (10% desktop proportion) */}
-      {isArchiveWingOpen && (
-        <aside className="download-wing-left">
-          <div className="wing-header">
-            <div className="wing-header-title">
-              <span className="wing-title">📁 ARCHIVIO</span>
-              <span className="wing-count">{foldersList.length} cartelle</span>
-            </div>
-            <button
-              type="button"
-              className="wing-close-btn"
-              onClick={() => setIsArchiveWingOpen(false)}
-              title="Chiudi scomparto Archivio"
-            >
-              ✕
-            </button>
+    <div className="download-workspace-frameless">
+      {/* TOP NAVIGATION / HAMBURGER BAR */}
+      <div className="workspace-top-bar">
+        <button
+          type="button"
+          className={`drops-hamburger-btn ${isSidebarOpen ? 'is-active' : ''}`}
+          onClick={() => setIsSidebarOpen((v) => !v)}
+          title={isSidebarOpen ? 'Chiudi pannello laterale' : 'Apri Libreria e File Pronti'}
+          aria-label={isSidebarOpen ? 'Chiudi pannello laterale' : 'Apri Libreria e File Pronti'}
+          aria-expanded={isSidebarOpen}
+        >
+          <div className="drops-hamburger-icon">
+            <span className="ham-line ham-line-1" />
+            <span className="ham-line ham-line-2" />
+            <span className="ham-line ham-line-3" />
           </div>
+          <span className="drops-hamburger-label">Libreria</span>
+          {availableHistory.length > 0 && (
+            <span className="drops-hamburger-badge" title={`${availableHistory.length} tracce pronte`}>
+              {availableHistory.length}
+            </span>
+          )}
+        </button>
+      </div>
 
-          <div className="wing-newfolder-row">
-            {isCreatingFolder ? (
-              <div className="dl-newfolder-inline">
-                <input type="text" className="dl-newfolder-input" placeholder="Nome nuova cartella" value={newFolderName} autoFocus onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateNewFolder() } if (e.key === 'Escape') { setIsCreatingFolder(false); setNewFolderName('') } }} />
-                <button type="button" className="dl-newfolder-confirm" onClick={handleCreateNewFolder} disabled={!newFolderName.trim()} title="Crea">✓</button>
-                <button type="button" className="dl-newfolder-cancel" onClick={() => { setIsCreatingFolder(false); setNewFolderName('') }} title="Annulla">✕</button>
-              </div>
-            ) : (
-              <button type="button" className="wing-newfolder-btn" onClick={() => { setIsCreatingFolder(true); setNewFolderName('') }}>＋ Crea Nuova Cartella</button>
-            )}
-          </div>
-
-          <div className="wing-folder-list">
-            {foldersList.map((f) => {
-              const isDestActive = f.id === activeMainFolderId
-              const isSelected = selectedFolderIdForActions === f.id
-              return (
-                <div
-                  key={f.id}
-                  className={`wing-folder-item ${isDestActive ? 'is-active-dest' : ''} ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedFolderIdForActions(isSelected ? null : f.id)}
-                  onDoubleClick={() => {
-                    setActiveMainFolderId(f.id)
-                    setMainFolder(f.id)
-                    setSelectedFolderIdForActions(null)
-                  }}
-                  title="Clicca 1 volta per azioni (Elimina / Vai ad Archivio), doppio click per impostare come cartella di download"
-                >
-                  <div className="wing-folder-name-row">
-                    <span className="wing-folder-name">📁 {f.name}</span>
-                    {isDestActive && <span className="wing-active-badge">Attiva</span>}
-                  </div>
-                  <div className="wing-folder-meta">
-                    {f.trackCount || 0} brani
-                  </div>
-
-                  {isSelected && (
-                    <div className="wing-folder-actions" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        className="wing-action-link"
-                        onClick={() => {
-                          if (onSwitchToArchive) onSwitchToArchive()
-                          else window.location.assign('/app/archive')
-                        }}
-                        title="Apri questa cartella nell'Archivio completo"
-                      >
-                        <u>↗️ Vai alla cartella</u>
-                      </button>
-                      {f.id !== 'main_default' && f.id !== 'main' && (
-                        <button
-                          type="button"
-                          className="wing-action-link danger"
-                          onClick={(e) => handleDeleteWingFolder(f.id, e)}
-                          title="Elimina questa cartella"
-                        >
-                          <u>🗑️ Elimina</u>
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </aside>
+      {isSidebarOpen && (
+        <div
+          className="drops-sidebar-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
       )}
 
-      {/* BOX CENTRALE: DOWNLOAD PRINCIPALE (30% desktop proportion) */}
-      <main className="download-wing-center">
-        <button
-          type="button"
-          className={`winged-side-toggle left ${isArchiveWingOpen ? 'active' : ''}`}
-          onClick={() => setIsArchiveWingOpen((v) => !v)}
-          title={isArchiveWingOpen ? 'Chiudi Archivio' : 'Apri Archivio'}
-          aria-label={isArchiveWingOpen ? 'Chiudi Archivio' : 'Apri Archivio'}
-        >
-          <span className="st-emoji">📁</span>
-          <span className="st-arrow">{isArchiveWingOpen ? '◀' : '▶'}</span>
-        </button>
-        <button
-          type="button"
-          className={`winged-side-toggle right ${isReadyWingOpen ? 'active' : ''}`}
-          onClick={() => setIsReadyWingOpen((v) => !v)}
-          title={isReadyWingOpen ? 'Chiudi Pronti' : 'Apri Pronti'}
-          aria-label={isReadyWingOpen ? 'Chiudi Pronti' : 'Apri Pronti'}
-        >
-          <span className="st-emoji">📥</span>
-          <span className="st-arrow">{isReadyWingOpen ? '▶' : '◀'}</span>
-        </button>
-        {/* MAIN INPUT CARD */}
-        <section className="card hero-card download-hero-card">
+      {/* MAIN LAYOUT BODY */}
+      <div className={`workspace-stage-row ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        {/* UNIFIED LEFT SIDEBAR (PRONTI + ARCHIVIO) */}
+        {isSidebarOpen && (
+          <aside className="drops-unified-sidebar" aria-label="Libreria e Archivio">
+            <div className="sidebar-top-header">
+              <div className="sidebar-tabs-segmented">
+                <button
+                  type="button"
+                  className={`sidebar-tab-btn ${sidebarTab === 'ready' ? 'active' : ''}`}
+                  onClick={() => setSidebarTab('ready')}
+                >
+                  📥 Pronti ({availableHistory.length})
+                </button>
+                <button
+                  type="button"
+                  className={`sidebar-tab-btn ${sidebarTab === 'archive' ? 'active' : ''}`}
+                  onClick={() => setSidebarTab('archive')}
+                >
+                  📁 Archivio ({foldersList.length})
+                </button>
+              </div>
+              <button
+                type="button"
+                className="sidebar-close-btn"
+                onClick={() => setIsSidebarOpen(false)}
+                title="Chiudi pannello"
+                aria-label="Chiudi pannello"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* TAB CONTENT: READY TRACKS */}
+            {sidebarTab === 'ready' && (
+              <div className="sidebar-tab-content">
+                <div className="wing-cloud-box">
+                  <span className="wing-cloud-label">SALVATO IN CLOUD:</span>
+                  <strong className="wing-cloud-folder">📁 {activeFolderName}</strong>
+                </div>
+
+                {availableHistory.length > 0 && (
+                  <div className="wing-export-actions">
+                    <button
+                      type="button"
+                      className="btn-rekordbox-batch"
+                      onClick={handleDownloadFolderZip}
+                      disabled={zipBusy}
+                      title="Scarica archivio .zip con tutte le tracce pronte"
+                    >
+                      {zipBusy ? '⏳ Preparazione…' : '⬇️ Scarica tutto (.zip)'}
+                    </button>
+                  </div>
+                )}
+
+                <div className="wing-ready-list">
+                  {availableHistory.length === 0 ? (
+                    <div className="wing-ready-empty">
+                      <span>🎵</span>
+                      <p>Nessun brano pronto</p>
+                      <small>I file convertiti e salvati nel cloud appariranno qui, pronti per il download locale.</small>
+                    </div>
+                  ) : (
+                    availableHistory.map((item) => {
+                      const fileUrl = api.fileUrl(item.id)
+                      const isPlaying = playingUrl === fileUrl
+                      const isSaved = downloadedIds.has(item.id)
+                      const formatLabel = 'MP3 HD'
+                      return (
+                        <div key={item.id} className="wing-ready-item">
+                          <button
+                            type="button"
+                            className={`wing-mini-play ${isPlaying ? 'playing' : ''}`}
+                            onClick={() => toggleAudio(fileUrl, item.id)}
+                            title={isPlaying ? 'Pausa anteprima' : 'Ascolta anteprima'}
+                          >
+                            {isPlaying ? '⏸' : '▶'}
+                          </button>
+                          <div className="wing-track-info">
+                            <span className="wing-track-title" title={item.title}>{item.title}</span>
+                            <div className="wing-track-meta">
+                              {item.artist && <span className="wing-artist">{item.artist}</span>}
+                              <span className="tag-badge tag-badge-format mp3">{formatLabel}</span>
+                              {item.bpm != null ? <span className="tag-badge tag-badge-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="tag-badge tag-badge-bpm">… BPM</span> : null}
+                            </div>
+                          </div>
+                          <a
+                            className={`btn-save-local-cta ${isSaved ? 'is-saved' : ''}`}
+                            href={fileUrl}
+                            download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              triggerResilientDownload(item, () => markDownloaded(item.id), requeueSingleUrl, setError)
+                            }}
+                            title={`Scarica ${item.title}`}
+                            aria-label={`Scarica ${item.title}`}
+                          >
+                            <svg className="btn-dl-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            <span>{isSaved ? 'Scaricato' : 'Scarica'}</span>
+                          </a>
+                          <button
+                            type="button"
+                            className="wing-item-remove"
+                            onClick={() => handleRemoveHistory(item.id)}
+                            title="Rimuovi dalla lista"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: ARCHIVIO / CARTELLE */}
+            {sidebarTab === 'archive' && (
+              <div className="sidebar-tab-content">
+                <div className="wing-newfolder-row">
+                  {isCreatingFolder ? (
+                    <div className="dl-newfolder-inline">
+                      <input
+                        type="text"
+                        className="dl-newfolder-input"
+                        placeholder="Nome nuova cartella"
+                        value={newFolderName}
+                        autoFocus
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); handleCreateNewFolder() }
+                          if (e.key === 'Escape') { setIsCreatingFolder(false); setNewFolderName('') }
+                        }}
+                      />
+                      <button type="button" className="dl-newfolder-confirm" onClick={handleCreateNewFolder} disabled={!newFolderName.trim()} title="Crea">✓</button>
+                      <button type="button" className="dl-newfolder-cancel" onClick={() => { setIsCreatingFolder(false); setNewFolderName('') }} title="Annulla">✕</button>
+                    </div>
+                  ) : (
+                    <button type="button" className="wing-newfolder-btn" onClick={() => { setIsCreatingFolder(true); setNewFolderName('') }}>
+                      ＋ Crea Nuova Cartella
+                    </button>
+                  )}
+                </div>
+
+                <div className="wing-folder-list">
+                  {foldersList.map((f) => {
+                    const isDestActive = f.id === activeMainFolderId
+                    const isSelected = selectedFolderIdForActions === f.id
+                    return (
+                      <div
+                        key={f.id}
+                        className={`wing-folder-item ${isDestActive ? 'is-active-dest' : ''} ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setSelectedFolderIdForActions(isSelected ? null : f.id)}
+                        onDoubleClick={() => {
+                          setActiveMainFolderId(f.id)
+                          setMainFolder(f.id)
+                          setSelectedFolderIdForActions(null)
+                        }}
+                        title="Clicca 1 volta per azioni (Elimina / Vai ad Archivio), doppio click per impostare come cartella di download"
+                      >
+                        <div className="wing-folder-name-row">
+                          <span className="wing-folder-name">📁 {f.name}</span>
+                          {isDestActive && <span className="wing-active-badge">Attiva</span>}
+                        </div>
+                        <div className="wing-folder-meta">
+                          {f.trackCount || 0} brani
+                        </div>
+
+                        {isSelected && (
+                          <div className="wing-folder-actions" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              className="wing-action-link"
+                              onClick={() => {
+                                if (onSwitchToArchive) onSwitchToArchive()
+                                else window.location.assign('/app/archive')
+                              }}
+                              title="Apri questa cartella nell'Archivio completo"
+                            >
+                              <u>↗️ Vai alla cartella</u>
+                            </button>
+                            {f.id !== 'main_default' && f.id !== 'main' && (
+                              <button
+                                type="button"
+                                className="wing-action-link danger"
+                                onClick={(e) => handleDeleteWingFolder(f.id, e)}
+                                title="Elimina questa cartella"
+                              >
+                                <u>🗑️ Elimina</u>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </aside>
+        )}
+
+        {/* MAIN DOWNLOAD STAGE: BORDERLESS / FRAMELESS CANVAS DIRECTLY ON BACKGROUND */}
+        <main className="download-stage-frameless">
           <form onSubmit={handleAdd} className="download-form-clean">
             <div className="dl-field-header">
               <label htmlFor="download-url" className="dl-field-eyebrow" style={{ cursor: 'pointer', display: 'block' }}>
@@ -3025,25 +3155,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
               <p className="dl-field-sub">Incolla qui i tuoi link musicali per scaricarli direttamente in locale.</p>
             </div>
 
-            <textarea
-              id="download-url"
-              className="download-textarea-clean"
-              placeholder={'Un link per riga · YouTube o SoundCloud / Le playlist e i set chiedono conferma delle tracce'}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && input.trim()) {
-                  e.preventDefault()
-                  const form = e.currentTarget.form
-                  if (form) form.requestSubmit()
-                }
-              }}
-              spellCheck={false}
-              rows={3}
-            />
-
-            {/* CONTROL ROW: SCARICA IN + FORMATO AUDIO */}
-            <div className="dl-control-bar">
+            <div className="dl-folder-top-bar">
               <div className="dl-select-wrap">
                 <span className="dl-select-label">Scarica in:</span>
                 {isCreatingFolder ? (
@@ -3087,25 +3199,30 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
                   </>
                 )}
               </div>
+            </div>
 
-              {/* SELETTORE FORMATO AUDIO DISCRETO */}
-              <div className="dl-format-toggle">
-                <button
-                  type="button"
-                  className={`dl-format-btn ${audioQuality === 'mp3' ? 'active' : ''}`}
-                  onClick={() => setAudioQuality('mp3')}
-                >
-                  MP3 320k
-                </button>
-                <span className="dl-format-divider">|</span>
-                <button
-                  type="button"
-                  className={`dl-format-btn ${audioQuality === 'hq' ? 'active' : ''}`}
-                  onClick={() => setAudioQuality('hq')}
-                >
-                  Lossless FLAC
-                </button>
-              </div>
+            <textarea
+              id="download-url"
+              className="download-textarea-clean"
+              placeholder={'Un link per riga · YouTube o SoundCloud / Le playlist e i set chiedono conferma delle tracce'}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && input.trim()) {
+                  e.preventDefault()
+                  const form = e.currentTarget.form
+                  if (form) form.requestSubmit()
+                }
+              }}
+              spellCheck={false}
+              rows={4}
+            />
+
+            <div className="dl-fixed-quality-notice">
+              <span className="dl-quality-badge">
+                <span className="dl-quality-dot"></span>
+                MP3 HD Quality · 320 kbps CBR (Formato fisso)
+              </span>
             </div>
 
             {/* UNICO PULSANTONE VERDE */}
@@ -3118,7 +3235,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             </button>
           </form>
 
-          {error && <div className="alert" role="alert" style={{ marginTop: '12px' }}>{error}</div>}
+          {error && <div className="alert" role="alert" style={{ marginTop: '14px' }}>{error}</div>}
 
           <input
             type="file"
@@ -3128,165 +3245,60 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             multiple
             onChange={(e) => { if (e.target.files) handleAudioFiles(e.target.files) }}
           />
-        </section>
 
-        {/* CODA IN CORSO */}
-        {queue.length > 0 && (
-          <section className="card download-queue-card">
-            <div className="dl-queue-header-clean">
-              <span className="eyebrow">CODA &amp; BRANI IN CORSO ({queue.length})</span>
-              <div className="dl-queue-header-actions">
-                <span className="dl-count">{activeCount} attivi</span>
-                {queue.some((j) => !readyStatuses.has(j.status)) && (
-                  <button type="button" className="dl-queue-clear" onClick={handleClearIncomplete} title="Rimuovi dalla coda tutti i download non completati">
-                    🧹 Svuota non completati
-                  </button>
-                )}
+          {/* CODA IN CORSO */}
+          {queue.length > 0 && (
+            <section className="download-queue-card">
+              <div className="dl-queue-header-clean">
+                <span className="eyebrow">CODA &amp; BRANI IN CORSO ({queue.length})</span>
+                <div className="dl-queue-header-actions">
+                  <span className="dl-count">{activeCount} attivi</span>
+                  {queue.some((j) => !readyStatuses.has(j.status)) && (
+                    <button type="button" className="dl-queue-clear" onClick={handleClearIncomplete} title="Rimuovi dalla coda tutti i download non completati">
+                      🧹 Svuota non completati
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="dl-queue-list-clean">
-              {queue.map((job) => {
-                const ready = readyStatuses.has(job.status)
-                const failed = failedStatuses.has(job.status)
-                const pct = Math.min(100, Math.round(Math.max(job.optimistic, job.progress)))
-                return (
-                  <div key={job.key} className={`dl-queue-item-clean ${ready ? 'ready' : failed ? 'failed' : ''}`}>
-                    <div className="dl-queue-info">
-                      <span className="dl-queue-icon">{failed ? '⚠️' : ready ? '✓' : '◷'}</span>
-                      <div className="dl-queue-text">
-                        <span className="dl-queue-title">{job.title ?? job.url}</span>
-                        <span className="dl-queue-detail">{failed ? (job.message ?? 'Errore') : ready ? 'Completato' : queueStatusLabel(job.status)}</span>
+              <div className="dl-queue-list-clean">
+                {queue.map((job) => {
+                  const ready = readyStatuses.has(job.status)
+                  const failed = failedStatuses.has(job.status)
+                  const pct = Math.min(100, Math.round(Math.max(job.optimistic, job.progress)))
+                  return (
+                    <div key={job.key} className={`dl-queue-item-clean ${ready ? 'ready' : failed ? 'failed' : ''}`}>
+                      <div className="dl-queue-info">
+                        <span className="dl-queue-icon">{failed ? '⚠️' : ready ? '✓' : '◷'}</span>
+                        <div className="dl-queue-text">
+                          <span className="dl-queue-title">{job.title ?? job.url}</span>
+                          <span className="dl-queue-detail">{failed ? (job.message ?? 'Errore') : ready ? 'Completato' : queueStatusLabel(job.status)}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    {!failed && !ready && (
-                      <div className="dl-progress-track">
-                        <div className="dl-progress-bar" style={{ width: `${pct}%` }} />
-                      </div>
-                    )}
+                      {!failed && !ready && (
+                        <div className="dl-progress-track">
+                          <div className="dl-progress-bar" style={{ width: `${pct}%` }} />
+                        </div>
+                      )}
 
-                    <span className="dl-queue-pct">{ready ? '100%' : failed ? '!' : `${pct}%`}</span>
+                      <span className="dl-queue-pct">{ready ? '100%' : failed ? '!' : `${pct}%`}</span>
 
-                    {failed && (
-                      <button type="button" className="dl-queue-retry" onClick={() => handleRetryJob(job)} title="Riprova download">
-                        🔄
+                      {failed && (
+                        <button type="button" className="dl-queue-retry" onClick={() => handleRetryJob(job)} title="Riprova download">
+                          🔄
+                        </button>
+                      )}
+                      <button type="button" className="dl-queue-remove" onClick={() => handleRemoveJob(job.key)} title={failed ? 'Cancella dalla coda' : 'Annulla download'} aria-label={failed ? 'Cancella dalla coda' : 'Annulla download'}>
+                        ✕
                       </button>
-                    )}
-                    <button type="button" className="dl-queue-remove" onClick={() => handleRemoveJob(job.key)} title={failed ? 'Cancella dalla coda' : 'Annulla download'} aria-label={failed ? 'Cancella dalla coda' : 'Annulla download'}>
-                      ✕
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
-      </main>
-
-      {/* SCOMPARTO DESTRO: DOWNLOAD PRONTI & REKORDBOX (10% desktop proportion) */}
-      {isReadyWingOpen && (
-        <aside className="download-wing-right">
-          <div className="wing-header">
-            <div className="wing-header-title">
-              <span className="wing-title">📥 PRONTI</span>
-              <span className="wing-count">{availableHistory.length} tracce</span>
-            </div>
-            <button
-              type="button"
-              className="wing-close-btn"
-              onClick={() => setIsReadyWingOpen(false)}
-              title="Chiudi scomparto Pronti"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* CLOUD DESTINATION NOTICE */}
-          <div className="wing-cloud-box">
-            <span className="wing-cloud-label">SALVATO IN CLOUD:</span>
-            <strong className="wing-cloud-folder">📁 {activeFolderName}</strong>
-          </div>
-
-          {/* BATCH REKORDBOX DOWNLOAD BUTTON */}
-          {availableHistory.length > 0 && (
-            <div className="wing-export-actions">
-              <button
-                type="button"
-                className="btn-rekordbox-batch"
-                onClick={handleDownloadFolderZip}
-                disabled={zipBusy}
-                title="Scarica una cartella .zip con tutte le tracce pronte"
-              >
-                {zipBusy ? '⏳ Preparazione…' : '⬇️ Scarica tutto'}
-              </button>
-            </div>
-          )}
-
-          {/* LISTA BRANI PRONTI */}
-          <div className="wing-ready-list">
-            {availableHistory.length === 0 ? (
-              <div className="wing-ready-empty">
-                <span>🎵</span>
-                <p>Nessun brano pronto</p>
-                <small>I file convertiti e salvati nel cloud appariranno qui, pronti per il download locale.</small>
-              </div>
-            ) : (
-              availableHistory.map((item) => {
-                const fileUrl = api.fileUrl(item.id)
-                const isPlaying = playingUrl === fileUrl
-                const isSaved = downloadedIds.has(item.id)
-                const formatLabel = audioQuality === 'hq' ? 'FLAC' : 'MP3 320k'
-                return (
-                  <div key={item.id} className="wing-ready-item">
-                    <button
-                      type="button"
-                      className={`wing-mini-play ${isPlaying ? 'playing' : ''}`}
-                      onClick={() => toggleAudio(fileUrl, item.id)}
-                      title={isPlaying ? 'Pausa anteprima' : 'Ascolta anteprima'}
-                    >
-                      {isPlaying ? '⏸' : '▶'}
-                    </button>
-                    <div className="wing-track-info">
-                      <span className="wing-track-title" title={item.title}>{item.title}</span>
-                      <div className="wing-track-meta">
-                        {item.artist && <span className="wing-artist">{item.artist}</span>}
-                        <span className={`tag-badge tag-badge-format ${audioQuality === 'hq' ? 'flac' : 'mp3'}`}>{formatLabel}</span>
-                        {item.bpm != null ? <span className="tag-badge tag-badge-bpm">{Math.round(item.bpm)} BPM</span> : item.bpmPending ? <span className="tag-badge tag-badge-bpm">… BPM</span> : null}
-                      </div>
                     </div>
-                    <a
-                      className={`btn-save-local-cta ${isSaved ? 'is-saved' : ''}`}
-                      href={fileUrl}
-                      download={`${item.artist ? `${item.artist} - ` : ''}${item.title}.mp3`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        triggerResilientDownload(item, () => markDownloaded(item.id), requeueSingleUrl, setError)
-                      }}
-                      title={`Scarica ${item.title}`}
-                      aria-label={`Scarica ${item.title}`}
-                    >
-                      <svg className="btn-dl-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
-                      <span>{isSaved ? 'Scaricato' : 'Scarica'}</span>
-                    </a>
-                    <button
-                      type="button"
-                      className="wing-item-remove"
-                      onClick={() => handleRemoveHistory(item.id)}
-                      title="Rimuovi dalla lista"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </aside>
-      )}
+                  )
+                })}
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
 
       {preview && <PlaylistDialog data={preview.data} onConfirm={(urls) => { preview.resolve(urls); setPreview(null) }} onCancel={() => { preview.resolve(null); setPreview(null) }} />}
       {playlistChoice && <TrackInPlaylistDialog data={playlistChoice.data} onTrack={() => { playlistChoice.resolve([playlistChoice.data.selected_track_url]); setPlaylistChoice(null) }} onPlaylist={() => continueWithPlaylist(playlistChoice)} onCancel={() => { playlistChoice.resolve(null); setPlaylistChoice(null) }} />}
