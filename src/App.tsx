@@ -2721,8 +2721,8 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             try {
               created = await api.createDownload(jobItem.url, { quality: audioQuality })
             } catch (firstErr) {
-              if (firstErr instanceof ApiError && (firstErr.status === 502 || firstErr.status === 503 || firstErr.status === 504 || firstErr.status === 0)) {
-                await new Promise((r) => setTimeout(r, 2000))
+              if (firstErr instanceof ApiError && (firstErr.status === 429 || firstErr.status === 502 || firstErr.status === 503 || firstErr.status === 504 || firstErr.status === 0)) {
+                await new Promise((r) => setTimeout(r, 2500))
                 created = await api.createDownload(jobItem.url, { quality: audioQuality })
               } else {
                 throw firstErr
