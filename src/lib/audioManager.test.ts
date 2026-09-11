@@ -56,16 +56,17 @@ describe('audioManager', () => {
   })
 
   describe('purgeUnavailableTrackFromStorage', () => {
-    it('elimina la traccia da history e da drops.saved.downloads.ids.v1', () => {
+    it('rispetta la Regola Zero-Purge e NON elimina la traccia da history o storage', () => {
       localStorage.setItem('drops.downloads.history.v1', JSON.stringify([{ id: 'trk-1', title: 'T1' }, { id: 'trk-2', title: 'T2' }]))
       localStorage.setItem('drops.saved.downloads.ids.v1', JSON.stringify(['trk-1', 'trk-2']))
       purgeUnavailableTrackFromStorage('trk-1')
 
+      // Zero-Purge: la cronologia e i salvati rimangono intatti
       const history = JSON.parse(localStorage.getItem('drops.downloads.history.v1') || '[]')
-      expect(history.map((t: any) => t.id)).toEqual(['trk-2'])
+      expect(history.map((t: any) => t.id)).toEqual(['trk-1', 'trk-2'])
 
       const saved = JSON.parse(localStorage.getItem('drops.saved.downloads.ids.v1') || '[]')
-      expect(saved).toEqual(['trk-2'])
+      expect(saved).toEqual(['trk-1', 'trk-2'])
     })
   })
 

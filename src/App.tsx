@@ -2491,9 +2491,50 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
 
   useEffect(() => {
     if (!hasActive) return
-    const timer = window.setInterval(() => {
+    const timer = window.setInterval(async () => {
       const active = queueRef.current.filter((j) => j.id && !terminalStatuses.has(j.status))
       if (!active.length) return
+
+      // Se ci sono molte tracce attive (>2), usiamo una singola richiesta listDownloads per alleggerire Render
+      if (active.length > 2) {
+        try {
+          const res = await api.listDownloads(100)
+          const map = new Map(res.downloads.map((d) => [d.id, d]))
+          active.forEach((j) => {
+            const fresh = map.get(j.id as string)
+            if (!fresh) return
+            setQueue((cur) => cur.map((x) => {
+              if (x.key !== j.key) return x
+              const merged: QueueJob = {
+                ...x,
+                status: fresh.status,
+                progress: typeof fresh.progress === 'number' ? fresh.progress : x.progress,
+                title: fresh.title ?? x.title,
+                artist: fresh.artist ?? x.artist,
+                coverUrl: fresh.coverUrl ?? x.coverUrl,
+                source: fresh.source ?? x.source,
+                message: fresh.message ?? x.message,
+              }
+              if (readyStatuses.has(fresh.status)) merged.optimistic = 100
+              return merged
+            }))
+            if (readyStatuses.has(fresh.status)) {
+              const record: HistoryItem = { id: fresh.id, title: fresh.title ?? fresh.fileName ?? 'Traccia', artist: fresh.artist, coverUrl: fresh.coverUrl, source: fresh.source, sourceUrl: j.url, bpm: fresh.bpm, bpmPending: fresh.bpm == null, ts: Date.now() }
+              saveTrackToMainFolder(record)
+              markDownloaded(fresh.id)
+              window.setTimeout(() => {
+                setHistory((h) => [record, ...h.filter((it) => it.id !== record.id)].slice(0, 100))
+                setQueue((cur) => cur.filter((x) => x.key !== j.key))
+              }, 1000)
+            }
+          })
+        } catch {
+          // Ignora errori transitori di polling aggregato
+        }
+        return
+      }
+
+      // Flusso classico per 1 o 2 tracce (preserva il comportamento esatto esistente)
       active.forEach(async (j) => {
         try {
           const fresh = await api.getDownload(j.id as string)
@@ -2617,7 +2658,21 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
         continue
       }
 
-      // 3. Risoluzione Playlist / Set Standard (YouTube / SoundCloud)
+      // 3. In caso di inserimento multiplo (50-100 brani), velocizza saltando resolvePlaylist per le tracce singole
+      if (links.length > 1) {
+        const ytMatch = link.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/)
+        const isYtPlaylist = link.includes('list=')
+        if (ytMatch && ytMatch[1] && !isYtPlaylist) {
+          resolved.push(`https://www.youtube.com/watch?v=${ytMatch[1]}`)
+          continue
+        }
+        if (link.includes('soundcloud.com/') && !link.includes('/sets/') && !link.includes('/discover')) {
+          resolved.push(link)
+          continue
+        }
+      }
+
+      // 4. Risoluzione Playlist / Set Standard (YouTube / SoundCloud)
       try {
         const data = await api.resolvePlaylist(link)
         if (data.url_type === 'track') {
@@ -2633,9 +2688,9 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
         }
       } catch (cause) {
         // Fallback resiliente: se l'analisi playlist fallisce ma è una traccia singola YouTube o SoundCloud, accodala direttamente
-        const ytMatch = link.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/)
-        if (ytMatch && ytMatch[1]) {
-          resolved.push(`https://www.youtube.com/watch?v=${ytMatch[1]}`)
+        const ytFallback = link.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/)
+        if (ytFallback && ytFallback[1]) {
+          resolved.push(`https://www.youtube.com/watch?v=${ytFallback[1]}`)
         } else if (link.includes('soundcloud.com/') && !link.includes('/sets/')) {
           resolved.push(link)
         } else {
@@ -2648,6 +2703,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       const newJobs: QueueJob[] = unique.map((url) => ({ key: makeKey(), id: null, url, status: 'starting', progress: 0, optimistic: 8 }))
       setQueue((cur) => [...newJobs, ...cur])
       setInput('')
+
       batchProcess(
         newJobs,
         async (jobItem) => {
@@ -2675,8 +2731,8 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
             setQueue((cur) => cur.map((x) => (x.key === jobItem.key ? { ...x, status: 'failed', message: cause instanceof ApiError ? cause.message : 'Avvio non riuscito' } : x)))
           }
         },
-        3,
-        100
+        2,
+        60
       )
     }
     if (errors.length) setError(errors.join(' · '))

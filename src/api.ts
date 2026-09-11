@@ -22,6 +22,7 @@ export type Job = {
   styles?: string[]
   bpm?: number
   source?: string
+  url?: string
 }
 
 export type SpotifyTrack = {
@@ -179,6 +180,7 @@ export const normalizeJob = (payload: unknown): Job => {
     styles,
     bpm: typeof raw.bpm === 'number' ? raw.bpm : undefined,
     source: typeof raw.source === 'string' && raw.source.trim() ? raw.source.trim() : undefined,
+    url: typeof raw.source_url === 'string' ? raw.source_url : typeof raw.url === 'string' ? raw.url : undefined,
   }
 }
 
@@ -201,6 +203,14 @@ export const api = {
         ...(meta?.quality && meta.quality !== 'mp3' ? { quality: meta.quality } : {}),
       }),
     }).then(normalizeJob),
+  batchCreateDownloads: (urls: string[], meta?: { quality?: 'mp3' | 'hq' }) =>
+    request<{ downloads: unknown[] }>('/api/v1/downloads/batch', {
+      method: 'POST',
+      body: JSON.stringify({
+        urls,
+        ...(meta?.quality && meta.quality !== 'mp3' ? { quality: meta.quality } : {}),
+      }),
+    }).then((res) => (res?.downloads ?? []).map(normalizeJob)),
   getDownload: (id: string) => request<unknown>(`/api/v1/downloads/${encodeURIComponent(id)}`).then(normalizeJob),
   listDownloads: (limit = 100) => request<{ downloads: unknown[] }>(`/api/v1/downloads?limit=${limit}`).then((res) => ({ downloads: (res?.downloads ?? []).map(normalizeJob) })),
   clearCatalog: () => request<{ status: string }>('/api/v1/downloads/clear', { method: 'POST' }),

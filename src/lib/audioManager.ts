@@ -52,43 +52,16 @@ export function filterAvailableTracks<T extends TrackLike>(tracks: T[] | null | 
 
 /**
  * Purges and deletes an unavailable or 404 track from localStorage and dispatches event to update React state.
+ * NOTA REGOLA ZERO-PURGE (HANDOFF_DOWNLOAD_ENGINE.md):
+ * È tassativamente vietato cancellare tracce dal browser in caso di errore di rete o 404.
+ * La rimozione da localStorage è disattivata per preservare cronologia e cartelle dell'utente.
  */
 export function purgeUnavailableTrackFromStorage(trackIdOrTitle?: string | number | null) {
   if (!trackIdOrTitle || typeof window === 'undefined') return
   try {
     const target = String(trackIdOrTitle)
+    // Dispatch solo evento per la notifica UI, senza cancellare nulla dallo storage
     window.dispatchEvent(new CustomEvent('drops-purge-unavailable-track', { detail: { id: target } }))
-
-    const historyKeys = ['drops.downloads.history.v1', 'drops.history.v1']
-    for (const key of historyKeys) {
-      const historyRaw = window.localStorage.getItem(key)
-      if (historyRaw) {
-        const history = JSON.parse(historyRaw)
-        if (Array.isArray(history)) {
-          const cleaned = history.filter((t: any) => String(t.id) !== target && String(t.title) !== target)
-          window.localStorage.setItem(key, JSON.stringify(cleaned))
-        }
-      }
-    }
-    const foldersRaw = window.localStorage.getItem('drops.folders.v1')
-    if (foldersRaw) {
-      const folders = JSON.parse(foldersRaw)
-      if (Array.isArray(folders)) {
-        const cleaned = folders.map((f: any) => ({
-          ...f,
-          tracks: (f.tracks || []).filter((t: any) => String(t.id) !== target && String(t.title) !== target)
-        }))
-        window.localStorage.setItem('drops.folders.v1', JSON.stringify(cleaned))
-      }
-    }
-    const savedIdsRaw = window.localStorage.getItem('drops.saved.downloads.ids.v1')
-    if (savedIdsRaw) {
-      const ids = JSON.parse(savedIdsRaw)
-      if (Array.isArray(ids)) {
-        const cleaned = ids.filter((id: any) => String(id) !== target)
-        window.localStorage.setItem('drops.saved.downloads.ids.v1', JSON.stringify(cleaned))
-      }
-    }
   } catch {}
 }
 
