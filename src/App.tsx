@@ -2403,6 +2403,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
   queueRef.current = queue
   const historyRef = useRef<HistoryItem[]>([])
   historyRef.current = history
+  const pollFailuresRef = useRef<Record<string, number>>({})
   void onError
 
   useEffect(() => { saveHistory(history) }, [history])
@@ -2538,6 +2539,7 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
       active.forEach(async (j) => {
         try {
           const fresh = await api.getDownload(j.id as string)
+          pollFailuresRef.current[j.key] = 0
           setQueue((cur) => cur.map((x) => {
             if (x.key !== j.key) return x
             const merged: QueueJob = {
@@ -2564,6 +2566,13 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
           }
         } catch (cause) {
           const is404 = cause instanceof ApiError && cause.status === 404
+          const isTransient = cause instanceof ApiError && (cause.status === 502 || cause.status === 503 || cause.status === 504 || cause.status === 0)
+          const fails = (pollFailuresRef.current[j.key] || 0) + 1
+          pollFailuresRef.current[j.key] = fails
+          if (isTransient && fails < 5) {
+            // Riprova silenziosamente per ~6 secondi in caso di glitch temporaneo o risveglio Render
+            return
+          }
           const msg = is404 ? 'Server riavviato. Clicca Riprova per avviare il download.' : (cause instanceof ApiError ? cause.message : 'Errore di rete')
           setQueue((cur) => cur.map((x) => (x.key === j.key ? { ...x, status: 'failed', message: msg } : x)))
         }
@@ -2708,7 +2717,17 @@ function Download({ user, onError, error, setError, onSwitchToArchive }: { user:
         newJobs,
         async (jobItem) => {
           try {
-            const created = await api.createDownload(jobItem.url, { quality: audioQuality })
+            let created: Job
+            try {
+              created = await api.createDownload(jobItem.url, { quality: audioQuality })
+            } catch (firstErr) {
+              if (firstErr instanceof ApiError && (firstErr.status === 502 || firstErr.status === 503 || firstErr.status === 504 || firstErr.status === 0)) {
+                await new Promise((r) => setTimeout(r, 2000))
+                created = await api.createDownload(jobItem.url, { quality: audioQuality })
+              } else {
+                throw firstErr
+              }
+            }
             setQueue((cur) => cur.map((x) => (x.key === jobItem.key ? {
               ...x,
               id: created.id,
