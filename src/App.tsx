@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, SyntheticEvent } from 'react'
 import { api, ApiError, batchProcess } from './api'
-import type { PlaylistEntry, PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
+import type { Job, PlaylistEntry, PlaylistPreview, SpotifyPlaylist, SpotifyTrack, User } from './api'
 import { postLoginRoute } from './lib/routes'
 import { isAvailableTrack, purgeUnavailableTrackFromStorage, registerAudioElement, stopAllOtherAudioExcept, verifyAndResolveBackendAudioUrl } from './lib/audioManager'
 import { contentFields, contentStages, radarDevelopmentFixtures, radarLockedFixtures } from './data/private.fixture'
