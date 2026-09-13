@@ -28,7 +28,7 @@ export default function DropsLanding() {
   const [copiedCode, setCopiedCode] = useState(false)
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const cliCommand = 'git clone https://github.com/gianco-cesarei/Drops.git && python3 drops-agent/drop_agent.py'
+  const cliCommand = 'git clone https://github.com/gianco-cesarei/drop-agent.git && cd drop-agent && python3 drop_agent.py'
 
   useEffect(() => {
     let active = true
