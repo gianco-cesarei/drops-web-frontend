@@ -239,13 +239,8 @@ export default function DJLab() {
   const isBpmMatched = parseFloat(bpmDifference) === 0.0
 
   return (
-    <div className="djlab-wrapper">
-      <div className="djlab-top-title-bar">
-        <div className="djlab-title-info">
-          <h2 className="djlab-main-title">🎛️ Beatmatching & Dual-Deck Studio (XDJ-RX3 Edition)</h2>
-          <span className="djlab-sub-title">Pioneer All-In-One Hardware Emulation • Full-Width Dual Waveforms & Cloud Ingestion</span>
-        </div>
-      </div>
+    <div className="djlab-wrapper" aria-label="Beatmatching & Dual-Deck Studio">
+      <h1 className="sr-only">Beatmatching & Dual-Deck Studio</h1>
       <div className="rx3-console-chassis">
         {/* =========================================================================
             TOP PANORAMIC 10.1" TOUCHSCREEN (XDJ-RX3 HEAD UNIT)

@@ -313,116 +313,109 @@ export default function AcademyHub({
     setTrackFile(file); setFileError('')
   }
 
+  const isDJLabFullscreen = tab === 'djlab' && djLabSubTab === 'beatmatching'
+
   return (
-    <main className="academy-page">
-      {/* HEADER STUDENTE & PRODUCER STATUS */}
-      <section className="academy-header-card">
-        <div className="academy-header-left">
-          <div className="academy-badge-group">
-            <span className="badge-new-pill">NEW</span>
-            <span className="academy-tag">PRODUCER ACADEMY & HUB</span>
-          </div>
-          <h1 className="academy-title">
-            Bentornato, {user?.name || user?.username || 'Alex Rossi'}
-            <span className="verified-badge-inline" title="Profilo Connesso Verificato">✓</span>
-          </h1>
-          <p className="academy-subtitle">
-            Percorso avanzato di produzione musicale elettronica: 4 moduli pratici, video-lezioni, sample kit e sessioni di track review con i Guest Artist del collettivo.
-          </p>
-        </div>
-
-        <div className="academy-header-right">
-          <div className="producer-level-badge-box">
-            <div className="level-label-row">
-              <span className="level-number">LEVEL 03</span>
-              <span className="level-title">CLUB READY</span>
+    <main className={`academy-page ${isDJLabFullscreen ? 'djlab-fullscreen-mode' : ''}`}>
+      {/* HEADER STUDENTE & PRODUCER STATUS (Nascosto se in djlab fullscreen) */}
+      {!isDJLabFullscreen && (
+        <section className="academy-header-card">
+          <div className="academy-header-left">
+            <div className="academy-badge-group">
+              <span className="badge-new-pill">NEW</span>
+              <span className="academy-tag">PRODUCER ACADEMY & HUB</span>
             </div>
-            <div className="xp-progress-bar-container">
-              <div className="xp-progress-bar-fill" style={{ width: '74%' }}></div>
+            <h1 className="academy-title">
+              Bentornato, {user?.name || user?.username || 'Alex Rossi'}
+              <span className="verified-badge-inline" title="Profilo Connesso Verificato">✓</span>
+            </h1>
+            <p className="academy-subtitle">
+              Percorso avanzato di produzione musicale elettronica: 4 moduli pratici, video-lezioni, sample kit e sessioni di track review con i Guest Artist del collettivo.
+            </p>
+          </div>
+
+          <div className="academy-header-right">
+            <div className="producer-level-badge-box">
+              <div className="level-label-row">
+                <span className="level-number">LEVEL 03</span>
+                <span className="level-title">CLUB READY</span>
+              </div>
+              <div className="xp-progress-bar-container">
+                <div className="xp-progress-bar-fill" style={{ width: '74%' }}></div>
+              </div>
+              <div className="xp-details-row">
+                <span>740 / 1.000 XP</span>
+                <span>260 XP a BREAKTHROUGH</span>
+              </div>
             </div>
-            <div className="xp-details-row">
-              <span>740 / 1.000 XP</span>
-              <span>260 XP a BREAKTHROUGH</span>
+
+            <div className="academy-quick-actions">
+              <a href="/item/alex-rossi" className="button-link-secondary" target="_blank" rel="noreferrer">
+                Profilo pubblico ↗
+              </a>
+              <a href="/app/settings" className="academy-settings-gear" aria-label="Apri impostazioni profilo" title="Impostazioni profilo">⚙</a>
             </div>
           </div>
+        </section>
+      )}
 
-          <div className="academy-quick-actions">
-            <a href="/item/alex-rossi" className="button-link-secondary" target="_blank" rel="noreferrer">
-              Profilo pubblico ↗
-            </a>
-            <a href="/app/settings" className="academy-settings-gear" aria-label="Apri impostazioni profilo" title="Impostazioni profilo">⚙</a>
-          </div>
-        </div>
-      </section>
+      {/* 4 MAIN ACADEMY TABS (Nascoste se in djlab fullscreen) */}
+      {!isDJLabFullscreen && (
+        <nav className="academy-main-tabs" role="tablist" aria-label="Sezioni Academy">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'lessons'}
+            className={`academy-tab-btn ${tab === 'lessons' ? 'active' : ''}`}
+            onClick={() => setTab('lessons')}
+          >
+            🎓 Lezioni & Video Moduli
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'djlab'}
+            className={`academy-tab-btn ${tab === 'djlab' ? 'active' : ''}`}
+            onClick={() => setTab('djlab')}
+          >
+            🎛️ DJ & Studio Lab
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'resources'}
+            className={`academy-tab-btn ${tab === 'resources' ? 'active' : ''}`}
+            onClick={() => setTab('resources')}
+          >
+            📦 Risorse & Guide
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'feedback'}
+            className={`academy-tab-btn ${tab === 'feedback' ? 'active' : ''}`}
+            onClick={() => setTab('feedback')}
+          >
+            🎧 Track Review (Guest Artist)
+          </button>
+        </nav>
+      )}
 
-      {/* 4 MAIN ACADEMY TABS */}
-      <nav className="academy-main-tabs" role="tablist" aria-label="Sezioni Academy">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'lessons'}
-          className={`academy-tab-btn ${tab === 'lessons' ? 'active' : ''}`}
-          onClick={() => setTab('lessons')}
-        >
-          🎓 Lezioni & Video Moduli
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'djlab'}
-          className={`academy-tab-btn ${tab === 'djlab' ? 'active' : ''}`}
-          onClick={() => setTab('djlab')}
-        >
-          🎛️ DJ & Studio Lab
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'resources'}
-          className={`academy-tab-btn ${tab === 'resources' ? 'active' : ''}`}
-          onClick={() => setTab('resources')}
-        >
-          📦 Risorse & Guide
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'feedback'}
-          className={`academy-tab-btn ${tab === 'feedback' ? 'active' : ''}`}
-          onClick={() => setTab('feedback')}
-        >
-          🎧 Track Review (Guest Artist)
-        </button>
-      </nav>
+      {tab === 'djlab' && djLabSubTab === 'beatmatching' && (
+        <section className="academy-tab-panel djlab-panel-fullscreen" role="tabpanel" aria-label="DJ & Studio Lab">
+          <DJLab />
+        </section>
+      )}
 
-      {tab === 'djlab' && (
-        <section className="academy-tab-panel" role="tabpanel" aria-label="DJ & Studio Lab">
-          <div className="djlab-subnav-bar">
-            <button
-              type="button"
-              className={`djlab-subnav-btn ${djLabSubTab === 'beatmatching' ? 'active' : ''}`}
-              onClick={() => setDjLabSubTab('beatmatching')}
-            >
-              🎛️ Dual-Deck Beatmatch & FX
-            </button>
-            <button
-              type="button"
-              className={`djlab-subnav-btn ${djLabSubTab === 'rekordbox' ? 'active' : ''}`}
-              onClick={() => setDjLabSubTab('rekordbox')}
-            >
-              💾 Rekordbox USB Prep & ID3 Tag
-            </button>
-            <button
-              type="button"
-              className={`djlab-subnav-btn ${djLabSubTab === 'studios' ? 'active' : ''}`}
-              onClick={() => setDjLabSubTab('studios')}
-            >
-              📍 Studi & Cabine DJ Partner
-            </button>
-          </div>
-          {djLabSubTab === 'beatmatching' && <DJLab />}
-          {djLabSubTab === 'rekordbox' && <RekordboxExporter />}
-          {djLabSubTab === 'studios' && <StudioDirectory />}
+      {tab === 'djlab' && djLabSubTab === 'rekordbox' && (
+        <section className="academy-tab-panel" role="tabpanel" aria-label="Rekordbox USB Exporter">
+          <RekordboxExporter />
+        </section>
+      )}
+
+      {tab === 'djlab' && djLabSubTab === 'studios' && (
+        <section className="academy-tab-panel" role="tabpanel" aria-label="Studi Partner">
+          <StudioDirectory />
         </section>
       )}
 

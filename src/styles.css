@@ -3692,34 +3692,65 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   }
 }
 
-/* ==========================================================================
-   PIONEER XDJ-RX3 ALL-IN-ONE DJ CONSOLE HARDWARE THEME
-   ========================================================================== */
+/* FULLSCREEN CONSOLE CONTAINER */
+.academy-page.djlab-fullscreen-mode {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 8px !important;
+  height: calc(100dvh - 72px) !important;
+  max-height: calc(100dvh - 72px) !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.djlab-panel-fullscreen {
+  flex: 1 1 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.djlab-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
 
 .rx3-console-chassis {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
-  max-width: 1240px;
+  height: 100%;
+  max-height: 100%;
   margin: 0 auto;
-  padding: 16px;
+  padding: 10px 14px;
   background: radial-gradient(circle at 50% 20%, #15181a 0%, #0a0c0e 100%);
   border: 2px solid #242a30;
-  border-radius: 20px;
+  border-radius: 14px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   color: #d1d5db;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   user-select: none;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* 1. TOP PANORAMIC TOUCHSCREEN UNIT */
 .rx3-screen-unit {
+  flex: 0 0 auto;
   width: 100%;
   background: #000000;
-  border: 4px solid #1a1e22;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 0, 0, 0.8);
+  border: 3px solid #1a1e22;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 0 16px rgba(0, 0, 0, 0.8);
   overflow: hidden;
 }
 
@@ -3734,7 +3765,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 14px;
+  padding: 4px 12px;
   background: #0e1216;
   border-bottom: 2px solid #1f262e;
 }
@@ -3746,12 +3777,12 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-touch-tab {
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: #181e24;
   border: 1px solid #2a333d;
   border-radius: 4px;
   color: #9ca3af;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   cursor: pointer;
@@ -3770,14 +3801,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-model-pill {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0.15em;
   color: #e5e7eb;
 }
 
 .rx3-mini-clock {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   color: #38bdf8;
   font-family: monospace;
@@ -3787,19 +3818,19 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-dual-waveform-stage {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 14px;
+  gap: 2px;
+  padding: 4px 10px;
   background: #020406;
 }
 
 .rx3-wave-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   background: #0a0d11;
   border: 1px solid #19212a;
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 4px 8px;
 }
 
 .rx3-wave-header-strip {
@@ -3811,13 +3842,13 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-wh-left, .rx3-wh-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .rx3-deck-badge {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 900;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
 }
 
@@ -3825,15 +3856,15 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-deck-badge.d2 { background: #0284c7; color: #ffffff; }
 
 .rx3-track-name {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #f3f4f6;
 }
 
 .rx3-key-badge {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 900;
-  padding: 2px 6px;
+  padding: 1px 5px;
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 4px;
@@ -3841,14 +3872,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-bpm-badge {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 900;
   color: #a3e635;
   font-family: monospace;
 }
 
 .rx3-time-readout {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 900;
   color: #ffffff;
   font-family: monospace;
@@ -3857,7 +3888,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 .rx3-wave-canvas-wrapper {
   position: relative;
-  height: 58px;
+  height: clamp(28px, 4.5vh, 46px);
   background: #05070a;
   border-radius: 4px;
   overflow: hidden;
@@ -3927,27 +3958,27 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4px 0;
+  padding: 1px 0;
 }
 
 .rx3-phase-track {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   background: #0f1318;
   border: 1px solid #1f2730;
   border-radius: 20px;
-  padding: 3px 14px;
+  padding: 1px 12px;
 }
 
 .rx3-phase-grid {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .rx3-phase-grid .dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #27272a;
 }
@@ -3958,7 +3989,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-phase-sync-status {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.05em;
 }
@@ -3970,37 +4001,36 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-screen-browser {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 8px;
   background: #0a0d11;
-  min-height: 160px;
+  height: clamp(80px, 14vh, 140px);
 }
 
 .rx3-browser-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #38bdf8;
 }
 
 .rx3-browser-close {
-  padding: 2px 8px;
+  padding: 1px 6px;
   background: #ef4444;
   color: #ffffff;
   border: none;
   border-radius: 4px;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   cursor: pointer;
 }
 
 .rx3-browser-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 140px;
+  gap: 4px;
   overflow-y: auto;
 }
 
@@ -4008,38 +4038,38 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 10px;
+  padding: 4px 8px;
   background: #12171e;
   border: 1px solid #1e2632;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .rx3-browser-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .rx3-b-title {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 800;
   color: #ffffff;
 }
 
 .rx3-b-sub {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #9ca3af;
 }
 
 .rx3-browser-load-btns {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .rx3-load-btn {
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 900;
   border: none;
   cursor: pointer;
@@ -4053,24 +4083,24 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 14px;
+  padding: 3px 12px;
   background: #0e1216;
-  border-top: 2px solid #1f262e;
+  border-top: 1px solid #1f262e;
 }
 
 .rx3-deck-load-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .rx3-quick-load-btn {
-  padding: 3px 8px;
+  padding: 2px 6px;
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 4px;
   color: #e2e8f0;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -4081,14 +4111,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-deck-pitch-status {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 800;
   color: #86efac;
   font-family: monospace;
 }
 
 .rx3-fx-tag {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   color: #94a3b8;
 }
 .rx3-fx-tag strong {
@@ -4097,15 +4127,18 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 /* 2. LOWER HARDWARE UNIT (DECK 1 | MIXER | DECK 2) */
 .rx3-lower-hardware-grid {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 340px 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr 310px 1fr;
+  gap: 12px;
   align-items: stretch;
 }
 
 @media (max-width: 1024px) {
   .rx3-lower-hardware-grid {
     grid-template-columns: 1fr;
+    overflow-y: auto;
   }
 }
 
@@ -4114,12 +4147,13 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
+  gap: 6px;
+  padding: 10px 12px;
   background: linear-gradient(180deg, #111417 0%, #090a0c 100%);
   border: 1px solid #222830;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  min-height: 0;
 }
 
 .rx3-deck-top-strip {
@@ -4131,33 +4165,33 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-deck-id-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .rx3-deck-number-pill {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 900;
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 4px;
 }
 .rx3-deck-number-pill.a { background: #ea580c; color: #ffffff; }
 .rx3-deck-number-pill.b { background: #0284c7; color: #ffffff; }
 
 .rx3-tag-genre {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   color: #64748b;
   font-weight: 700;
 }
 
 .rx3-sync-group {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .rx3-round-metal-btn {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 0.65rem;
   font-weight: 900;
   border: 1px solid #334155;
   background: #1e293b;
@@ -4170,14 +4204,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: #a3e635;
   color: #000000;
   border-color: #a3e635;
-  box-shadow: 0 0 10px rgba(163, 230, 53, 0.6);
+  box-shadow: 0 0 8px rgba(163, 230, 53, 0.6);
 }
 
 .rx3-round-metal-btn.master.active {
   background: #3b82f6;
   color: #ffffff;
   border-color: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
 }
 
 /* PIONEER JOG WHEEL */
@@ -4185,25 +4219,25 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 8px auto;
-  width: 220px;
-  height: 220px;
+  margin: 2px auto;
+  width: clamp(100px, 16vh, 160px);
+  height: clamp(100px, 16vh, 160px);
   border-radius: 50%;
   background: radial-gradient(circle, #242930 0%, #101216 70%, #08090b 100%);
-  border: 6px solid #181b20;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+  border: 4px solid #181b20;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.15);
 }
 
 .rx3-jog-inner-platter {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 176px;
-  height: 176px;
+  width: 80%;
+  height: 80%;
   border-radius: 50%;
   background: conic-gradient(from 0deg, #181c22 0%, #0d0f12 25%, #181c22 50%, #0d0f12 75%, #181c22 100%);
-  border: 3px solid #2d3540;
-  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
+  border: 2px solid #2d3540;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.9);
   transition: transform 0.1s linear;
 }
 
@@ -4220,24 +4254,24 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 90px;
-  height: 90px;
+  width: 52%;
+  height: 52%;
   border-radius: 50%;
   background: #030406;
   border: 2px solid #38bdf8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
   position: relative;
 }
 
 .rx3-on-jog-bpm {
-  font-size: 0.85rem;
+  font-size: 0.72rem;
   font-weight: 900;
   color: #a3e635;
   font-family: monospace;
 }
 
 .rx3-on-jog-time {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   font-weight: 800;
   color: #ffffff;
   font-family: monospace;
@@ -4245,9 +4279,9 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 .rx3-on-jog-needle-marker {
   position: absolute;
-  top: 4px;
-  width: 3px;
-  height: 8px;
+  top: 2px;
+  width: 2px;
+  height: 6px;
   background: #ea580c;
   border-radius: 2px;
 }
@@ -4256,17 +4290,17 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-tempo-slider-dock {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
+  gap: 2px;
+  padding: 4px 8px;
   background: #090c0f;
   border: 1px solid #1a2027;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .rx3-tempo-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #94a3b8;
 }
@@ -4280,23 +4314,23 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   width: 100%;
   accent-color: #3b82f6;
   cursor: pointer;
-  height: 18px;
+  height: 14px;
 }
 
 .rx3-pitch-bend-micro {
   display: flex;
   justify-content: space-between;
-  gap: 4px;
+  gap: 3px;
 }
 
 .rx3-pitch-bend-micro button {
   flex: 1;
-  padding: 3px 0;
+  padding: 2px 0;
   background: #1e293b;
   border: 1px solid #334155;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #cbd5e1;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -4305,22 +4339,22 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-pads-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .rx3-pad-mode-selector {
   display: flex;
-  gap: 4px;
+  gap: 3px;
 }
 
 .rx3-pad-mode-selector button {
   flex: 1;
-  padding: 3px 0;
-  font-size: 0.62rem;
+  padding: 2px 0;
+  font-size: 0.58rem;
   font-weight: 800;
   background: #181e25;
   border: 1px solid #27313d;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #94a3b8;
   cursor: pointer;
 }
@@ -4339,7 +4373,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-pads-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: 4px;
 }
 
 .rx3-rgb-pad {
@@ -4347,9 +4381,9 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 38px;
-  border-radius: 6px;
-  border: 2px solid #272f3a;
+  height: clamp(24px, 4vh, 32px);
+  border-radius: 5px;
+  border: 1px solid #272f3a;
   background: #12161c;
   color: #e2e8f0;
   cursor: pointer;
@@ -4359,7 +4393,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-rgb-pad.set {
   background: #2563eb;
   border-color: #60a5fa;
-  box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
 }
 
 .rx3-rgb-pad.dim {
@@ -4367,27 +4401,27 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-rgb-pad .pad-n {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 900;
 }
 
 .rx3-rgb-pad .pad-time {
-  font-size: 0.58rem;
+  font-size: 0.52rem;
   font-family: monospace;
 }
 
 /* BIG ROUND TRANSPORT BUTTONS (PLAY / CUE) */
 .rx3-transport-cluster {
   display: flex;
-  gap: 12px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .rx3-big-round-btn {
   flex: 1;
-  height: 52px;
-  border-radius: 10px;
-  font-size: 1.1rem;
+  height: clamp(34px, 5.5vh, 44px);
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 900;
   cursor: pointer;
   transition: all 0.15s;
@@ -4403,14 +4437,14 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: #ea580c;
   color: #ffffff;
   border-color: #fb923c;
-  box-shadow: 0 0 14px rgba(234, 88, 12, 0.7);
+  box-shadow: 0 0 10px rgba(234, 88, 12, 0.7);
 }
 
 .rx3-big-round-btn.play.playing {
   background: #16a34a;
   color: #ffffff;
   border-color: #4ade80;
-  box-shadow: 0 0 14px rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
 }
 
 /* 3. CENTER 2-CH MIXER UNIT */
@@ -4418,21 +4452,22 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px 12px;
+  padding: 10px 8px;
   background: linear-gradient(180deg, #15181c 0%, #0d0f12 100%);
   border: 1px solid #2b333e;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  min-height: 0;
 }
 
 .rx3-mixer-top-bar {
   text-align: center;
-  padding-bottom: 6px;
+  padding-bottom: 3px;
   border-bottom: 1px solid #232b35;
 }
 
 .rx3-mixer-branding {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   color: #94a3b8;
@@ -4440,25 +4475,27 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 
 .rx3-mixer-channels-chassis {
   display: grid;
-  grid-template-columns: 1fr 64px 1fr;
-  gap: 8px;
-  margin: 10px 0;
+  grid-template-columns: 1fr 54px 1fr;
+  gap: 6px;
+  margin: 4px 0;
+  flex: 1 1 auto;
+  align-items: center;
 }
 
 .rx3-channel-strip {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .rx3-ch-num {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 900;
   color: #ffffff;
   background: #1f2732;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -4469,21 +4506,21 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   width: 100%;
 }
 
 .rx3-knob-unit .knob-t {
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
   color: #94a3b8;
 }
 
 .rx3-rotary-knob {
-  width: 80%;
+  width: 85%;
   accent-color: #64748b;
   cursor: pointer;
-  height: 14px;
+  height: 10px;
 }
 
 .rx3-rotary-knob.filter {
@@ -4491,19 +4528,19 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 .rx3-knob-unit.color-fx .knob-v {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 800;
   color: #38bdf8;
 }
 
 .rx3-ch-cue-btn {
-  padding: 4px 0;
-  width: 70%;
-  font-size: 0.68rem;
+  padding: 2px 0;
+  width: 75%;
+  font-size: 0.62rem;
   font-weight: 900;
   background: #1e2530;
   border: 1px solid #334155;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #cbd5e1;
   cursor: pointer;
 }
@@ -4512,21 +4549,21 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   background: #ea580c;
   color: #ffffff;
   border-color: #fb923c;
-  box-shadow: 0 0 10px rgba(234, 88, 12, 0.6);
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.6);
 }
 
 .rx3-fader-track-box {
   width: 100%;
-  height: 70px;
+  height: clamp(36px, 6vh, 55px);
   display: flex;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .rx3-vertical-fader {
   writing-mode: vertical-lr;
   direction: rtl;
-  height: 65px;
+  height: 100%;
   accent-color: #ffffff;
   cursor: pointer;
 }
@@ -4537,32 +4574,32 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
 }
 
 .rx3-master-knobs {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
 }
 
 .rx3-stereo-vu-meter {
   display: flex;
   justify-content: center;
-  gap: 3px;
-  padding: 6px 4px;
+  gap: 2px;
+  padding: 4px 3px;
   background: #080a0d;
   border: 1px solid #1c222b;
-  border-radius: 6px;
-  height: 120px;
+  border-radius: 4px;
+  height: clamp(60px, 10vh, 95px);
 }
 
 .rx3-vu-ladder {
   display: flex;
   flex-direction: column-reverse;
-  gap: 2px;
-  width: 6px;
+  gap: 1px;
+  width: 5px;
 }
 
 .vu-segment {
@@ -4580,22 +4617,22 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .rx3-beat-fx-box .fx-t {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 800;
   color: #38bdf8;
 }
 
 .rx3-fx-blue-button {
-  padding: 4px 6px;
-  font-size: 0.62rem;
+  padding: 2px 4px;
+  font-size: 0.58rem;
   font-weight: 900;
   background: #1e293b;
   border: 1px solid #3b82f6;
-  border-radius: 4px;
+  border-radius: 3px;
   color: #38bdf8;
   cursor: pointer;
 }
@@ -4603,23 +4640,23 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 .rx3-fx-blue-button.engaged {
   background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 0 10px #3b82f6;
+  box-shadow: 0 0 8px #3b82f6;
 }
 
 /* CROSSFADER ROW */
 .rx3-crossfader-dock {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 10px;
-  padding-top: 8px;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 4px;
   border-top: 1px solid #232b35;
 }
 
 .rx3-cf-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 800;
   color: #64748b;
 }
