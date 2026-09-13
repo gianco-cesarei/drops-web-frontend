@@ -3743,8 +3743,8 @@ body:has(.djlab-fullscreen-mode) {
   max-height: 100%;
   margin: 0 auto;
   padding: 8px 12px;
-  background: #0a0c0e;
-  border: 1px solid #1a1e23;
+  background: #101411;
+  border: 1px solid #232a24;
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
   color: #d1d5db;
@@ -3777,7 +3777,7 @@ body:has(.djlab-fullscreen-mode) {
   justify-content: space-between;
   align-items: center;
   padding: 4px 12px;
-  background: #0e1216;
+  background: #0d110e;
   border-bottom: 2px solid #1f262e;
 }
 
@@ -3801,10 +3801,10 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-touch-tab:hover, .rx3-touch-tab.active {
-  background: #2563eb;
-  border-color: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  background: #232924;
+  border-color: #3f4b41;
+  color: #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .rx3-touch-tab.menu {
@@ -3821,7 +3821,7 @@ body:has(.djlab-fullscreen-mode) {
 .rx3-mini-clock {
   font-size: 0.68rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: #94a3b8;
   font-family: monospace;
 }
 
@@ -3838,7 +3838,7 @@ body:has(.djlab-fullscreen-mode) {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: #0a0d11;
+  background: #090c0a;
   border: 1px solid #19212a;
   border-radius: 6px;
   padding: 4px 8px;
@@ -3863,8 +3863,8 @@ body:has(.djlab-fullscreen-mode) {
   border-radius: 4px;
 }
 
-.rx3-deck-badge.d1 { background: #ea580c; color: #ffffff; }
-.rx3-deck-badge.d2 { background: #0284c7; color: #ffffff; }
+.rx3-deck-badge.d1 { background: #2f3731; border: 1px solid #4a574d; color: #e5e7eb; }
+.rx3-deck-badge.d2 { background: #232c33; border: 1px solid #3e4d59; color: #e5e7eb; }
 
 .rx3-track-name {
   font-size: 0.78rem;
@@ -3879,7 +3879,7 @@ body:has(.djlab-fullscreen-mode) {
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 4px;
-  color: #38bdf8;
+  color: #94a3b8;
 }
 
 .rx3-bpm-badge {
@@ -3900,7 +3900,7 @@ body:has(.djlab-fullscreen-mode) {
 .rx3-wave-canvas-wrapper {
   position: relative;
   height: clamp(28px, 4.5vh, 46px);
-  background: #05070a;
+  background: #050706;
   border-radius: 4px;
   overflow: hidden;
   display: flex;
@@ -3941,11 +3941,11 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-waveform-scrollable.orange .rx3-wave-bar {
-  background: #ea580c;
+  background: #78350f;
 }
 .rx3-waveform-scrollable.orange .rx3-wave-bar.beat {
-  background: #fdba74;
-  box-shadow: 0 0 4px #fb923c;
+  background: #d97706;
+  box-shadow: none;
 }
 .rx3-waveform-scrollable.orange .rx3-wave-bar.bar {
   background: #ffffff;
@@ -3953,11 +3953,11 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-waveform-scrollable.blue .rx3-wave-bar {
-  background: #0284c7;
+  background: #1e3a5f;
 }
 .rx3-waveform-scrollable.blue .rx3-wave-bar.beat {
-  background: #7dd3fc;
-  box-shadow: 0 0 4px #38bdf8;
+  background: #38bdf8;
+  box-shadow: none;
 }
 .rx3-waveform-scrollable.blue .rx3-wave-bar.bar {
   background: #ffffff;
@@ -4014,7 +4014,7 @@ body:has(.djlab-fullscreen-mode) {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  background: #0a0d11;
+  background: #090c0a;
   height: clamp(80px, 14vh, 140px);
 }
 
@@ -4024,7 +4024,7 @@ body:has(.djlab-fullscreen-mode) {
   align-items: center;
   font-size: 0.72rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: #94a3b8;
 }
 
 .rx3-browser-close {
@@ -4086,8 +4086,8 @@ body:has(.djlab-fullscreen-mode) {
   cursor: pointer;
 }
 
-.rx3-load-btn.deck-1 { background: #ea580c; color: #ffffff; }
-.rx3-load-btn.deck-2 { background: #0284c7; color: #ffffff; }
+.rx3-load-btn.deck-1 { background: #2f3731; border: 1px solid #4a574d; color: #e5e7eb; }
+.rx3-load-btn.deck-2 { background: #232c33; border: 1px solid #3e4d59; color: #e5e7eb; }
 
 /* SCREEN FOOTER */
 .rx3-screen-footer {
@@ -4095,7 +4095,7 @@ body:has(.djlab-fullscreen-mode) {
   justify-content: space-between;
   align-items: center;
   padding: 3px 12px;
-  background: #0e1216;
+  background: #0d110e;
   border-top: 1px solid #1f262e;
 }
 
@@ -4133,7 +4133,7 @@ body:has(.djlab-fullscreen-mode) {
   color: #94a3b8;
 }
 .rx3-fx-tag strong {
-  color: #38bdf8;
+  color: #94a3b8;
 }
 
 /* 2. LOWER HARDWARE UNIT (DECK 1 | MIXER | DECK 2) */
@@ -4160,8 +4160,8 @@ body:has(.djlab-fullscreen-mode) {
   justify-content: space-between;
   gap: 6px;
   padding: 10px 12px;
-  background: linear-gradient(180deg, #07090b 0%, #030405 100%);
-  border: 1px solid #161a1f;
+  background: linear-gradient(180deg, #121613 0%, #0c0f0d 100%);
+  border: 1px solid #1f2620;
   border-radius: 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   min-height: 0;
@@ -4185,8 +4185,8 @@ body:has(.djlab-fullscreen-mode) {
   padding: 1px 6px;
   border-radius: 4px;
 }
-.rx3-deck-number-pill.a { background: #ea580c; color: #ffffff; }
-.rx3-deck-number-pill.b { background: #0284c7; color: #ffffff; }
+.rx3-deck-number-pill.a { background: #2f3731; border: 1px solid #4a574d; color: #e5e7eb; }
+.rx3-deck-number-pill.b { background: #232c33; border: 1px solid #3e4d59; color: #e5e7eb; }
 
 .rx3-tag-genre {
   font-size: 0.64rem;
@@ -4234,8 +4234,8 @@ body:has(.djlab-fullscreen-mode) {
   width: clamp(100px, 16vh, 160px);
   height: clamp(100px, 16vh, 160px);
   border-radius: 50%;
-  background: radial-gradient(circle, #242930 0%, #101216 70%, #08090b 100%);
-  border: 4px solid #181b20;
+  background: radial-gradient(circle, #1a1e1b 0%, #0f1210 70%, #070908 100%);
+  border: 4px solid #141815;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.15);
 }
 
@@ -4246,8 +4246,8 @@ body:has(.djlab-fullscreen-mode) {
   width: 80%;
   height: 80%;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, #181c22 0%, #0d0f12 25%, #181c22 50%, #0d0f12 75%, #181c22 100%);
-  border: 2px solid #2d3540;
+  background: conic-gradient(from 0deg, #141815 0%, #0c0e0d 25%, #141815 50%, #0c0e0d 75%, #141815 100%);
+  border: 2px solid #242b26;
   box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.9);
   transition: transform 0.1s linear;
 }
@@ -4269,8 +4269,8 @@ body:has(.djlab-fullscreen-mode) {
   height: 52%;
   border-radius: 50%;
   background: #030406;
-  border: 2px solid #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  border: 2px solid #2d3730;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
   position: relative;
 }
 
@@ -4293,7 +4293,7 @@ body:has(.djlab-fullscreen-mode) {
   top: 2px;
   width: 2px;
   height: 6px;
-  background: #ea580c;
+  background: #cbd5e1;
   border-radius: 2px;
 }
 
@@ -4323,7 +4323,7 @@ body:has(.djlab-fullscreen-mode) {
 
 .rx3-vertical-pitch {
   width: 100%;
-  accent-color: #3b82f6;
+  accent-color: #526056;
   cursor: pointer;
   height: 14px;
 }
@@ -4371,14 +4371,14 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-pad-mode-selector button.active {
-  background: #ea580c;
-  color: #ffffff;
-  border-color: #f97316;
+  background: #2a332c;
+  color: #f1f5f9;
+  border-color: #445347;
 }
 
 .deck-right .rx3-pad-mode-selector button.active {
   background: #0284c7;
-  border-color: #38bdf8;
+  border-color: #94a3b8;
 }
 
 .rx3-pads-grid {
@@ -4402,9 +4402,9 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-rgb-pad.set {
-  background: #2563eb;
-  border-color: #60a5fa;
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+  background: #1e2420;
+  border-color: #3e4d41;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
 }
 
 .rx3-rgb-pad.dim {
@@ -4445,10 +4445,10 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-big-round-btn.cue.lit {
-  background: #ea580c;
+  background: #b45309;
   color: #ffffff;
-  border-color: #fb923c;
-  box-shadow: 0 0 10px rgba(234, 88, 12, 0.7);
+  border-color: #d97706;
+  box-shadow: 0 0 6px rgba(180, 83, 9, 0.5);
 }
 
 .rx3-big-round-btn.play.playing {
@@ -4464,8 +4464,8 @@ body:has(.djlab-fullscreen-mode) {
   flex-direction: column;
   justify-content: space-between;
   padding: 10px 8px;
-  background: linear-gradient(180deg, #090b0d 0%, #040506 100%);
-  border: 1px solid #1a1e24;
+  background: linear-gradient(180deg, #141815 0%, #0e110f 100%);
+  border: 1px solid #232b24;
   border-radius: 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   min-height: 0;
@@ -4535,13 +4535,13 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-rotary-knob.filter {
-  accent-color: #38bdf8;
+  accent-color: #94a3b8;
 }
 
 .rx3-knob-unit.color-fx .knob-v {
   font-size: 0.55rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: #94a3b8;
 }
 
 .rx3-ch-cue-btn {
@@ -4557,10 +4557,10 @@ body:has(.djlab-fullscreen-mode) {
 }
 
 .rx3-ch-cue-btn.lit {
-  background: #ea580c;
+  background: #b45309;
   color: #ffffff;
-  border-color: #fb923c;
-  box-shadow: 0 0 8px rgba(234, 88, 12, 0.6);
+  border-color: #d97706;
+  box-shadow: 0 0 6px rgba(180, 83, 9, 0.5);
 }
 
 .rx3-fader-track-box {
@@ -4634,7 +4634,7 @@ body:has(.djlab-fullscreen-mode) {
 .rx3-beat-fx-box .fx-t {
   font-size: 0.55rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: #94a3b8;
 }
 
 .rx3-fx-blue-button {
@@ -4644,14 +4644,14 @@ body:has(.djlab-fullscreen-mode) {
   background: #1e293b;
   border: 1px solid #3b82f6;
   border-radius: 3px;
-  color: #38bdf8;
+  color: #94a3b8;
   cursor: pointer;
 }
 
 .rx3-fx-blue-button.engaged {
-  background: #2563eb;
+  background: #2e3b31;
   color: #ffffff;
-  box-shadow: 0 0 8px #3b82f6;
+  box-shadow: 0 0 6px rgba(46, 59, 49, 0.6);
 }
 
 /* CROSSFADER ROW */
@@ -4682,6 +4682,8 @@ body:has(.djlab-fullscreen-mode) {
   accent-color: #ffffff;
   cursor: pointer;
 }
+
+
 
 
 /* ==========================================================================
