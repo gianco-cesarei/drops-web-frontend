@@ -13,7 +13,7 @@ describe("DropsLanding Campaign Hero", () => {
   it("renders campaign hero headline in English, CLI terminal, and 3 outcome modalities", () => {
     render(<DropsLanding />)
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Manage your\s+music world\s+in cloud/i)
-    expect(screen.getByText(/git clone https:\/\/github.com\/gianco-cesarei\/drop-agent.git && cd drop-agent && python3 drop_agent.py/i)).toBeInTheDocument()
+    expect(screen.getByText(/curl -fsSL https:\/\/raw\.githubusercontent\.com\/gianco-cesarei\/drop-agent\/main\/install\.sh \| bash/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /Copy Command/i })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 3, name: /Drop Agent/i })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 3, name: /Cloud Library/i })).toBeInTheDocument()
