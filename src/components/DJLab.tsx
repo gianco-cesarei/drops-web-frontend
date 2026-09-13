@@ -16,40 +16,55 @@ export interface DeckState {
   currentTime: number
   duration: number
   keyLock: boolean
+  camelotKey: string
   volume: number
+  trim: number // 0 to 100
   eqHigh: number // -12dB to +6dB
   eqMid: number
   eqLow: number
   filterFx: number // -50 (LPF) to +50 (HPF)
   activeLoop: number | null // 2, 4, 8, 16 bars
-  hotCues: (number | null)[] // up to 4 cue points
+  padMode: 'hotcue' | 'beatloop' | 'sliploop' | 'beatjump'
+  hotCues: (number | null)[] // up to 8 cues
   audioUrl?: string
 }
 
 const DEMO_TRACKS = [
   {
     id: 'track-1',
-    title: 'Minimal Groove (Vinyl Rip)',
+    title: 'Above The Cloud (Original Mix)',
     artist: 'Alex Rossi',
     bpm: 124.0,
-    duration: 380,
+    duration: 378,
+    camelotKey: '8A',
     genre: 'Microhouse',
   },
   {
     id: 'track-2',
-    title: 'Hypnotic Deep Flow (Club Mix)',
+    title: 'Rainy Season (Original Club Mix)',
     artist: 'MANIA Collective',
-    bpm: 126.0,
-    duration: 420,
+    bpm: 124.0,
+    duration: 412,
+    camelotKey: '8B',
     genre: 'Minimal Techno',
   },
   {
     id: 'track-3',
     title: 'Submarine Bassline (Pre-master)',
     artist: 'Marco Donati',
-    bpm: 125.0,
+    bpm: 126.0,
     duration: 360,
+    camelotKey: '11B',
     genre: 'Deep Tech',
+  },
+  {
+    id: 'track-4',
+    title: 'Houghton Forest Drift',
+    artist: 'Dan Ghenacia & Shonky',
+    bpm: 125.0,
+    duration: 440,
+    camelotKey: '2A',
+    genre: 'Underground House',
   },
 ]
 
@@ -64,11 +79,18 @@ export default function DJLab() {
 
   // Crossfader: -100 (100% Deck A) to +100 (100% Deck B)
   const [crossfader, setCrossfader] = useState<number>(0)
-
-  // Master Volume (0 to 100)
   const [masterVolume, setMasterVolume] = useState<number>(85)
+  const [boothVolume, setBoothVolume] = useState<number>(70)
 
-  // Deck A State
+  // Beat FX Section (Center Right)
+  const [selectedFx, setSelectedFx] = useState<string>('FLANGER')
+  const [fxBeatFraction, setFxBeatFraction] = useState<string>('1/2')
+  const [fxOn, setFxOn] = useState<boolean>(false)
+
+  // Screen Tab Mode (Touchscreen Top)
+  const [screenTab, setScreenTab] = useState<'wave' | 'browse' | 'playlist'>('wave')
+
+  // Deck A State (Left)
   const [deckA, setDeckA] = useState<DeckState>({
     title: DEMO_TRACKS[0].title,
     artist: DEMO_TRACKS[0].artist,
@@ -77,19 +99,22 @@ export default function DJLab() {
     pitchPercent: 0.0,
     isPlaying: false,
     isCueing: false,
-    currentTime: 0,
+    currentTime: 142,
     duration: DEMO_TRACKS[0].duration,
     keyLock: true,
+    camelotKey: DEMO_TRACKS[0].camelotKey,
     volume: 85,
+    trim: 75,
     eqHigh: 0,
     eqMid: 0,
     eqLow: 0,
     filterFx: 0,
     activeLoop: null,
-    hotCues: [0, 32, 64, null],
+    padMode: 'hotcue',
+    hotCues: [0, 32, 64, 128, null, null, null, null],
   })
 
-  // Deck B State
+  // Deck B State (Right)
   const [deckB, setDeckB] = useState<DeckState>({
     title: DEMO_TRACKS[1].title,
     artist: DEMO_TRACKS[1].artist,
@@ -98,789 +123,803 @@ export default function DJLab() {
     pitchPercent: 0.0,
     isPlaying: false,
     isCueing: false,
-    currentTime: 0,
+    currentTime: 88,
     duration: DEMO_TRACKS[1].duration,
     keyLock: true,
+    camelotKey: DEMO_TRACKS[1].camelotKey,
     volume: 85,
+    trim: 75,
     eqHigh: 0,
     eqMid: 0,
     eqLow: 0,
     filterFx: 0,
     activeLoop: null,
-    hotCues: [0, 16, 48, null],
+    padMode: 'hotcue',
+    hotCues: [0, 16, 48, 96, null, null, null, null],
   })
 
-  // Enumerate audio output devices on mount
+  // Playback timer ticker for active decks
   useEffect(() => {
-    if (typeof window === 'undefined' || !navigator.mediaDevices) return
-
-    const checkDevices = async () => {
-      try {
-        if ('setSinkId' in HTMLMediaElement.prototype || 'setSinkId' in (window.AudioContext || {}).prototype) {
-          setMultiOutputSupported(true)
-        }
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const outputs = devices
-          .filter((d) => d.kind === 'audiooutput')
-          .map((d, index) => ({
-            deviceId: d.deviceId || `device-${index}`,
-            label: d.label || (index === 0 ? 'Altoparlanti Principali / Default' : `Uscita Audio ${index + 1}`),
-          }))
-
-        if (outputs.length > 0) {
-          setOutputDevices(outputs)
-          setMasterDeviceId(outputs[0].deviceId)
-          if (outputs.length > 1) {
-            setCueDeviceId(outputs[1].deviceId)
-            setRoutingMode('multi')
-          }
-        }
-      } catch {
-        // Fallback for permissions / older browsers
+    const interval = setInterval(() => {
+      if (deckA.isPlaying) {
+        setDeckA((prev) => ({
+          ...prev,
+          currentTime: prev.currentTime >= prev.duration ? 0 : prev.currentTime + 1,
+        }))
       }
-    }
+      if (deckB.isPlaying) {
+        setDeckB((prev) => ({
+          ...prev,
+          currentTime: prev.currentTime >= prev.duration ? 0 : prev.currentTime + 1,
+        }))
+      }
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [deckA.isPlaying, deckB.isPlaying])
 
-    checkDevices()
-  }, [])
-
-  // Pitch change handlers with continuous floating point precision
-  const handlePitchChange = (deck: 'A' | 'B', percent: number) => {
-    const clamped = Math.max(-8.0, Math.min(8.0, Number(percent.toFixed(2))))
-    if (deck === 'A') {
-      const newBpm = Number((deckA.bpm * (1 + clamped / 100)).toFixed(2))
-      setDeckA((prev) => ({ ...prev, pitchPercent: clamped, currentBpm: newBpm }))
+  // Pitch calculation
+  const handlePitchChange = (deckLetter: 'A' | 'B', percent: number) => {
+    if (deckLetter === 'A') {
+      const newBpm = Number((deckA.bpm * (1 + percent / 100)).toFixed(2))
+      setDeckA((prev) => ({ ...prev, pitchPercent: percent, currentBpm: newBpm }))
     } else {
-      const newBpm = Number((deckB.bpm * (1 + clamped / 100)).toFixed(2))
-      setDeckB((prev) => ({ ...prev, pitchPercent: clamped, currentBpm: newBpm }))
+      const newBpm = Number((deckB.bpm * (1 + percent / 100)).toFixed(2))
+      setDeckB((prev) => ({ ...prev, pitchPercent: percent, currentBpm: newBpm }))
     }
   }
 
-  // Pitch nudge / bend (+/- temporary adjustment)
-  const handlePitchNudge = (deck: 'A' | 'B', delta: number) => {
-    if (deck === 'A') {
-      handlePitchChange('A', deckA.pitchPercent + delta)
+  // Pitch Nudge / Bend (+ / -)
+  const handlePitchNudge = (deckLetter: 'A' | 'B', amount: number) => {
+    if (deckLetter === 'A') {
+      const clamped = Math.max(-8, Math.min(8, deckA.pitchPercent + amount))
+      handlePitchChange('A', Number(clamped.toFixed(2)))
     } else {
-      handlePitchChange('B', deckB.pitchPercent + delta)
+      const clamped = Math.max(-8, Math.min(8, deckB.pitchPercent + amount))
+      handlePitchChange('B', Number(clamped.toFixed(2)))
     }
   }
 
-  // Sync BPM of Deck B to Deck A or vice-versa
+  // Master Sync Deck to other Deck
   const handleSync = (targetDeck: 'A' | 'B') => {
-    if (targetDeck === 'B') {
-      const desiredBpm = deckA.currentBpm
-      const requiredPitch = Number((((desiredBpm - deckB.bpm) / deckB.bpm) * 100).toFixed(2))
-      handlePitchChange('B', requiredPitch)
+    if (targetDeck === 'A') {
+      const deltaPercent = ((deckB.currentBpm - deckA.bpm) / deckA.bpm) * 100
+      handlePitchChange('A', Number(deltaPercent.toFixed(2)))
     } else {
-      const desiredBpm = deckB.currentBpm
-      const requiredPitch = Number((((desiredBpm - deckA.bpm) / deckA.bpm) * 100).toFixed(2))
-      handlePitchChange('A', requiredPitch)
+      const deltaPercent = ((deckA.currentBpm - deckB.bpm) / deckB.bpm) * 100
+      handlePitchChange('B', Number(deltaPercent.toFixed(2)))
     }
   }
 
-  // Hot Cue trigger or set
-  const handleHotCue = (deck: 'A' | 'B', cueIndex: number) => {
-    if (deck === 'A') {
-      setDeckA((prev) => {
-        const currentCue = prev.hotCues[cueIndex]
-        if (currentCue !== null && currentCue !== undefined) {
-          return { ...prev, currentTime: currentCue, isPlaying: true }
-        }
-        const updated = [...prev.hotCues]
-        updated[cueIndex] = Math.round(prev.currentTime)
-        return { ...prev, hotCues: updated }
-      })
+  // Hot Cues
+  const handleHotCue = (deckLetter: 'A' | 'B', padIndex: number) => {
+    const deck = deckLetter === 'A' ? deckA : deckB
+    const setDeck = deckLetter === 'A' ? setDeckA : setDeckB
+
+    const existingTime = deck.hotCues[padIndex]
+    if (existingTime !== null && existingTime !== undefined) {
+      setDeck((prev) => ({ ...prev, currentTime: existingTime, isPlaying: true }))
     } else {
-      setDeckB((prev) => {
-        const currentCue = prev.hotCues[cueIndex]
-        if (currentCue !== null && currentCue !== undefined) {
-          return { ...prev, currentTime: currentCue, isPlaying: true }
-        }
-        const updated = [...prev.hotCues]
-        updated[cueIndex] = Math.round(prev.currentTime)
-        return { ...prev, hotCues: updated }
-      })
+      const newCues = [...deck.hotCues]
+      newCues[padIndex] = deck.currentTime
+      setDeck((prev) => ({ ...prev, hotCues: newCues }))
     }
   }
 
-  // Auto Beat Loop toggle
-  const handleLoopToggle = (deck: 'A' | 'B', bars: number) => {
-    if (deck === 'A') {
-      setDeckA((prev) => ({ ...prev, activeLoop: prev.activeLoop === bars ? null : bars }))
-    } else {
-      setDeckB((prev) => ({ ...prev, activeLoop: prev.activeLoop === bars ? null : bars }))
+  // Load track
+  const loadTrack = (deckLetter: 'A' | 'B', trackIndex: number) => {
+    const tr = DEMO_TRACKS[trackIndex]
+    if (!tr) return
+    const update = {
+      title: tr.title,
+      artist: tr.artist,
+      bpm: tr.bpm,
+      currentBpm: tr.bpm,
+      pitchPercent: 0,
+      currentTime: 0,
+      duration: tr.duration,
+      camelotKey: tr.camelotKey,
+      isPlaying: false,
     }
+    if (deckLetter === 'A') {
+      setDeckA((prev) => ({ ...prev, ...update }))
+    } else {
+      setDeckB((prev) => ({ ...prev, ...update }))
+    }
+    setScreenTab('wave')
   }
 
-  // Load track into deck
-  const loadTrack = (deck: 'A' | 'B', trackIndex: number) => {
-    const t = DEMO_TRACKS[trackIndex]
-    if (deck === 'A') {
-      setDeckA((prev) => ({
-        ...prev,
-        title: t.title,
-        artist: t.artist,
-        bpm: t.bpm,
-        currentBpm: t.bpm,
-        pitchPercent: 0.0,
-        duration: t.duration,
-        currentTime: 0,
-        isPlaying: false,
-      }))
-    } else {
-      setDeckB((prev) => ({
-        ...prev,
-        title: t.title,
-        artist: t.artist,
-        bpm: t.bpm,
-        currentBpm: t.bpm,
-        pitchPercent: 0.0,
-        duration: t.duration,
-        currentTime: 0,
-        isPlaying: false,
-      }))
-    }
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    const ms = Math.floor((secs % 1) * 100)
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`
   }
 
-  // BPM delta calculation
   const bpmDifference = Math.abs(deckA.currentBpm - deckB.currentBpm).toFixed(2)
-  const isBpmMatched = Number(bpmDifference) <= 0.05
+  const isBpmMatched = parseFloat(bpmDifference) === 0.0
 
   return (
-    <div className="djlab-container">
-      {/* TOP HEADER & ROUTING CONTROLS */}
-      <div className="djlab-header-bar">
-        <div className="djlab-title-group">
-          <div className="academy-badge-group">
-            <span className="badge-new-pill">NEW</span>
-            <span className="academy-tag">DJ LAB & STUDIO</span>
-          </div>
-          <h2>Beatmatching & Dual-Deck Studio</h2>
-          <span className="djlab-subtitle">
-            Esercitati nel pitch control continuo (±8%), allineamento BPM millimetrico e pre-ascolto separato via Web Audio.
-          </span>
+    <div className="djlab-wrapper">
+      <div className="djlab-top-title-bar">
+        <div className="djlab-title-info">
+          <h2 className="djlab-main-title">🎛️ Beatmatching & Dual-Deck Studio (XDJ-RX3 Edition)</h2>
+          <span className="djlab-sub-title">Pioneer All-In-One Hardware Emulation • Full-Width Dual Waveforms & Cloud Ingestion</span>
         </div>
-
-        {/* AUDIO ROUTING SETTINGS */}
-        <div className="djlab-routing-box">
-          <div className="routing-mode-selector">
-            <span className="routing-label">Uscita Audio:</span>
-            <div className="routing-chips">
+      </div>
+      <div className="rx3-console-chassis">
+        {/* =========================================================================
+            TOP PANORAMIC 10.1" TOUCHSCREEN (XDJ-RX3 HEAD UNIT)
+            ========================================================================= */}
+        <header className="rx3-screen-unit">
+        <div className="rx3-screen-bezel">
+          {/* Top Header Buttons Bar */}
+          <div className="rx3-screen-header-nav">
+            <div className="rx3-screen-tabs-left">
               <button
                 type="button"
-                className={`routing-chip-btn ${routingMode === 'single' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('single')}
-                title="Ascolto tramite singola uscita cuffie con manopola Cue Mix virtuale"
+                className={`rx3-touch-tab ${screenTab === 'browse' ? 'active' : ''}`}
+                onClick={() => setScreenTab(screenTab === 'browse' ? 'wave' : 'browse')}
               >
-                🎧 Singola Cuffia (Cue Mix)
+                BROWSE
               </button>
               <button
                 type="button"
-                className={`routing-chip-btn ${routingMode === 'multi' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('multi')}
-                title="Due uscite separate (es. Cassa Bluetooth per Master + AirPods per Cue)"
+                className={`rx3-touch-tab ${screenTab === 'playlist' ? 'active' : ''}`}
+                onClick={() => setScreenTab(screenTab === 'playlist' ? 'wave' : 'playlist')}
               >
-                🔊 Multi-Device (Cassa + AirPods)
+                PLAYLIST
               </button>
               <button
                 type="button"
-                className={`routing-chip-btn ${routingMode === 'split' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('split')}
-                title="Split cavo DJ: Canale Sinistro (Master Casse) / Canale Destro (Cue Cuffie)"
+                className={`rx3-touch-tab ${screenTab === 'wave' ? 'active' : ''}`}
+                onClick={() => setScreenTab('wave')}
               >
-                🔀 Split Stereo L/R
+                WAVEFORM
               </button>
+            </div>
+            <div className="rx3-screen-logo">
+              <span className="rx3-model-pill">Pioneer DJ • XDJ-RX3 DISPLAY</span>
+            </div>
+            <div className="rx3-screen-tabs-right">
+              <span className="rx3-mini-clock">124.0 BPM • MASTER</span>
+              <button type="button" className="rx3-touch-tab menu">MENU</button>
             </div>
           </div>
 
-          {routingMode === 'multi' && (
-            <div className="device-pickers-row">
-              <label className="device-select-label">
-                <span>🔊 Master (Casse):</span>
-                <select value={masterDeviceId} onChange={(e) => setMasterDeviceId(e.target.value)}>
-                  {outputDevices.length === 0 && <option value="default">Altoparlanti di sistema (Predefinito)</option>}
-                  {outputDevices.map((d) => (
-                    <option key={`master-${d.deviceId}`} value={d.deviceId}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          {/* SCREEN CONTENT: BROWSE MODAL OR DUAL HORIZONTAL WAVEFORMS */}
+          {screenTab === 'browse' || screenTab === 'playlist' ? (
+            <div className="rx3-screen-browser">
+              <div className="rx3-browser-header">
+                <span>📁 DROPS CLOUD ARCHIVE • SELECT TRACK</span>
+                <button type="button" className="rx3-browser-close" onClick={() => setScreenTab('wave')}>✕ CLOSE</button>
+              </div>
+              <div className="rx3-browser-list">
+                {DEMO_TRACKS.map((t, idx) => (
+                  <div key={t.id} className="rx3-browser-row">
+                    <div className="rx3-browser-meta">
+                      <span className="rx3-b-title">{t.title}</span>
+                      <span className="rx3-b-sub">{t.artist} • {t.genre} • <strong>{t.camelotKey}</strong> • {t.bpm} BPM</span>
+                    </div>
+                    <div className="rx3-browser-load-btns">
+                      <button type="button" className="rx3-load-btn deck-1" onClick={() => loadTrack('A', idx)}>
+                        LOAD 1
+                      </button>
+                      <button type="button" className="rx3-load-btn deck-2" onClick={() => loadTrack('B', idx)}>
+                        LOAD 2
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rx3-dual-waveform-stage">
+              {/* WAVEFORM 1 (DECK A - ORANGE) */}
+              <div className="rx3-wave-row deck-1">
+                <div className="rx3-wave-header-strip">
+                  <div className="rx3-wh-left">
+                    <span className="rx3-deck-badge d1">DECK A</span>
+                    <span className="rx3-track-name">{deckA.title}</span>
+                  </div>
+                  <div className="rx3-wh-right">
+                    <span className="rx3-key-badge">{deckA.camelotKey}</span>
+                    <span className="rx3-bpm-badge">{deckA.currentBpm.toFixed(1)} BPM</span>
+                    <span className="rx3-time-readout">{formatTime(deckA.currentTime)}</span>
+                  </div>
+                </div>
+                <div className="rx3-wave-canvas-wrapper">
+                  <div className="rx3-center-needle"></div>
+                  <div className={`rx3-waveform-scrollable orange ${deckA.isPlaying ? 'scrolling' : ''}`}>
+                    {Array.from({ length: 96 }).map((_, i) => {
+                      const h = 10 + Math.sin(i * 0.28) * 26 + (i % 4 === 0 ? 12 : 0) + (i % 16 === 0 ? 14 : 0)
+                      const isBeat = i % 4 === 0
+                      const isBar = i % 16 === 0
+                      return (
+                        <div
+                          key={`w1-${i}`}
+                          className={`rx3-wave-bar ${isBeat ? 'beat' : ''} ${isBar ? 'bar' : ''}`}
+                          style={{ height: `${Math.min(58, h)}px` }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
 
-              <label className="device-select-label">
-                <span>🎧 Cue (Cuffie / AirPods):</span>
-                <select value={cueDeviceId} onChange={(e) => setCueDeviceId(e.target.value)}>
-                  {outputDevices.length === 0 && <option value="default">Cuffie / Auricolari Bluetooth</option>}
-                  {outputDevices.map((d) => (
-                    <option key={`cue-${d.deviceId}`} value={d.deviceId}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* BEAT PHASE METER (CENTER LINE IN XDJ-RX3) */}
+              <div className="rx3-screen-phase-meter">
+                <div className="rx3-phase-track">
+                  <div className="rx3-phase-grid">
+                    <span className="dot active"></span>
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                  </div>
+                  <span className={`rx3-phase-sync-status ${isBpmMatched ? 'matched' : 'drift'}`}>
+                    {isBpmMatched ? 'BEAT SYNC • IN PHASE' : `DIFFERENZA BPM: ${bpmDifference}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* WAVEFORM 2 (DECK B - BLUE) */}
+              <div className="rx3-wave-row deck-2">
+                <div className="rx3-wave-header-strip">
+                  <div className="rx3-wh-left">
+                    <span className="rx3-deck-badge d2">DECK B</span>
+                    <span className="rx3-track-name">{deckB.title}</span>
+                  </div>
+                  <div className="rx3-wh-right">
+                    <span className="rx3-key-badge">{deckB.camelotKey}</span>
+                    <span className="rx3-bpm-badge">{deckB.currentBpm.toFixed(1)} BPM</span>
+                    <span className="rx3-time-readout">{formatTime(deckB.currentTime)}</span>
+                  </div>
+                </div>
+                <div className="rx3-wave-canvas-wrapper">
+                  <div className="rx3-center-needle"></div>
+                  <div className={`rx3-waveform-scrollable blue ${deckB.isPlaying ? 'scrolling' : ''}`}>
+                    {Array.from({ length: 96 }).map((_, i) => {
+                      const h = 12 + Math.cos(i * 0.32) * 24 + (i % 4 === 0 ? 10 : 0) + (i % 16 === 0 ? 16 : 0)
+                      const isBeat = i % 4 === 0
+                      const isBar = i % 16 === 0
+                      return (
+                        <div
+                          key={`w2-${i}`}
+                          className={`rx3-wave-bar ${isBeat ? 'beat' : ''} ${isBar ? 'bar' : ''}`}
+                          style={{ height: `${Math.min(58, h)}px` }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* BPM PHASE STATUS INDICATOR */}
-      <div className="bpm-phase-bar">
-        <div className="phase-indicator-box">
-          <span className="phase-label">DIFFERENZA BPM:</span>
-          <span className={`phase-diff-value ${isBpmMatched ? 'matched' : 'unmatched'}`}>
-            {bpmDifference} BPM {isBpmMatched ? '✓ IN FASE' : '⚠️ FUORI TEMPO'}
-          </span>
-        </div>
-
-        <div className="deck-sync-actions">
-          <button type="button" className="sync-pill-btn" onClick={() => handleSync('B')}>
-            Sync Deck B ➔ A ({deckA.currentBpm} BPM)
-          </button>
-          <button type="button" className="sync-pill-btn" onClick={() => handleSync('A')}>
-            Sync Deck A ➔ B ({deckB.currentBpm} BPM)
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN DUAL DECK & MIXER LAYOUT */}
-      <div className="djlab-main-deck-grid">
-        {/* =========================================================================
-            DECK A (LEFT)
-            ========================================================================= */}
-        <section className="dj-deck-unit deck-a">
-          <div className="deck-top-info">
-            <div className="deck-tag-row">
-              <span className="deck-letter-badge a">DECK A</span>
-              <span className="deck-track-title">{deckA.title}</span>
+          {/* Screen Bottom Quick Load Buttons */}
+          <div className="rx3-screen-footer">
+            <div className="rx3-deck-load-pill">
+              <button type="button" className="rx3-quick-load-btn" onClick={() => loadTrack('A', 0)}>
+                LOAD DECK 1
+              </button>
+              <span className="rx3-deck-pitch-status">{deckA.pitchPercent >= 0 ? `+${deckA.pitchPercent.toFixed(2)}%` : `${deckA.pitchPercent.toFixed(2)}%`}</span>
             </div>
-            <span className="deck-artist-sub">{deckA.artist}</span>
+            <div className="rx3-screen-fx-status">
+              <span className="rx3-fx-tag">BEAT FX: <strong>{selectedFx}</strong> ({fxBeatFraction})</span>
+            </div>
+            <div className="rx3-deck-load-pill">
+              <span className="rx3-deck-pitch-status">{deckB.pitchPercent >= 0 ? `+${deckB.pitchPercent.toFixed(2)}%` : `${deckB.pitchPercent.toFixed(2)}%`}</span>
+              <button type="button" className="rx3-quick-load-btn" onClick={() => loadTrack('B', 1)}>
+                LOAD DECK 2
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* =========================================================================
+          LOWER HARDWARE UNIT (DECK 1 | MIXER | DECK 2)
+          ========================================================================= */}
+      <main className="rx3-lower-hardware-grid">
+        {/* =====================================================================
+            LEFT DECK (DECK 1 / A)
+            ===================================================================== */}
+        <section className="rx3-deck-hardware deck-left">
+          <div className="rx3-deck-top-strip">
+            <div className="rx3-deck-id-title">
+              <span className="rx3-deck-number-pill a">DECK A</span>
+              <span className="rx3-tag-genre">VINYL / USB 1</span>
+            </div>
+            <div className="rx3-sync-group">
+              <button
+                type="button"
+                className={`rx3-round-metal-btn sync ${isBpmMatched ? 'engaged' : ''}`}
+                onClick={() => handleSync('A')}
+                title="Sincronizza BPM con Deck B"
+              >
+                Sync Deck A ➔ B ({deckB.currentBpm} BPM)
+              </button>
+              <button
+                type="button"
+                className={`rx3-round-metal-btn master ${!isBpmMatched ? 'active' : ''}`}
+                onClick={() => handleSync('B')}
+              >
+                MASTER
+              </button>
+            </div>
           </div>
 
-          {/* WAVEFORM VISUALIZER MOCKUP */}
-          <div className="deck-waveform-container">
-            <div className="waveform-center-playhead"></div>
-            <div className="waveform-bars-visual">
-              {Array.from({ length: 44 }).map((_, i) => {
-                const height = 14 + Math.sin(i * 0.4) * 18 + ((i % 4 === 0) ? 10 : 0)
-                const isBeat = i % 4 === 0
+          {/* PIONEER JOG WHEEL (DECK 1) */}
+          <div className="rx3-jog-outer-ring">
+            <div className={`rx3-jog-inner-platter ${deckA.isPlaying ? 'spinning' : ''}`}>
+              <div className="rx3-on-jog-display">
+                <span className="rx3-on-jog-bpm">{deckA.currentBpm.toFixed(1)}</span>
+                <span className="rx3-on-jog-time">{formatTime(deckA.currentTime)}</span>
+                <div className="rx3-on-jog-needle-marker"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* PITCH / TEMPO SLIDER ROW */}
+          <div className="rx3-tempo-slider-dock">
+            <div className="rx3-tempo-labels">
+              <span>TEMPO</span>
+              <span className="rx3-tempo-val">{deckA.pitchPercent >= 0 ? `+${deckA.pitchPercent.toFixed(2)}%` : `${deckA.pitchPercent.toFixed(2)}%`}</span>
+            </div>
+            <input
+              type="range"
+              min="-8.00"
+              max="8.00"
+              step="0.05"
+              value={deckA.pitchPercent}
+              onChange={(e) => handlePitchChange('A', parseFloat(e.target.value))}
+              className="rx3-vertical-pitch"
+              aria-label="Pitch fader Deck A"
+            />
+            <div className="rx3-pitch-bend-micro">
+              <button type="button" onClick={() => handlePitchNudge('A', -0.1)}>- BEND</button>
+              <button type="button" onClick={() => handlePitchChange('A', 0)}>RESET</button>
+              <button type="button" onClick={() => handlePitchNudge('A', +0.1)}>+ BEND</button>
+            </div>
+          </div>
+
+          {/* 8 RGB PERFORMANCE PADS */}
+          <div className="rx3-pads-container">
+            <div className="rx3-pad-mode-selector">
+              <button type="button" className={deckA.padMode === 'hotcue' ? 'active' : ''} onClick={() => setDeckA({ ...deckA, padMode: 'hotcue' })}>HOT CUE</button>
+              <button type="button" className={deckA.padMode === 'beatloop' ? 'active' : ''} onClick={() => setDeckA({ ...deckA, padMode: 'beatloop' })}>BEAT LOOP</button>
+              <button type="button" className={deckA.padMode === 'sliploop' ? 'active' : ''} onClick={() => setDeckA({ ...deckA, padMode: 'sliploop' })}>SLIP LOOP</button>
+              <button type="button" className={deckA.padMode === 'beatjump' ? 'active' : ''} onClick={() => setDeckA({ ...deckA, padMode: 'beatjump' })}>BEAT JUMP</button>
+            </div>
+            <div className="rx3-pads-grid">
+              {['1', '2', '3', '4', '5', '6', '7', '8'].map((label, idx) => {
+                const cue = deckA.hotCues[idx]
+                const isSet = cue !== null && cue !== undefined
                 return (
-                  <span
-                    key={`wa-${i}`}
-                    className={`wave-bar ${isBeat ? 'beat-marker' : ''}`}
-                    style={{ height: `${height}px` }}
-                  ></span>
+                  <button
+                    key={`pad-a-${idx}`}
+                    type="button"
+                    className={`rx3-rgb-pad ${isSet ? 'set' : 'dim'}`}
+                    onClick={() => handleHotCue('A', idx)}
+                  >
+                    <span className="pad-n">{label}</span>
+                    <span className="pad-time">{isSet ? `${cue}s` : '--'}</span>
+                  </button>
                 )
               })}
             </div>
           </div>
 
-          {/* DECK A CONTROLS & PITCH */}
-          <div className="deck-controls-row">
-            <div className="deck-transport-column">
-              <div className="transport-main-btns">
-                <button
-                  type="button"
-                  className={`btn-transport cue ${deckA.isCueing ? 'active' : ''}`}
-                  onClick={() => setDeckA((prev) => ({ ...prev, isCueing: !prev.isCueing }))}
-                >
-                  CUE
-                </button>
-                <button
-                  type="button"
-                  className={`btn-transport play ${deckA.isPlaying ? 'playing' : ''}`}
-                  onClick={() => setDeckA((prev) => ({ ...prev, isPlaying: !prev.isPlaying }))}
-                >
-                  {deckA.isPlaying ? '❚❚ PAUSE' : '▶ PLAY'}
-                </button>
-              </div>
-
-              {/* PITCH BEND BUTTONS */}
-              <div className="pitch-bend-btns">
-                <button type="button" className="btn-bend" onClick={() => handlePitchNudge('A', -0.15)}>
-                  − BEND
-                </button>
-                <button type="button" className="btn-bend" onClick={() => handlePitchNudge('A', +0.15)}>
-                  + BEND
-                </button>
-              </div>
-
-              {/* AUTO BEAT LOOP ROW */}
-              <div className="beat-loop-section">
-                <span className="mini-label">AUTO BEAT LOOP:</span>
-                <div className="loop-btns-row">
-                  {[2, 4, 8, 16].map((bars) => (
-                    <button
-                      key={`loop-a-${bars}`}
-                      type="button"
-                      className={`btn-loop ${deckA.activeLoop === bars ? 'active' : ''}`}
-                      onClick={() => handleLoopToggle('A', bars)}
-                    >
-                      {bars}B
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* HOT CUE PADS (4 PADS) */}
-              <div className="hot-cues-section">
-                <span className="mini-label">HOT CUES (PADS):</span>
-                <div className="hot-cues-grid">
-                  {['A', 'B', 'C', 'D'].map((padLabel, idx) => {
-                    const cueVal = deckA.hotCues[idx]
-                    const hasCue = cueVal !== null && cueVal !== undefined
-                    return (
-                      <button
-                        key={`hotcue-a-${idx}`}
-                        type="button"
-                        className={`btn-hot-cue ${hasCue ? 'set' : 'empty'}`}
-                        onClick={() => handleHotCue('A', idx)}
-                        title={hasCue ? `Salta a Cue ${padLabel} (${cueVal}s)` : `Imposta Cue ${padLabel} al punto corrente`}
-                      >
-                        <span className="pad-letter">{padLabel}</span>
-                        <span className="pad-time">{hasCue ? `${cueVal}s` : '--'}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* TRACK SELECTOR */}
-              <div className="track-load-box">
-                <span className="mini-label">Carica Traccia:</span>
-                <div className="track-picker-chips">
-                  {DEMO_TRACKS.map((t, idx) => (
-                    <button
-                      key={`load-a-${t.id}`}
-                      type="button"
-                      className="track-chip-btn"
-                      onClick={() => loadTrack('A', idx)}
-                    >
-                      {idx + 1}. {t.title.slice(0, 15)}… ({t.bpm})
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* PITCH SLIDER A */}
-            <div className="pitch-fader-column">
-              <div className="pitch-readout">
-                <span className="bpm-number">{deckA.currentBpm.toFixed(2)}</span>
-                <span className="pitch-percent-tag">
-                  {deckA.pitchPercent >= 0 ? `+${deckA.pitchPercent.toFixed(2)}%` : `${deckA.pitchPercent.toFixed(2)}%`}
-                </span>
-              </div>
-
-              <div className="pitch-slider-track-box">
-                <span className="pitch-limit-label">+8%</span>
-                <input
-                  type="range"
-                  min="-8.00"
-                  max="8.00"
-                  step="0.05"
-                  value={deckA.pitchPercent}
-                  onChange={(e) => handlePitchChange('A', parseFloat(e.target.value))}
-                  className="vertical-pitch-slider"
-                  aria-label="Pitch fader Deck A"
-                />
-                <span className="pitch-limit-label">−8%</span>
-              </div>
-
-              <button
-                type="button"
-                className="btn-pitch-reset"
-                onClick={() => handlePitchChange('A', 0)}
-                title="Ripristina a 0.00%"
-              >
-                RESET 0%
-              </button>
-            </div>
+          {/* BIG ROUND PLAY & CUE BUTTONS (LOWER LEFT) */}
+          <div className="rx3-transport-cluster">
+            <button
+              type="button"
+              className={`rx3-big-round-btn cue ${deckA.isCueing ? 'lit' : ''}`}
+              onClick={() => setDeckA((prev) => ({ ...prev, isCueing: !prev.isCueing }))}
+            >
+              CUE
+            </button>
+            <button
+              type="button"
+              className={`rx3-big-round-btn play ${deckA.isPlaying ? 'playing' : ''}`}
+              onClick={() => setDeckA((prev) => ({ ...prev, isPlaying: !prev.isPlaying }))}
+            >
+              {deckA.isPlaying ? '❚❚' : '▶'}
+            </button>
           </div>
         </section>
 
-        {/* =========================================================================
-            CENTRAL MIXER UNIT
-            ========================================================================= */}
-        <section className="dj-mixer-unit">
-          <div className="mixer-header">
-            <span className="mixer-title-tag">2-CH MIXER & COLOR FX</span>
+        {/* =====================================================================
+            CENTER MIXER (PIONEER DJM SECTION - 2 CHANNELS)
+            ===================================================================== */}
+        <section className="rx3-mixer-hardware">
+          <div className="rx3-mixer-top-bar">
+            <span className="rx3-mixer-branding">Pioneer DJ • 2-CH MIXER</span>
           </div>
 
-          {/* CHANNEL STRIPS (EQ & GAIN) */}
-          <div className="mixer-channels-grid">
-            {/* CH 1 (DECK A) */}
-            <div className="channel-strip">
-              <span className="ch-name">CH 1</span>
-              <div className="eq-knobs-stack">
-                <label className="knob-label">
-                  <span>HIGH</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="6"
-                    step="1"
-                    value={deckA.eqHigh}
-                    onChange={(e) => setDeckA({ ...deckA, eqHigh: parseInt(e.target.value, 10) })}
-                    className="eq-slider"
-                  />
-                  <span className="knob-val">{deckA.eqHigh}dB</span>
-                </label>
-                <label className="knob-label">
-                  <span>MID</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="6"
-                    step="1"
-                    value={deckA.eqMid}
-                    onChange={(e) => setDeckA({ ...deckA, eqMid: parseInt(e.target.value, 10) })}
-                    className="eq-slider"
-                  />
-                  <span className="knob-val">{deckA.eqMid}dB</span>
-                </label>
-                <label className="knob-label">
-                  <span>LOW</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="6"
-                    step="1"
-                    value={deckA.eqLow}
-                    onChange={(e) => setDeckA({ ...deckA, eqLow: parseInt(e.target.value, 10) })}
-                    className="eq-slider"
-                  />
-                  <span className="knob-val">{deckA.eqLow}dB</span>
-                </label>
-                {/* COLOR FX / FILTER KNOB (LPF / HPF) */}
-                <label className="knob-label filter-color-fx">
-                  <span>FILTER (LPF/HPF)</span>
-                  <input
-                    type="range"
-                    min="-50"
-                    max="50"
-                    step="1"
-                    value={deckA.filterFx}
-                    onChange={(e) => setDeckA({ ...deckA, filterFx: parseInt(e.target.value, 10) })}
-                    className="filter-slider"
-                  />
-                  <span className="knob-val">{deckA.filterFx === 0 ? 'FLAT' : deckA.filterFx < 0 ? `LPF ${deckA.filterFx}` : `HPF +${deckA.filterFx}`}</span>
-                </label>
-              </div>
+          <div className="rx3-mixer-channels-chassis">
+            {/* CHANNEL 1 STRIP */}
+            <div className="rx3-channel-strip ch1">
+              <span className="rx3-ch-num">1</span>
+              
+              {/* TRIM */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">TRIM</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={deckA.trim}
+                  onChange={(e) => setDeckA({ ...deckA, trim: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
 
-              {/* CUE HEADPHONES BUTTON A */}
+              {/* EQ HIGH */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">HI</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="6"
+                  value={deckA.eqHigh}
+                  onChange={(e) => setDeckA({ ...deckA, eqHigh: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
+
+              {/* EQ MID */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">MID</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="6"
+                  value={deckA.eqMid}
+                  onChange={(e) => setDeckA({ ...deckA, eqMid: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
+
+              {/* EQ LOW */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">LOW</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="6"
+                  value={deckA.eqLow}
+                  onChange={(e) => setDeckA({ ...deckA, eqLow: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
+
+              {/* SOUND COLOR FX (FILTER) */}
+              <label className="rx3-knob-unit color-fx">
+                <span className="knob-t">COLOR</span>
+                <input
+                  type="range"
+                  min="-50"
+                  max="50"
+                  value={deckA.filterFx}
+                  onChange={(e) => setDeckA({ ...deckA, filterFx: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob filter"
+                />
+                <span className="knob-v">{deckA.filterFx === 0 ? 'FLAT' : deckA.filterFx < 0 ? 'LPF' : 'HPF'}</span>
+              </label>
+
+              {/* CUE 1 HEADPHONES */}
               <button
                 type="button"
-                className={`btn-ch-cue ${deckA.isCueing ? 'active' : ''}`}
+                className={`rx3-ch-cue-btn ${deckA.isCueing ? 'lit' : ''}`}
                 onClick={() => setDeckA((prev) => ({ ...prev, isCueing: !prev.isCueing }))}
-                aria-label="Cuffia pre-ascolto Canale 1"
               >
-                🎧 CUE 1
+                CUE 1
               </button>
 
-              {/* VOLUME FADER A */}
-              <div className="ch-volume-fader-box">
+              {/* CHANNEL 1 FADER */}
+              <div className="rx3-fader-track-box">
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={deckA.volume}
                   onChange={(e) => setDeckA({ ...deckA, volume: parseInt(e.target.value, 10) })}
-                  className="channel-volume-fader"
+                  className="rx3-vertical-fader"
                   aria-label="Fader volume Canale 1"
                 />
               </div>
             </div>
 
-            {/* MASTER & CUE MIX CONTROLS (CENTER) */}
-            <div className="mixer-center-column">
-              <div className="cue-mix-box">
-                <span className="mini-label">CUE / MASTER MIX</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={cueMix}
-                  onChange={(e) => setCueMix(parseInt(e.target.value, 10))}
-                  className="cue-mix-slider"
-                  aria-label="Manopola Cue / Master Mix"
-                />
-                <div className="cue-mix-readout">
-                  <span>CUE {100 - cueMix}%</span>
-                  <span>MST {cueMix}%</span>
+            {/* MIXER CENTER COLUMN (VU METERS & MASTER/BOOTH) */}
+            <div className="rx3-mixer-master-column">
+              <div className="rx3-master-knobs">
+                <label className="rx3-knob-unit master">
+                  <span className="knob-t">MASTER</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={masterVolume}
+                    onChange={(e) => setMasterVolume(parseInt(e.target.value, 10))}
+                    className="rx3-rotary-knob small"
+                  />
+                </label>
+                <label className="rx3-knob-unit booth">
+                  <span className="knob-t">BOOTH</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={boothVolume}
+                    onChange={(e) => setBoothVolume(parseInt(e.target.value, 10))}
+                    className="rx3-rotary-knob small"
+                  />
+                </label>
+              </div>
+
+              {/* STEREO LED VU METER BAR */}
+              <div className="rx3-stereo-vu-meter">
+                <div className="rx3-vu-ladder ch1">
+                  {[...Array(12)].map((_, i) => (
+                    <div
+                      key={`vu1-${i}`}
+                      className={`vu-segment ${i >= 10 ? 'red' : i >= 7 ? 'amber' : 'green'} ${deckA.isPlaying ? 'lit' : ''}`}
+                    />
+                  ))}
+                </div>
+                <div className="rx3-vu-ladder master">
+                  {[...Array(12)].map((_, i) => (
+                    <div
+                      key={`vum-${i}`}
+                      className={`vu-segment ${i >= 10 ? 'red' : i >= 7 ? 'amber' : 'green'} ${(deckA.isPlaying || deckB.isPlaying) ? 'lit' : ''}`}
+                    />
+                  ))}
+                </div>
+                <div className="rx3-vu-ladder ch2">
+                  {[...Array(12)].map((_, i) => (
+                    <div
+                      key={`vu2-${i}`}
+                      className={`vu-segment ${i >= 10 ? 'red' : i >= 7 ? 'amber' : 'green'} ${deckB.isPlaying ? 'lit' : ''}`}
+                    />
+                  ))}
                 </div>
               </div>
 
-              {/* MASTER LEVEL */}
-              <label className="master-volume-label">
-                <span>MASTER VOL</span>
+              {/* BEAT FX ENGAGE BUTTON */}
+              <div className="rx3-beat-fx-box">
+                <span className="fx-t">BEAT FX</span>
+                <button
+                  type="button"
+                  className={`rx3-fx-blue-button ${fxOn ? 'engaged' : ''}`}
+                  onClick={() => setFxOn(!fxOn)}
+                >
+                  ON / OFF
+                </button>
+              </div>
+            </div>
+
+            {/* CHANNEL 2 STRIP */}
+            <div className="rx3-channel-strip ch2">
+              <span className="rx3-ch-num">2</span>
+
+              {/* TRIM */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">TRIM</span>
                 <input
                   type="range"
                   min="0"
                   max="100"
-                  value={masterVolume}
-                  onChange={(e) => setMasterVolume(parseInt(e.target.value, 10))}
+                  value={deckB.trim}
+                  onChange={(e) => setDeckB({ ...deckB, trim: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
                 />
-                <span className="knob-val">{masterVolume}%</span>
               </label>
-            </div>
 
-            {/* CH 2 (DECK B) */}
-            <div className="channel-strip">
-              <span className="ch-name">CH 2</span>
-              <div className="eq-knobs-stack">
-                <label className="knob-label">
-                  <span>HIGH</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="6"
-                    step="1"
-                    value={deckB.eqHigh}
-                    onChange={(e) => setDeckB({ ...deckB, eqHigh: parseInt(e.target.value, 10) })}
-                    className="eq-slider"
-                  />
-                  <span className="knob-val">{deckB.eqHigh}dB</span>
-                </label>
-                <label className="knob-label">
-                  <span>MID</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="6"
-                    step="1"
-                    value={deckB.eqMid}
-                    onChange={(e) => setDeckB({ ...deckB, eqMid: parseInt(e.target.value, 10) })}
-                    className="eq-slider"
-                  />
-                  <span className="knob-val">{deckB.eqMid}dB</span>
-                </label>
-                <label className="knob-label">
-                  <span>LOW</span>
-                  <input
-                    type="range"
-                    min="-12"
-                    max="6"
-                    step="1"
-                    value={deckB.eqLow}
-                    onChange={(e) => setDeckB({ ...deckB, eqLow: parseInt(e.target.value, 10) })}
-                    className="eq-slider"
-                  />
-                  <span className="knob-val">{deckB.eqLow}dB</span>
-                </label>
-                {/* COLOR FX / FILTER KNOB (LPF / HPF) */}
-                <label className="knob-label filter-color-fx">
-                  <span>FILTER (LPF/HPF)</span>
-                  <input
-                    type="range"
-                    min="-50"
-                    max="50"
-                    step="1"
-                    value={deckB.filterFx}
-                    onChange={(e) => setDeckB({ ...deckB, filterFx: parseInt(e.target.value, 10) })}
-                    className="filter-slider"
-                  />
-                  <span className="knob-val">{deckB.filterFx === 0 ? 'FLAT' : deckB.filterFx < 0 ? `LPF ${deckB.filterFx}` : `HPF +${deckB.filterFx}`}</span>
-                </label>
-              </div>
+              {/* EQ HIGH */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">HI</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="6"
+                  value={deckB.eqHigh}
+                  onChange={(e) => setDeckB({ ...deckB, eqHigh: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
 
-              {/* CUE HEADPHONES BUTTON B */}
+              {/* EQ MID */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">MID</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="6"
+                  value={deckB.eqMid}
+                  onChange={(e) => setDeckB({ ...deckB, eqMid: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
+
+              {/* EQ LOW */}
+              <label className="rx3-knob-unit">
+                <span className="knob-t">LOW</span>
+                <input
+                  type="range"
+                  min="-12"
+                  max="6"
+                  value={deckB.eqLow}
+                  onChange={(e) => setDeckB({ ...deckB, eqLow: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob"
+                />
+              </label>
+
+              {/* SOUND COLOR FX (FILTER) */}
+              <label className="rx3-knob-unit color-fx">
+                <span className="knob-t">COLOR</span>
+                <input
+                  type="range"
+                  min="-50"
+                  max="50"
+                  value={deckB.filterFx}
+                  onChange={(e) => setDeckB({ ...deckB, filterFx: parseInt(e.target.value, 10) })}
+                  className="rx3-rotary-knob filter"
+                />
+                <span className="knob-v">{deckB.filterFx === 0 ? 'FLAT' : deckB.filterFx < 0 ? 'LPF' : 'HPF'}</span>
+              </label>
+
+              {/* CUE 2 HEADPHONES */}
               <button
                 type="button"
-                className={`btn-ch-cue ${deckB.isCueing ? 'active' : ''}`}
+                className={`rx3-ch-cue-btn ${deckB.isCueing ? 'lit' : ''}`}
                 onClick={() => setDeckB((prev) => ({ ...prev, isCueing: !prev.isCueing }))}
-                aria-label="Cuffia pre-ascolto Canale 2"
               >
-                🎧 CUE 2
+                CUE 2
               </button>
 
-              {/* VOLUME FADER B */}
-              <div className="ch-volume-fader-box">
+              {/* CHANNEL 2 FADER */}
+              <div className="rx3-fader-track-box">
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={deckB.volume}
                   onChange={(e) => setDeckB({ ...deckB, volume: parseInt(e.target.value, 10) })}
-                  className="channel-volume-fader"
+                  className="rx3-vertical-fader"
                   aria-label="Fader volume Canale 2"
                 />
               </div>
             </div>
           </div>
 
-          {/* CROSSFADER */}
-          <div className="crossfader-section">
-            <div className="crossfader-labels">
-              <span>DECK A</span>
-              <span>CROSSFADER</span>
-              <span>DECK B</span>
+          {/* CROSSFADER ROW (BOTTOM CENTER) */}
+          <div className="rx3-crossfader-dock">
+            <div className="rx3-cf-labels">
+              <span>◄ CH 1</span>
+              <span className="rx3-cf-brand">CROSSFADER</span>
+              <span>CH 2 ►</span>
             </div>
             <input
               type="range"
               min="-100"
               max="100"
-              step="1"
               value={crossfader}
               onChange={(e) => setCrossfader(parseInt(e.target.value, 10))}
-              className="crossfader-slider"
+              className="rx3-horizontal-crossfader"
               aria-label="Crossfader"
             />
           </div>
         </section>
 
-        {/* =========================================================================
-            DECK B (RIGHT)
-            ========================================================================= */}
-        <section className="dj-deck-unit deck-b">
-          <div className="deck-top-info">
-            <div className="deck-tag-row">
-              <span className="deck-letter-badge b">DECK B</span>
-              <span className="deck-track-title">{deckB.title}</span>
+        {/* =====================================================================
+            RIGHT DECK (DECK 2 / B)
+            ===================================================================== */}
+        <section className="rx3-deck-hardware deck-right">
+          <div className="rx3-deck-top-strip">
+            <div className="rx3-deck-id-title">
+              <span className="rx3-deck-number-pill b">DECK B</span>
+              <span className="rx3-tag-genre">VINYL / USB 2</span>
             </div>
-            <span className="deck-artist-sub">{deckB.artist}</span>
+            <div className="rx3-sync-group">
+              <button
+                type="button"
+                className={`rx3-round-metal-btn sync ${isBpmMatched ? 'engaged' : ''}`}
+                onClick={() => handleSync('B')}
+                title="Sincronizza BPM con Deck A"
+              >
+                Sync Deck B ➔ A ({deckA.currentBpm} BPM)
+              </button>
+              <button
+                type="button"
+                className={`rx3-round-metal-btn master ${!isBpmMatched ? 'active' : ''}`}
+                onClick={() => handleSync('A')}
+              >
+                MASTER
+              </button>
+            </div>
           </div>
 
-          {/* WAVEFORM VISUALIZER MOCKUP */}
-          <div className="deck-waveform-container">
-            <div className="waveform-center-playhead"></div>
-            <div className="waveform-bars-visual">
-              {Array.from({ length: 44 }).map((_, i) => {
-                const height = 14 + Math.cos(i * 0.45) * 18 + ((i % 4 === 0) ? 10 : 0)
-                const isBeat = i % 4 === 0
+          {/* PIONEER JOG WHEEL (DECK 2) */}
+          <div className="rx3-jog-outer-ring">
+            <div className={`rx3-jog-inner-platter ${deckB.isPlaying ? 'spinning' : ''}`}>
+              <div className="rx3-on-jog-display">
+                <span className="rx3-on-jog-bpm">{deckB.currentBpm.toFixed(1)}</span>
+                <span className="rx3-on-jog-time">{formatTime(deckB.currentTime)}</span>
+                <div className="rx3-on-jog-needle-marker"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* PITCH / TEMPO SLIDER ROW */}
+          <div className="rx3-tempo-slider-dock">
+            <div className="rx3-tempo-labels">
+              <span>TEMPO</span>
+              <span className="rx3-tempo-val">{deckB.pitchPercent >= 0 ? `+${deckB.pitchPercent.toFixed(2)}%` : `${deckB.pitchPercent.toFixed(2)}%`}</span>
+            </div>
+            <input
+              type="range"
+              min="-8.00"
+              max="8.00"
+              step="0.05"
+              value={deckB.pitchPercent}
+              onChange={(e) => handlePitchChange('B', parseFloat(e.target.value))}
+              className="rx3-vertical-pitch"
+              aria-label="Pitch fader Deck B"
+            />
+            <div className="rx3-pitch-bend-micro">
+              <button type="button" onClick={() => handlePitchNudge('B', -0.1)}>- BEND</button>
+              <button type="button" onClick={() => handlePitchChange('B', 0)}>RESET</button>
+              <button type="button" onClick={() => handlePitchNudge('B', +0.1)}>+ BEND</button>
+            </div>
+          </div>
+
+          {/* 8 RGB PERFORMANCE PADS */}
+          <div className="rx3-pads-container">
+            <div className="rx3-pad-mode-selector">
+              <button type="button" className={deckB.padMode === 'hotcue' ? 'active' : ''} onClick={() => setDeckB({ ...deckB, padMode: 'hotcue' })}>HOT CUE</button>
+              <button type="button" className={deckB.padMode === 'beatloop' ? 'active' : ''} onClick={() => setDeckB({ ...deckB, padMode: 'beatloop' })}>BEAT LOOP</button>
+              <button type="button" className={deckB.padMode === 'sliploop' ? 'active' : ''} onClick={() => setDeckB({ ...deckB, padMode: 'sliploop' })}>SLIP LOOP</button>
+              <button type="button" className={deckB.padMode === 'beatjump' ? 'active' : ''} onClick={() => setDeckB({ ...deckB, padMode: 'beatjump' })}>BEAT JUMP</button>
+            </div>
+            <div className="rx3-pads-grid">
+              {['1', '2', '3', '4', '5', '6', '7', '8'].map((label, idx) => {
+                const cue = deckB.hotCues[idx]
+                const isSet = cue !== null && cue !== undefined
                 return (
-                  <span
-                    key={`wb-${i}`}
-                    className={`wave-bar ${isBeat ? 'beat-marker' : ''}`}
-                    style={{ height: `${height}px` }}
-                  ></span>
+                  <button
+                    key={`pad-b-${idx}`}
+                    type="button"
+                    className={`rx3-rgb-pad ${isSet ? 'set' : 'dim'}`}
+                    onClick={() => handleHotCue('B', idx)}
+                  >
+                    <span className="pad-n">{label}</span>
+                    <span className="pad-time">{isSet ? `${cue}s` : '--'}</span>
+                  </button>
                 )
               })}
             </div>
           </div>
 
-          {/* DECK B CONTROLS & PITCH */}
-          <div className="deck-controls-row">
-            <div className="deck-transport-column">
-              <div className="transport-main-btns">
-                <button
-                  type="button"
-                  className={`btn-transport cue ${deckB.isCueing ? 'active' : ''}`}
-                  onClick={() => setDeckB((prev) => ({ ...prev, isCueing: !prev.isCueing }))}
-                >
-                  CUE
-                </button>
-                <button
-                  type="button"
-                  className={`btn-transport play ${deckB.isPlaying ? 'playing' : ''}`}
-                  onClick={() => setDeckB((prev) => ({ ...prev, isPlaying: !prev.isPlaying }))}
-                >
-                  {deckB.isPlaying ? '❚❚ PAUSE' : '▶ PLAY'}
-                </button>
-              </div>
-
-              {/* PITCH BEND BUTTONS */}
-              <div className="pitch-bend-btns">
-                <button type="button" className="btn-bend" onClick={() => handlePitchNudge('B', -0.15)}>
-                  − BEND
-                </button>
-                <button type="button" className="btn-bend" onClick={() => handlePitchNudge('B', +0.15)}>
-                  + BEND
-                </button>
-              </div>
-
-              {/* AUTO BEAT LOOP ROW */}
-              <div className="beat-loop-section">
-                <span className="mini-label">AUTO BEAT LOOP:</span>
-                <div className="loop-btns-row">
-                  {[2, 4, 8, 16].map((bars) => (
-                    <button
-                      key={`loop-b-${bars}`}
-                      type="button"
-                      className={`btn-loop ${deckB.activeLoop === bars ? 'active' : ''}`}
-                      onClick={() => handleLoopToggle('B', bars)}
-                    >
-                      {bars}B
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* HOT CUE PADS (4 PADS) */}
-              <div className="hot-cues-section">
-                <span className="mini-label">HOT CUES (PADS):</span>
-                <div className="hot-cues-grid">
-                  {['A', 'B', 'C', 'D'].map((padLabel, idx) => {
-                    const cueVal = deckB.hotCues[idx]
-                    const hasCue = cueVal !== null && cueVal !== undefined
-                    return (
-                      <button
-                        key={`hotcue-b-${idx}`}
-                        type="button"
-                        className={`btn-hot-cue ${hasCue ? 'set' : 'empty'}`}
-                        onClick={() => handleHotCue('B', idx)}
-                        title={hasCue ? `Salta a Cue ${padLabel} (${cueVal}s)` : `Imposta Cue ${padLabel} al punto corrente`}
-                      >
-                        <span className="pad-letter">{padLabel}</span>
-                        <span className="pad-time">{hasCue ? `${cueVal}s` : '--'}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* TRACK SELECTOR */}
-              <div className="track-load-box">
-                <span className="mini-label">Carica Traccia:</span>
-                <div className="track-picker-chips">
-                  {DEMO_TRACKS.map((t, idx) => (
-                    <button
-                      key={`load-b-${t.id}`}
-                      type="button"
-                      className="track-chip-btn"
-                      onClick={() => loadTrack('B', idx)}
-                    >
-                      {idx + 1}. {t.title.slice(0, 15)}… ({t.bpm})
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* PITCH SLIDER B */}
-            <div className="pitch-fader-column">
-              <div className="pitch-readout">
-                <span className="bpm-number">{deckB.currentBpm.toFixed(2)}</span>
-                <span className="pitch-percent-tag">
-                  {deckB.pitchPercent >= 0 ? `+${deckB.pitchPercent.toFixed(2)}%` : `${deckB.pitchPercent.toFixed(2)}%`}
-                </span>
-              </div>
-
-              <div className="pitch-slider-track-box">
-                <span className="pitch-limit-label">+8%</span>
-                <input
-                  type="range"
-                  min="-8.00"
-                  max="8.00"
-                  step="0.05"
-                  value={deckB.pitchPercent}
-                  onChange={(e) => handlePitchChange('B', parseFloat(e.target.value))}
-                  className="vertical-pitch-slider"
-                  aria-label="Pitch fader Deck B"
-                />
-                <span className="pitch-limit-label">−8%</span>
-              </div>
-
-              <button
-                type="button"
-                className="btn-pitch-reset"
-                onClick={() => handlePitchChange('B', 0)}
-                title="Ripristina a 0.00%"
-              >
-                RESET 0%
-              </button>
-            </div>
+          {/* BIG ROUND PLAY & CUE BUTTONS (LOWER RIGHT) */}
+          <div className="rx3-transport-cluster">
+            <button
+              type="button"
+              className={`rx3-big-round-btn cue ${deckB.isCueing ? 'lit' : ''}`}
+              onClick={() => setDeckB((prev) => ({ ...prev, isCueing: !prev.isCueing }))}
+            >
+              CUE
+            </button>
+            <button
+              type="button"
+              className={`rx3-big-round-btn play ${deckB.isPlaying ? 'playing' : ''}`}
+              onClick={() => setDeckB((prev) => ({ ...prev, isPlaying: !prev.isPlaying }))}
+            >
+              {deckB.isPlaying ? '❚❚' : '▶'}
+            </button>
           </div>
         </section>
-      </div>
+      </main>
     </div>
-  )
+  </div>
+)
 }
