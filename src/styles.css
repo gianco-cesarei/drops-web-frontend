@@ -3693,15 +3693,22 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
 }
 
 /* FULLSCREEN CONSOLE CONTAINER */
+.private-layout:has(.djlab-fullscreen-mode),
+body:has(.djlab-fullscreen-mode) {
+  background: #000000 !important;
+}
+
 .academy-page.djlab-fullscreen-mode {
   display: flex !important;
   flex-direction: column !important;
-  padding: 8px !important;
-  height: calc(100dvh - 72px) !important;
-  max-height: calc(100dvh - 72px) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: calc(100dvh - 60px) !important;
+  max-height: calc(100dvh - 60px) !important;
   overflow: hidden !important;
   width: 100% !important;
   max-width: 100% !important;
+  background: #000000 !important;
 }
 
 .djlab-panel-fullscreen {
@@ -3712,6 +3719,7 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-direction: column !important;
   overflow: hidden !important;
   padding: 0 !important;
+  background: #000000 !important;
 }
 
 .djlab-wrapper {
@@ -3720,22 +3728,25 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   height: 100%;
   width: 100%;
   overflow: hidden;
+  background: #000000;
+  padding: 4px 6px;
+  box-sizing: border-box;
 }
 
 .rx3-console-chassis {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   height: 100%;
   max-height: 100%;
   margin: 0 auto;
-  padding: 10px 14px;
-  background: radial-gradient(circle at 50% 20%, #15181a 0%, #0a0c0e 100%);
-  border: 2px solid #242a30;
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  background: #0a0c0e;
+  border: 1px solid #1a1e23;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95);
   color: #d1d5db;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   user-select: none;
@@ -3748,9 +3759,9 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex: 0 0 auto;
   width: 100%;
   background: #000000;
-  border: 3px solid #1a1e22;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 0 16px rgba(0, 0, 0, 0.8);
+  border: 2px solid #14171b;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.95);
   overflow: hidden;
 }
 
@@ -4149,10 +4160,10 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   justify-content: space-between;
   gap: 6px;
   padding: 10px 12px;
-  background: linear-gradient(180deg, #111417 0%, #090a0c 100%);
-  border: 1px solid #222830;
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, #07090b 0%, #030405 100%);
+  border: 1px solid #161a1f;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   min-height: 0;
 }
 
@@ -4453,10 +4464,10 @@ footer { padding: 20px 0; color: var(--color-text-muted); font-size: var(--font-
   flex-direction: column;
   justify-content: space-between;
   padding: 10px 8px;
-  background: linear-gradient(180deg, #15181c 0%, #0d0f12 100%);
-  border: 1px solid #2b333e;
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, #090b0d 0%, #040506 100%);
+  border: 1px solid #1a1e24;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   min-height: 0;
 }
 
