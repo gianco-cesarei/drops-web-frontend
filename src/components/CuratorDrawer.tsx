@@ -117,7 +117,7 @@ export default function CuratorDrawer() {
       
       const tokens: React.ReactNode[] = []
       let lastIdx = 0
-      const comboRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g
+      const comboRegex = /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g
       let cMatch: RegExpExecArray | null
 
       while ((cMatch = comboRegex.exec(line)) !== null) {
@@ -126,23 +126,45 @@ export default function CuratorDrawer() {
         }
         if (cMatch[1] && cMatch[2]) {
           const linkText = cMatch[1]
-          const href = cMatch[2]
+          let href = cMatch[2]
+
+          // Direct listening guarantee: If link points to a search results page,
+          // rewrite to direct listen resolver so the user lands straight on the playing track,
+          // without having to search or select from lists.
+          try {
+            const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://drops.giancarlocesarei.workers.dev'
+            const urlObj = href.startsWith('http') ? new URL(href) : new URL(href, baseOrigin)
+            const isSearch =
+              urlObj.pathname.startsWith('/search') ||
+              urlObj.pathname.startsWith('/results') ||
+              urlObj.searchParams.has('search_query')
+            if (isSearch) {
+              const q = urlObj.searchParams.get('q') || urlObj.searchParams.get('search_query') || ''
+              if (q) {
+                let platform = 'youtube'
+                if (urlObj.hostname.includes('soundcloud.com')) platform = 'soundcloud'
+                else if (urlObj.hostname.includes('bandcamp.com')) platform = 'bandcamp'
+                href = `/api/v1/curator/listen?q=${encodeURIComponent(q)}&platform=${platform}`
+              }
+            }
+          } catch {}
+
           let badgeColor = '#047857'
           let badgeBg = '#ecfdf5'
           let badgeBorder = '#a7f3d0'
           let serviceIcon = '🔗'
 
-          if (href.includes('bandcamp.com')) {
+          if (href.includes('bandcamp.com') || href.includes('platform=bandcamp')) {
             serviceIcon = '🟣'
             badgeColor = '#0369a1'
             badgeBg = '#f0f9ff'
             badgeBorder = '#bae6fd'
-          } else if (href.includes('soundcloud.com')) {
+          } else if (href.includes('soundcloud.com') || href.includes('platform=soundcloud')) {
             serviceIcon = '🟠'
             badgeColor = '#c2410c'
             badgeBg = '#fff7ed'
             badgeBorder = '#fed7aa'
-          } else if (href.includes('youtube.com') || href.includes('youtu.be')) {
+          } else if (href.includes('youtube.com') || href.includes('youtu.be') || href.includes('curator/listen')) {
             serviceIcon = '🔴'
             badgeColor = '#b91c1c'
             badgeBg = '#fef2f2'

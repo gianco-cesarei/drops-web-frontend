@@ -164,3 +164,40 @@ test('falls back to upstream proxy for curator chat when no edge AI is available
   }
 })
 
+test('handles /api/v1/curator/listen and redirects directly to YouTube track', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('youtube.com/results')) {
+      return new Response('<html><body><a href="/watch?v=D5LkLmxcgIQ">Link</a></body></html>', { status: 200 })
+    }
+    return new Response('not found', { status: 404 })
+  }
+  try {
+    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/listen?q=Skee+Mask+Routine')
+    const response = await worker.fetch(request, env())
+    assert.equal(response.status, 302)
+    assert.equal(response.headers.get('location'), 'https://www.youtube.com/watch?v=D5LkLmxcgIQ')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('handles /api/v1/curator/listen with soundcloud platform and redirects to track', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('soundcloud.com/search')) {
+      return new Response('<html><body><a href="/max-wiebenga/so-inagawa-logo-queen">Track</a></body></html>', { status: 200 })
+    }
+    return new Response('not found', { status: 404 })
+  }
+  try {
+    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/listen?q=So+Inagawa+Logo+Queen&platform=soundcloud')
+    const response = await worker.fetch(request, env())
+    assert.equal(response.status, 302)
+    assert.equal(response.headers.get('location'), 'https://soundcloud.com/max-wiebenga/so-inagawa-logo-queen')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+

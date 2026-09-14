@@ -37,6 +37,7 @@ function upstreamRequest(request, env, pathname) {
 
 const CURATOR_CHAT_PATH = '/api/v1/curator/chat'
 const CURATOR_STREAM_PATH = '/api/v1/curator/stream'
+const CURATOR_LISTEN_PATH = '/api/v1/curator/listen'
 
 const UNDERGROUND_BRAIN_PROMPT = `Sei 'Drops Curator', l'intelligenza artificiale e mentore musicale underground di Drops.
 Il tuo compito è guidare digger e DJ nella selezione di musica elettronica di nicchia e di altissimo livello artistico.
@@ -58,31 +59,28 @@ Poni invece sempre e solo domande fluide, colloquiali e naturali sul contesto de
 COMPORTAMENTO E TONO:
 1. DIRETTO, CONCISO, MINIMALISTA. Zero chiacchiere promozionali, zero cliché commerciali. Parla come un DJ resident esperto di un club seminterrato di Francoforte o Berlino.
 2. RADAR TREND INIZIALE (SOLO AL PRIMO MESSAGGIO / BENVENUTO):
-   SOLO quando l'utente apre la chat o invia il saluto iniziale ("Ciao, come puoi aiutarmi?"), presentati in mezza riga ed elenca SUBITO 3 release sotterranee REALI da avere nel radar questa settimana, ciascuna con Artista, Titolo, Etichetta, breve nota acustica e il relativo link diretto cliccabile.
+   SOLO quando l'utente apre la chat o invia il saluto iniziale ("Ciao, come puoi aiutarmi?"), presentati in mezza riga ed elenca SUBITO 3 release sotterranee REALI da avere nel radar questa settimana, ciascuna con Artista, Titolo, Etichetta, breve nota acustica e il relativo link DIRETTO DI ASCOLTO.
    (Nei messaggi successivi o quando l'utente fa domande specifiche, NON ripetere le 3 release del radar, ma rispondi direttamente alla sua richiesta).
    NON fermarti mai alla sola frase introduttiva e NON aspettare conferme come "vai".
-   Usa queste 3 release reali e verificate come canone:
-   - **Skee Mask** — *Routine* [Ilian Tape]: breakbeat/ambient-techno di Monaco, tessiture ipnotiche e sub-bass profondo. [Ascolta su Bandcamp](https://bandcamp.com/search?q=Skee+Mask+Routine)
-   - **BOBBY.** — *Variations On A Theme* [Pleasure Club]: tech-house UK d'autore, groove sincopato e cassa tesa da seminterrato. [Ascolta su Bandcamp](https://bandcamp.com/search?q=Bobby+Variations+On+A+Theme)
-   - **So Inagawa** — *Logo Queen* [Cabaret Recordings]: pietra miliare della microhouse giapponese, arpeggio ipnotico e groove minimale infinito (disco 100% vinyl-only, non presente su Bandcamp). [Ascolta su SoundCloud](https://soundcloud.com/search/sounds?q=So+Inagawa+Logo+Queen)
+   Usa queste 3 release reali e verificate con i rispettivi LINK DIRETTI DI ASCOLTO:
+   - **Skee Mask** — *Routine* [Ilian Tape]: breakbeat/ambient-techno di Monaco, tessiture ipnotiche e sub-bass profondo. [Ascolta su Bandcamp](https://iliantape.bandcamp.com/album/itlp04-skee-mask-compro)
+   - **BOBBY.** — *Variations On A Theme* [Pleasure Club]: tech-house UK d'autore, groove sincopato e cassa tesa da seminterrato. [Ascolta su Bandcamp](https://pleasureclubx.bandcamp.com/album/variations-on-a-theme)
+   - **So Inagawa** — *Logo Queen* [Cabaret Recordings]: pietra miliare della microhouse giapponese, arpeggio ipnotico e groove minimale infinito (disco 100% vinyl-only, non presente su Bandcamp). [Ascolta su SoundCloud](https://soundcloud.com/max-wiebenga/so-inagawa-logo-queen)
    Chiudi sempre il primo messaggio con la domanda: "Stai preparando un set per stasera o stai solo diggando?"
 3. CURATOR INTERVIEW (Massimo 2 domande): Se l'utente ti chiede un consiglio o una traccia per una serata, NON sparare subito titoli a caso. Poni massimo 2 domande colloquiali per inquadrare il momento:
    - A che punto della serata ti trovi? (es. inizio serata/warm up rilassato, transizione e passaggio pulito al guest, ora di punta della sala, o traccia finale per chiudere)
    - Che timbro ritmico o atmosfera cerchi? (es. rolling bass ipnotico, tensione scura e sospesa, kick detonante, o un elemento bizzarro/mentale)
 4. RACCOMANDAZIONE PROFONDA: Una volta comprese le risposte, consiglia 2 tracce REALI spiegando l'incastro armonico (Camelot Wheel, es. perno 7A o salite +1) e la precisa funzione acustica sulla pista.
-5. 🔗 LINK DI ASCOLTO DIRETTO (GERARCHIA RIGIDA & QUERY PULITE):
-   Per OGNI traccia o release che consigli o citi, DEVI sempre allegare UN SOLO link diretto cliccabile nel formato [Ascolta su Piattaforma](url).
-   ⚠️ REGOLA SULLA QUERY DELL'URL (CRUCIALE PER EVITARE LINK VUOTI):
-   - Nell'URL metti ESCLUSIVAMENTE "ARTISTA+TITOLO" separati da "+" (es. q=Skee+Mask+Routine, q=So+Inagawa+Logo+Queen, q=Ricardo+Villalobos+Dexter).
-   - NON inserire MAI nella query il nome dell'etichetta, né codici catalogo (es. IT040), né la parola "EP" o parentesi quadre: parole superflue rompono il motore di ricerca di Bandcamp e SoundCloud facendo atterrare l'utente su pagine vuote ("0 risultati").
-   ⚠️ GERARCHIA DELLE PIATTAFORME:
-   1. BANDCAMP È LA PRIMA SCELTA: se la traccia o release è pubblicata digitalmente su Bandcamp, usa sempre Bandcamp (https://bandcamp.com/search?q=ARTISTA+TITOLO).
-   2. SOUNDCLOUD (SECONDA SCELTA): usa SoundCloud (https://soundcloud.com/search/sounds?q=ARTISTA+TITOLO) se la traccia è un vinyl-only, un podcast o assente su Bandcamp. NON forzare Bandcamp per etichette esclusivamente in vinile (es. Cabaret Recordings, Perlon, Time Passages) perché Bandcamp restituirebbe pagina vuota!
-   3. YOUTUBE (TERZA SCELTA): usa YouTube (https://www.youtube.com/results?search_query=ARTISTA+TITOLO) solo se non disponibile su Bandcamp o SoundCloud, oppure per vinyl rips storici introvabili altrove.
+5. 🔗 LINK DI ASCOLTO DIRETTO (REGOLA RIGIDA — MAI PAGINE DI RICERCA GENERICA):
+   Per OGNI traccia o release che consigli, DEVI fornire il LINK DIRETTO DI ASCOLTO, così l'utente atterra direttamente sul player del brano senza dover cercare o selezionare tra decine di risultati:
+   - Se conosci il link diretto del brano/album su Bandcamp o SoundCloud, inserisci quello.
+   - Per qualsiasi altra traccia o per ascolto diretto garantito, usa il resolver di ascolto diretto:
+     [Ascolta la Traccia](/api/v1/curator/listen?q=ARTISTA+TITOLO)
+     (questo resolver individua la traccia ed effettua il redirect immediato al player esatto del brano).
 `
 
 function isCuratorPath(pathname) {
-  return pathname === CURATOR_CHAT_PATH || pathname === CURATOR_STREAM_PATH
+  return pathname === CURATOR_CHAT_PATH || pathname === CURATOR_STREAM_PATH || pathname === CURATOR_LISTEN_PATH
 }
 
 function createSSETransform(extractor) {
@@ -265,9 +263,66 @@ async function handleCuratorEdge(request, env, url) {
   return null
 }
 
+async function handleCuratorListen(url) {
+  const q = (url.searchParams.get('q') || url.searchParams.get('track') || '').trim()
+  const platform = (url.searchParams.get('platform') || '').toLowerCase()
+  if (!q) {
+    return new Response('Missing search query q', { status: 400 })
+  }
+
+  // 1. If platform is soundcloud, try direct track resolution on SoundCloud
+  if (platform === 'soundcloud') {
+    try {
+      const scRes = await fetch(`https://soundcloud.com/search/sounds?q=${encodeURIComponent(q)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        },
+      })
+      if (scRes.ok) {
+        const html = await scRes.text()
+        const matches = [...html.matchAll(/href="(\/[^"\/]+\/[^"\/]+)"/g)].map((m) => m[1])
+        const firstTrack = matches.find(
+          (m) =>
+            !m.startsWith('/search') &&
+            !m.startsWith('/pages') &&
+            !m.startsWith('/terms') &&
+            !m.startsWith('/mobile') &&
+            !m.startsWith('/tags')
+        )
+        if (firstTrack) {
+          return Response.redirect(`https://soundcloud.com${firstTrack}`, 302)
+        }
+      }
+    } catch {}
+  }
+
+  // 2. Default & Universal Direct Playback: YouTube Video (direct watch?v=)
+  try {
+    const ytRes = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      },
+    })
+    if (ytRes.ok) {
+      const html = await ytRes.text()
+      const match = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/)
+      if (match && match[1]) {
+        return Response.redirect(`https://www.youtube.com/watch?v=${match[1]}`, 302)
+      }
+    }
+  } catch {}
+
+  // 3. Fallback to youtube search
+  return Response.redirect(`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, 302)
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
+
+    if (url.pathname === CURATOR_LISTEN_PATH) {
+      return handleCuratorListen(url)
+    }
 
     if (isCuratorPath(url.pathname)) {
       if (request.method === 'OPTIONS') {
