@@ -34,7 +34,7 @@ export default function CuratorDrawer() {
       
       // Auto-trigger welcome radar if chat is empty
       if (messages.length === 0 && !loading) {
-        handleSendMessage('Inizia la sessione: presentati brevemente ed elenca subito le 3 release calde o sold-out da avere nel radar questa settimana con artista, etichetta e nota sonora.')
+        handleSendMessage('Ciao, come puoi aiutarmi?')
       }
     }
   }, [isOpen])
@@ -104,7 +104,7 @@ export default function CuratorDrawer() {
     setLoading(false)
     // Trigger fresh welcome
     setTimeout(() => {
-      handleSendMessage('Inizia la sessione: presentati brevemente ed elenca subito le 3 release calde o sold-out da avere nel radar questa settimana con artista, etichetta e nota sonora.')
+      handleSendMessage('Ciao, come puoi aiutarmi?')
     }, 100)
   }
 
