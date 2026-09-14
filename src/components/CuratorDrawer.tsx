@@ -3,18 +3,8 @@ import { api, type CuratorMessage } from '../api'
 
 const QUICK_STARTERS = [
   { label: '🔥 Radar: 3 Release Calde / Sold-Out', prompt: 'Inizia la sessione: dammi subito le 3 release calde o sold-out da tenere d\'occhio questa settimana.' },
-  { label: '🎧 Prepariamo un DJ Set', prompt: 'Ho bisogno di preparare una selezione per stasera. Fammi le domande per calibrare le tracce.' },
-  { label: '🎛️ Tension Bridge (7A / 11A)', prompt: 'Cerco un Tension Bridge tra 120 e 126 BPM in chiave minore (7A o 11A) per alzare la tensione senza accelerare.' },
-  { label: '⚡ Peak Starter per Fase [3]', prompt: 'Consigliami un Peak Starter da 127-128 BPM con attacco percussivo secco per aprire il picco.' },
-]
-
-const QUICK_PHASE_CHIPS = [
-  '[1] Warm Up (≤119 BPM)',
-  '[2-3B] Holding (120-124 BPM, Major)',
-  '[2-3A] Tension Bridge (7A/11A)',
-  '[3] Peak Starter (127-128 BPM)',
-  '[4] Plateau (128-132 BPM)',
-  '[5] Outro / Breakbeat',
+  { label: '🎧 Raccomandazione Traccia per Stasera', prompt: 'Ho bisogno di una traccia speciale da suonare stasera. Fammi le domande per guidarmi.' },
+  { label: '🎛️ Rarità e Release Vinyl-Only', prompt: 'Cosa consiglia il radar tra le ultime stampe in vinile più ricercate?' },
 ]
 
 export default function CuratorDrawer() {
@@ -394,44 +384,6 @@ export default function CuratorDrawer() {
               )}
 
               <div ref={messagesEndRef} />
-            </div>
-
-            {/* Quick Phase Chips */}
-            <div style={{
-              padding: '6px 16px',
-              backgroundColor: '#070b09',
-              borderTop: '1px solid #131b15',
-              display: 'flex',
-              gap: '6px',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-            }}>
-              {QUICK_PHASE_CHIPS.map((chip, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSendMessage(`Sto preparando la fase ${chip}. Che tracce mi consigli?`)}
-                  style={{
-                    background: '#0d1410',
-                    border: '1px solid #1a251e',
-                    color: '#94a3b8',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#10b981'
-                    e.currentTarget.style.color = '#e2e8f0'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#1a251e'
-                    e.currentTarget.style.color = '#94a3b8'
-                  }}
-                >
-                  {chip}
-                </button>
-              ))}
             </div>
 
             {/* Input Form */}
