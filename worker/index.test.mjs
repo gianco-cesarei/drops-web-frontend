@@ -110,7 +110,7 @@ test('handles /api/v1/curator/chat using Workers AI with streaming SSE', async (
   const response = await worker.fetch(request, env({ AI: mockAi }))
   assert.equal(response.status, 200)
   assert.ok(response.headers.get('content-type')?.includes('text/event-stream'))
-  assert.equal(capturedModel, '@cf/meta/llama-3.1-8b-instruct')
+  assert.equal(capturedModel, '@cf/meta/llama-3.1-8b-instruct-fast')
   assert.equal(capturedOptions.stream, true)
 
   const text = await response.text()

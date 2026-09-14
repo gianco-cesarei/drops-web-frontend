@@ -109,30 +109,106 @@ export default function CuratorDrawer() {
   }
 
   const formatContent = (content: string) => {
-    // Simple markdown-style bold and bullet parser
     return content.split('\n').map((line, idx) => {
       const trimmed = line.trim()
       if (!trimmed) return <div key={idx} style={{ height: '8px' }} />
 
       const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ') || /^\d+\./.test(trimmed)
       
-      // Parse **bold**
-      const parts = line.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={pIdx} style={{ color: '#34d399', fontWeight: 600 }}>{part.slice(2, -2)}</strong>
+      const tokens: React.ReactNode[] = []
+      let lastIdx = 0
+      const comboRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g
+      let cMatch: RegExpExecArray | null
+
+      while ((cMatch = comboRegex.exec(line)) !== null) {
+        if (cMatch.index > lastIdx) {
+          tokens.push(line.slice(lastIdx, cMatch.index))
         }
-        return part
-      })
+        if (cMatch[1] && cMatch[2]) {
+          const linkText = cMatch[1]
+          const href = cMatch[2]
+          let badgeColor = '#047857'
+          let badgeBg = '#ecfdf5'
+          let badgeBorder = '#a7f3d0'
+          let serviceIcon = '🔗'
+
+          if (href.includes('bandcamp.com')) {
+            serviceIcon = '🟣'
+            badgeColor = '#0369a1'
+            badgeBg = '#f0f9ff'
+            badgeBorder = '#bae6fd'
+          } else if (href.includes('soundcloud.com')) {
+            serviceIcon = '🟠'
+            badgeColor = '#c2410c'
+            badgeBg = '#fff7ed'
+            badgeBorder = '#fed7aa'
+          } else if (href.includes('youtube.com') || href.includes('youtu.be')) {
+            serviceIcon = '🔴'
+            badgeColor = '#b91c1c'
+            badgeBg = '#fef2f2'
+            badgeBorder = '#fecaca'
+          }
+
+          tokens.push(
+            <a
+              key={cMatch.index}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                margin: '3px 4px 3px 0',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                backgroundColor: badgeBg,
+                border: `1px solid ${badgeBorder}`,
+                color: badgeColor,
+                fontSize: '12px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                verticalAlign: 'middle',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                transition: 'opacity 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.75')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              <span>{serviceIcon}</span>
+              <span>{linkText}</span>
+              <span style={{ fontSize: '10px' }}>↗</span>
+            </a>
+          )
+        } else if (cMatch[3]) {
+          tokens.push(
+            <strong key={cMatch.index} style={{ color: '#047857', fontWeight: 600 }}>
+              {cMatch[3]}
+            </strong>
+          )
+        } else if (cMatch[4]) {
+          tokens.push(
+            <em key={cMatch.index} style={{ color: '#475569', fontStyle: 'italic' }}>
+              {cMatch[4]}
+            </em>
+          )
+        }
+        lastIdx = comboRegex.lastIndex
+      }
+
+      if (lastIdx < line.length) {
+        tokens.push(line.slice(lastIdx))
+      }
 
       return (
         <div key={idx} style={{ 
           paddingLeft: isBullet ? '12px' : '0',
-          marginBottom: '4px',
-          lineHeight: '1.5',
-          color: '#e2e8f0',
+          marginBottom: '5px',
+          lineHeight: '1.55',
+          color: '#1e293b',
           fontSize: '13.5px'
         }}>
-          {parts}
+          {tokens.length > 0 ? tokens : line}
         </div>
       )
     })
@@ -153,10 +229,10 @@ export default function CuratorDrawer() {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            backgroundColor: '#090d0b',
-            color: '#f8fafc',
-            border: '1px solid #1e2922',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(16, 185, 129, 0.2)',
+            backgroundColor: '#ffffff',
+            color: '#0f172a',
+            border: '1px solid #cbd5e1',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12), 0 0 15px rgba(16, 185, 129, 0.15)',
             padding: '10px 16px',
             borderRadius: '9999px',
             cursor: 'pointer',
@@ -168,7 +244,7 @@ export default function CuratorDrawer() {
             e.currentTarget.style.transform = 'translateY(-2px)'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#1e2922'
+            e.currentTarget.style.borderColor = '#cbd5e1'
             e.currentTarget.style.transform = 'translateY(0)'
           }}
           aria-label="Apri Drops Curator AI"
@@ -182,12 +258,12 @@ export default function CuratorDrawer() {
             boxShadow: '0 0 8px #10b981',
           }} />
           <span style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.02em' }}>
-            DROPS CURATOR <span style={{ color: '#10b981', fontSize: '11px', textTransform: 'uppercase' }}>[AI]</span>
+            DROPS CURATOR <span style={{ color: '#059669', fontSize: '11px', textTransform: 'uppercase' }}>[AI]</span>
           </span>
         </button>
       </div>
 
-      {/* Slide-over Drawer / Modal */}
+      {/* Slide-over Drawer / Modal (White Background Theme) */}
       {isOpen && (
         <div style={{
           position: 'fixed',
@@ -195,7 +271,7 @@ export default function CuratorDrawer() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
           backdropFilter: 'blur(4px)',
           zIndex: 9999,
           display: 'flex',
@@ -205,20 +281,20 @@ export default function CuratorDrawer() {
             width: '100%',
             maxWidth: '480px',
             height: '100%',
-            backgroundColor: '#080c0a',
-            borderLeft: '1px solid #1a241d',
+            backgroundColor: '#ffffff',
+            borderLeft: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.8)',
+            boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.15)',
           }}>
             {/* Header */}
             <div style={{
               padding: '16px 20px',
-              borderBottom: '1px solid #162019',
+              borderBottom: '1px solid #f1f5f9',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: '#0a0e0b',
+              backgroundColor: '#ffffff',
             }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -227,10 +303,10 @@ export default function CuratorDrawer() {
                     height: '8px',
                     borderRadius: '50%',
                     backgroundColor: '#10b981',
-                    boxShadow: '0 0 8px #10b981',
+                    boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)',
                   }} />
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, letterSpacing: '0.04em', color: '#f1f5f9' }}>
-                    DROPS CURATOR <span style={{ color: '#10b981', fontSize: '11px' }}>AI</span>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, letterSpacing: '0.04em', color: '#0f172a' }}>
+                    DROPS CURATOR <span style={{ color: '#059669', fontSize: '11px' }}>AI</span>
                   </h3>
                 </div>
                 <p style={{ margin: '2px 0 0 16px', fontSize: '11.5px', color: '#64748b' }}>
@@ -243,16 +319,23 @@ export default function CuratorDrawer() {
                   onClick={handleResetSession}
                   title="Azzera e ricomincia sessione"
                   style={{
-                    background: 'transparent',
-                    border: '1px solid #27352a',
-                    color: '#94a3b8',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    color: '#475569',
                     padding: '5px 9px',
                     borderRadius: '6px',
                     fontSize: '11px',
                     cursor: 'pointer',
+                    fontWeight: 500,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#10b981')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#27352a')}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#10b981'
+                    e.currentTarget.style.color = '#047857'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0'
+                    e.currentTarget.style.color = '#475569'
+                  }}
                 >
                   🔄 Reset
                 </button>
@@ -262,7 +345,7 @@ export default function CuratorDrawer() {
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#94a3b8',
+                    color: '#64748b',
                     fontSize: '18px',
                     cursor: 'pointer',
                     padding: '4px 8px',
@@ -276,8 +359,8 @@ export default function CuratorDrawer() {
             {/* Ephemeral Notice */}
             <div style={{
               padding: '8px 16px',
-              backgroundColor: '#0c120e',
-              borderBottom: '1px solid #141c16',
+              backgroundColor: '#f8fafc',
+              borderBottom: '1px solid #e2e8f0',
               fontSize: '11px',
               color: '#64748b',
               display: 'flex',
@@ -285,10 +368,10 @@ export default function CuratorDrawer() {
               justifyContent: 'space-between',
             }}>
               <span>⚡ Sessione senza memoria: si azzera alla chiusura della scheda.</span>
-              <span style={{ color: '#10b981', fontWeight: 600 }}>BRAIN V1</span>
+              <span style={{ color: '#059669', fontWeight: 600 }}>BRAIN V1</span>
             </div>
 
-            {/* Chat Body */}
+            {/* Chat Body (White Background) */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
@@ -296,15 +379,16 @@ export default function CuratorDrawer() {
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
+              backgroundColor: '#ffffff',
             }}>
               {messages.length === 0 && !loading && (
                 <div style={{
                   padding: '20px 10px',
                   textAlign: 'center',
-                  color: '#94a3b8',
+                  color: '#64748b',
                 }}>
                   <div style={{ fontSize: '32px', marginBottom: '10px' }}>🎧</div>
-                  <h4 style={{ color: '#f1f5f9', margin: '0 0 6px 0', fontSize: '15px' }}>Benvenuto nel Radar Underground</h4>
+                  <h4 style={{ color: '#0f172a', margin: '0 0 6px 0', fontSize: '15px' }}>Benvenuto nel Radar Underground</h4>
                   <p style={{ fontSize: '12.5px', color: '#64748b', maxWidth: '320px', margin: '0 auto 18px auto' }}>
                     Chiedi selezioni per slot specifici di set, radar sold-out o transizioni armoniche basate sul Canone Drops.
                   </p>
@@ -315,11 +399,11 @@ export default function CuratorDrawer() {
                         key={idx}
                         onClick={() => handleSendMessage(s.prompt)}
                         style={{
-                          backgroundColor: '#0f1612',
-                          border: '1px solid #1f2a22',
+                          backgroundColor: '#f8fafc',
+                          border: '1px solid #e2e8f0',
                           padding: '10px 12px',
                           borderRadius: '8px',
-                          color: '#cbd5e1',
+                          color: '#334155',
                           fontSize: '12.5px',
                           cursor: 'pointer',
                           display: 'flex',
@@ -329,15 +413,15 @@ export default function CuratorDrawer() {
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = '#10b981'
-                          e.currentTarget.style.backgroundColor = '#131e17'
+                          e.currentTarget.style.backgroundColor = '#f0fdf4'
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = '#1f2a22'
-                          e.currentTarget.style.backgroundColor = '#0f1612'
+                          e.currentTarget.style.borderColor = '#e2e8f0'
+                          e.currentTarget.style.backgroundColor = '#f8fafc'
                         }}
                       >
                         <span>{s.label}</span>
-                        <span style={{ color: '#10b981', fontSize: '13px' }}>→</span>
+                        <span style={{ color: '#059669', fontSize: '13px' }}>→</span>
                       </button>
                     ))}
                   </div>
@@ -357,7 +441,7 @@ export default function CuratorDrawer() {
                   >
                     <div style={{
                       fontSize: '10.5px',
-                      color: isUser ? '#10b981' : '#64748b',
+                      color: isUser ? '#059669' : '#64748b',
                       marginBottom: '4px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em',
@@ -366,15 +450,15 @@ export default function CuratorDrawer() {
                       {isUser ? 'Tu' : 'Drops Curator'}
                     </div>
                     <div style={{
-                      maxWidth: '90%',
+                      maxWidth: '92%',
                       padding: '12px 14px',
                       borderRadius: isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                      backgroundColor: isUser ? '#064e3b' : '#0e1511',
-                      border: isUser ? '1px solid #059669' : '1px solid #1b261e',
-                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)',
+                      backgroundColor: isUser ? '#059669' : '#f8fafc',
+                      border: isUser ? '1px solid #047857' : '1px solid #e2e8f0',
+                      boxShadow: isUser ? '0 2px 8px rgba(5, 150, 105, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
                     }}>
                       {isUser ? (
-                        <div style={{ color: '#f8fafc', fontSize: '13.5px', lineHeight: '1.4' }}>{msg.content}</div>
+                        <div style={{ color: '#ffffff', fontSize: '13.5px', lineHeight: '1.4' }}>{msg.content}</div>
                       ) : (
                         formatContent(msg.content)
                       )}
@@ -388,12 +472,12 @@ export default function CuratorDrawer() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  color: '#10b981',
+                  color: '#047857',
                   fontSize: '12.5px',
                   padding: '10px 14px',
-                  backgroundColor: '#0d1410',
+                  backgroundColor: '#f0fdf4',
                   borderRadius: '8px',
-                  border: '1px solid #1b281f',
+                  border: '1px solid #bbf7d0',
                   width: 'fit-content',
                 }}>
                   <span style={{
@@ -411,10 +495,10 @@ export default function CuratorDrawer() {
               {error && (
                 <div style={{
                   padding: '10px 14px',
-                  backgroundColor: '#3f1212',
-                  border: '1px solid #7f1d1d',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fecaca',
                   borderRadius: '8px',
-                  color: '#fca5a5',
+                  color: '#b91c1c',
                   fontSize: '12.5px',
                 }}>
                   {error}
@@ -424,7 +508,7 @@ export default function CuratorDrawer() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
+            {/* Input Form (White Theme) */}
             <form
               onSubmit={(e) => {
                 e.preventDefault()
@@ -434,8 +518,8 @@ export default function CuratorDrawer() {
               }}
               style={{
                 padding: '14px 16px',
-                borderTop: '1px solid #162019',
-                backgroundColor: '#090d0b',
+                borderTop: '1px solid #e2e8f0',
+                backgroundColor: '#ffffff',
                 display: 'flex',
                 gap: '8px',
               }}
@@ -449,24 +533,30 @@ export default function CuratorDrawer() {
                 disabled={loading}
                 style={{
                   flex: 1,
-                  backgroundColor: '#0e1511',
-                  border: '1px solid #1c2720',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #cbd5e1',
                   borderRadius: '8px',
                   padding: '10px 12px',
-                  color: '#f8fafc',
+                  color: '#0f172a',
                   fontSize: '13px',
                   outline: 'none',
                 }}
-                onFocus={(e) => (e.target.style.borderColor = '#10b981')}
-                onBlur={(e) => (e.target.style.borderColor = '#1c2720')}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#10b981'
+                  e.target.style.backgroundColor = '#ffffff'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#cbd5e1'
+                  e.target.style.backgroundColor = '#f8fafc'
+                }}
               />
               <button
                 type={loading ? 'button' : 'submit'}
                 onClick={loading ? handleStopGeneration : undefined}
                 disabled={!loading && !input.trim()}
                 style={{
-                  backgroundColor: loading ? '#2d3748' : input.trim() ? '#10b981' : '#14251c',
-                  color: loading ? '#f8fafc' : input.trim() ? '#041d13' : '#475569',
+                  backgroundColor: loading ? '#475569' : input.trim() ? '#059669' : '#e2e8f0',
+                  color: loading || input.trim() ? '#ffffff' : '#94a3b8',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '0 16px',

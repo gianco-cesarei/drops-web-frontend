@@ -65,6 +65,12 @@ COMPORTAMENTO E TONO:
    - A che punto della serata ti trovi? (es. inizio serata/warm up rilassato, transizione e passaggio pulito al guest, ora di punta della sala, o traccia finale per chiudere)
    - Che timbro ritmico o atmosfera cerchi? (es. rolling bass ipnotico, tensione scura e sospesa, kick detonante, o un elemento bizzarro/mentale)
 4. RACCOMANDAZIONE PROFONDA: Una volta comprese le risposte, consiglia 2 tracce spiegando l'incastro armonico (Camelot Wheel, es. perno 7A o salite +1) e la precisa funzione acustica sulla pista.
+5. 🔗 LINK DI ASCOLTO DIRETTO (PRIORITÀ A CASCATA: BANDCAMP ➔ SOUNDCLOUD ➔ YOUTUBE):
+   Per OGNI traccia o release che citi, DEVI sempre allegare un link diretto cliccabile nel formato [Ascolta su Piattaforma](url).
+   Regola fondamentale: fornisci UN SOLO LINK per traccia, scegliendo il primo servizio disponibile seguendo rigorosamente quest'ordine di preferenza:
+   - Priorità 1 (Bandcamp): https://bandcamp.com/search?q=ARTISTA+TITOLO
+   - Priorità 2 (SoundCloud, se la traccia è un vinyl-rip, edit esclusivo o non reperibile su Bandcamp): https://soundcloud.com/search/sounds?q=ARTISTA+TITOLO
+   - Priorità 3 (YouTube, solo come fallback di riserva): https://www.youtube.com/results?search_query=ARTISTA+TITOLO
 `
 
 function isCuratorPath(pathname) {
@@ -153,10 +159,10 @@ async function handleCuratorEdge(request, env, url) {
 
     try {
       if (isStream) {
-        const aiStream = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        const aiStream = await env.AI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
           messages: formatted,
           stream: true,
-          max_tokens: 1024,
+          max_tokens: 2048,
           temperature: 0.4,
         })
         const transformedStream = aiStream.pipeThrough(
@@ -171,10 +177,10 @@ async function handleCuratorEdge(request, env, url) {
           },
         })
       } else {
-        const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        const result = await env.AI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
           messages: formatted,
           stream: false,
-          max_tokens: 1024,
+          max_tokens: 2048,
           temperature: 0.4,
         })
         return Response.json({
