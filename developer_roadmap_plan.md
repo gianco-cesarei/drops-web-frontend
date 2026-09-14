@@ -255,13 +255,17 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
      * Estrazione IP reale del client Cloudflare per superare il blocco di rate limit.
      * Spotify OAuth iniziale con reindirizzamenti dinamici.
 
-3. **Task 9.3: Drops Curator [AI] — Edge Sound Selector & Streaming a Costo Zero (Settembre 2026)**
-   * *Miglioramento Utente:* Consulta il selezionatore musicale underground di Drops con streaming token-by-token a bassissima latenza (~200ms TTFT), zero timeout su Render Free Tier, 100% gratuito e privacy stateless assoluta.
+3. **Task 9.3: Drops Curator [AI] — Edge Sound Selector & Direct Audio Playback a Costo Zero (Settembre 2026)**
+   * *Miglioramento Utente:* Consulta il selezionatore musicale underground di Drops con streaming token-by-token a bassissima latenza (~200ms TTFT), zero timeout su Render Free Tier, 100% gratuito, privacy stateless assoluta e riproduzione audio garantita con 1 click (zero link 404 o selezioni manuali da liste di ricerca).
    * *a) Architettura Edge su Cloudflare Workers* `[front]`
      * Binding nativo `ai` in `wrangler.jsonc` per Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct`), piano gratuito con 10.000 neuroni/giorno.
      * Fallback automatico su Google Gemini Free Tier con streaming diretto `streamGenerateContent?alt=sse`.
      * Fallback graceful trasparente sull'upstream backend FastAPI.
    * *b) Esperienza Utente in Streaming Fluido & Stateless* `[front]`
      * Flusso token-by-token in `CuratorDrawer.tsx` e `api.streamCurator`: aggiornamento in tempo reale del testo, cancellazione tramite AbortController e azzeramento memoria ad ogni chiusura/reset.
-   * *c) Blindatura Regola Zero & Underground Club Brain* `[front]` `[back]`
+   * *c) Resolver di Ascolto Diretto & Garanzia Zero 404* `[front]` `[back]`
+     * Endpoint resolver `/api/v1/curator/listen?q=ARTISTA+TITOLO`: intercetta qualsiasi raccomandazione dinamica e reindirizza via HTTP 302 direttamente al player del brano esatto (zero liste generiche, zero clic intermedi).
+     * Whitelist ferrea nel prompt e nel frontend per URL verificati di Bandcamp e SoundCloud, impedendo allucinazioni di slug fittizi.
+   * *d) Blindatura Regola Zero & Underground Club Brain* `[front]` `[back]`
      * Segretezza rigorosa per la tassonomia interna delle fasi del set (`[1]`, `[2-3B]`, ecc.). Intervista selettiva limitata a 2 domande colloquiali e radar di benvenuto immediato con 3 release underground imperdibili.
+

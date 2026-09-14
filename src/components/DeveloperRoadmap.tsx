@@ -543,9 +543,9 @@ const DEFAULT_SECTIONS: Section[] = [
       },
       {
         id: '9.3',
-        title: 'Drops Curator [AI] — Edge Sound Selector & Streaming a Costo Zero (2026)',
+        title: 'Drops Curator [AI] — Edge Sound Selector & Direct Audio Playback a Costo Zero (2026)',
         benefit:
-          'Integrazione del curatore musicale underground su Cloudflare Workers AI con streaming token-by-token in tempo reale, zero memoria sul server e segretezza assoluta delle fasi del set.',
+          'Integrazione del curatore musicale underground su Cloudflare Workers AI con streaming token-by-token in tempo reale, zero memoria sul server, segretezza assoluta delle fasi del set e riproduzione audio diretta senza link 404 o selezioni manuali.',
         status: 'completed',
         subtasks: [
           {
@@ -557,6 +557,10 @@ const DEFAULT_SECTIONS: Section[] = [
             tags: ['front'],
           },
           {
+            title: 'Resolver di ascolto diretto (/api/v1/curator/listen): intercettazione link e redirect immediato al player esatto del brano (zero 404, zero liste di ricerca)',
+            tags: ['front', 'back'],
+          },
+          {
             title: 'Applicazione rigorosa della Regola Zero: segretezza know-how interno fasi del set e radar di benvenuto',
             tags: ['front', 'back'],
           },
@@ -566,7 +570,7 @@ const DEFAULT_SECTIONS: Section[] = [
   },
 ]
 
-const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v11'
+const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v12'
 
 // --- COMPONENTE VISTA CONSOLE DEDICATA DROP AGENT ---
 function DropAgentConsoleView({ onClose }: { onClose: () => void }) {
