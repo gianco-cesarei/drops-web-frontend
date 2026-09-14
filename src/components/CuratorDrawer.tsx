@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react'
 import { api, type CuratorMessage } from '../api'
 
 const QUICK_STARTERS = [
-  { label: '🔥 Radar: 3 Release Calde / Sold-Out', prompt: 'Inizia la sessione: dammi subito le 3 release calde o sold-out da tenere d\'occhio questa settimana.' },
+  { label: '🔥 Radar: 3 Release Calde / Sold-Out', prompt: 'Elenca subito le 3 release calde o sold-out da avere nel radar questa settimana con artista, etichetta e nota sonora.' },
   { label: '🎧 Raccomandazione Traccia per Stasera', prompt: 'Ho bisogno di una traccia speciale da suonare stasera. Fammi le domande per guidarmi.' },
-  { label: '🎛️ Rarità e Release Vinyl-Only', prompt: 'Cosa consiglia il radar tra le ultime stampe in vinile più ricercate?' },
+  { label: '🎛️ Rarità e Release Vinyl-Only', prompt: 'Quali sono le 3 stampe in vinile più ricercate del radar al momento? Elencale subito con etichetta e nota sonora.' },
 ]
 
 export default function CuratorDrawer() {
@@ -34,7 +34,7 @@ export default function CuratorDrawer() {
       
       // Auto-trigger welcome radar if chat is empty
       if (messages.length === 0 && !loading) {
-        handleSendMessage('Inizia la sessione: presentati e dammi le 3 release calde o sold-out da tenere d\'occhio.')
+        handleSendMessage('Inizia la sessione: presentati brevemente ed elenca subito le 3 release calde o sold-out da avere nel radar questa settimana con artista, etichetta e nota sonora.')
       }
     }
   }, [isOpen])
@@ -104,7 +104,7 @@ export default function CuratorDrawer() {
     setLoading(false)
     // Trigger fresh welcome
     setTimeout(() => {
-      handleSendMessage('Inizia la sessione: presentati e dammi le 3 release calde o sold-out da tenere d\'occhio.')
+      handleSendMessage('Inizia la sessione: presentati brevemente ed elenca subito le 3 release calde o sold-out da avere nel radar questa settimana con artista, etichetta e nota sonora.')
     }, 100)
   }
 
