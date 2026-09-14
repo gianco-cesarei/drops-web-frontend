@@ -80,3 +80,87 @@ test('scheduled handler pings upstream /health endpoint', async () => {
     globalThis.fetch = originalFetch
   }
 })
+
+test('handles /api/v1/curator/chat using Workers AI with streaming SSE', async () => {
+  let capturedModel = ''
+  let capturedOptions = null
+  const fakeStream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('data: {"response":"Ciao "}\n\n'))
+      controller.enqueue(new TextEncoder().encode('data: {"response":"ecco le release"}\n\n'))
+      controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
+      controller.close()
+    },
+  })
+
+  const mockAi = {
+    async run(model, options) {
+      capturedModel = model
+      capturedOptions = options
+      return fakeStream
+    },
+  }
+
+  const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/chat?stream=true', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'Inizia la sessione' }] }),
+  })
+
+  const response = await worker.fetch(request, env({ AI: mockAi }))
+  assert.equal(response.status, 200)
+  assert.ok(response.headers.get('content-type')?.includes('text/event-stream'))
+  assert.equal(capturedModel, '@cf/meta/llama-3.1-8b-instruct')
+  assert.equal(capturedOptions.stream, true)
+
+  const text = await response.text()
+  assert.ok(text.includes('data: {"text":"Ciao "}\n\n'))
+  assert.ok(text.includes('data: {"text":"ecco le release"}\n\n'))
+  assert.ok(text.includes('data: [DONE]\n\n'))
+})
+
+test('handles /api/v1/curator/chat using Workers AI without streaming (JSON)', async () => {
+  const mockAi = {
+    async run() {
+      return { response: 'Ecco 3 dischi sotterranei imperdibili.' }
+    },
+  }
+
+  const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'Dammi le release' }] }),
+  })
+
+  const response = await worker.fetch(request, env({ AI: mockAi }))
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.success, true)
+  assert.equal(data.reply, 'Ecco 3 dischi sotterranei imperdibili.')
+})
+
+test('falls back to upstream proxy for curator chat when no edge AI is available', async () => {
+  const originalFetch = globalThis.fetch
+  let upstreamCalled = false
+  globalThis.fetch = async () => {
+    upstreamCalled = true
+    return new Response(JSON.stringify({ success: true, reply: 'from-upstream' }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  try {
+    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'test' }] }),
+    })
+    const response = await worker.fetch(request, env())
+    assert.equal(upstreamCalled, true)
+    const data = await response.json()
+    assert.equal(data.reply, 'from-upstream')
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+

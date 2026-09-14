@@ -197,6 +197,15 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *a) Algoritmo di ricerca immagini tramite API esterne (Unsplash/Google)* `[back]`
    * *b) Interfaccia editor per approvare, ritagliare e applicare la foto in un click* `[front]`
 
+4. **Task 7.4: Drops Curator [AI] — Underground Sound Selector a Bassa Latenza [COMPLETATO]**
+   * *Miglioramento Utente:* Dialoga con il mentore e selezionatore underground di Drops con risposta streaming token-by-token in tempo reale, zero memoria persistita per privacy totale e radar di benvenuto istantaneo.
+   * *a) Edge AI Routing su Cloudflare Workers* `[front]`
+     * **Stato:** Esecuzione serverless sul worker edge (`drops-web-frontend/worker/index.js`) con Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct`, 10.000 neuroni/giorno gratuiti) e fallback streaming diretto Google Gemini free tier.
+   * *b) Drawer UI reattivo con streaming SSE e abort controller* `[front]`
+     * **Stato:** `CuratorDrawer.tsx` e `streamCurator` in `src/api.ts` con consumo `ReadableStream` token-by-token, cancellazione istantanea con tasto "Ferma", avvio automatico radar 3 release sotterranee.
+   * *c) Regola Zero e segretezza dei codici interni* `[front]` `[back]`
+     * **Stato:** Blindatura del prompt deontologico: segretezza assoluta dei codici tecnici di fase (`[1]`, `[2-3B]`, ecc.), sostituiti con intervista selettiva a massimo 2 domande colloquiali.
+
 ---
 
 ### Sezione 8: Analisi Audio & Preparazione DJ
@@ -245,3 +254,14 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
      * Gestione rate limit di Discogs (coda pacizzata con sleep di 300ms e thread pool).
      * Estrazione IP reale del client Cloudflare per superare il blocco di rate limit.
      * Spotify OAuth iniziale con reindirizzamenti dinamici.
+
+3. **Task 9.3: Drops Curator [AI] — Edge Sound Selector & Streaming a Costo Zero (Settembre 2026)**
+   * *Miglioramento Utente:* Consulta il selezionatore musicale underground di Drops con streaming token-by-token a bassissima latenza (~200ms TTFT), zero timeout su Render Free Tier, 100% gratuito e privacy stateless assoluta.
+   * *a) Architettura Edge su Cloudflare Workers* `[front]`
+     * Binding nativo `ai` in `wrangler.jsonc` per Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct`), piano gratuito con 10.000 neuroni/giorno.
+     * Fallback automatico su Google Gemini Free Tier con streaming diretto `streamGenerateContent?alt=sse`.
+     * Fallback graceful trasparente sull'upstream backend FastAPI.
+   * *b) Esperienza Utente in Streaming Fluido & Stateless* `[front]`
+     * Flusso token-by-token in `CuratorDrawer.tsx` e `api.streamCurator`: aggiornamento in tempo reale del testo, cancellazione tramite AbortController e azzeramento memoria ad ogni chiusura/reset.
+   * *c) Blindatura Regola Zero & Underground Club Brain* `[front]` `[back]`
+     * Segretezza rigorosa per la tassonomia interna delle fasi del set (`[1]`, `[2-3B]`, ecc.). Intervista selettiva limitata a 2 domande colloquiali e radar di benvenuto immediato con 3 release underground imperdibili.

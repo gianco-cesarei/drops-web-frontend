@@ -409,6 +409,27 @@ const DEFAULT_SECTIONS: Section[] = [
           },
         ],
       },
+      {
+        id: '7.4',
+        title: 'Drops Curator [AI] — Underground Sound Selector a Bassa Latenza',
+        benefit:
+          'Consulta il mentore underground di Drops con streaming token-by-token in tempo reale, zero memoria persistita e radar di benvenuto istantaneo.',
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'CuratorDrawer.tsx con streaming SSE progressivo, radar 3 release e intervista selettiva',
+            tags: ['front'],
+          },
+          {
+            title: 'Edge AI routing su Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct) e fallback Gemini free',
+            tags: ['front', 'back'],
+          },
+          {
+            title: 'Protezione Regola Zero (segretezza know-how interno delle fasi del set) e architettura 100% stateless',
+            tags: ['front', 'back'],
+          },
+        ],
+      },
     ],
   },
   {
@@ -520,11 +541,32 @@ const DEFAULT_SECTIONS: Section[] = [
           },
         ],
       },
+      {
+        id: '9.3',
+        title: 'Drops Curator [AI] — Edge Sound Selector & Streaming a Costo Zero (2026)',
+        benefit:
+          'Integrazione del curatore musicale underground su Cloudflare Workers AI con streaming token-by-token in tempo reale, zero memoria sul server e segretezza assoluta delle fasi del set.',
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'Integrazione Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct) e streaming SSE nativo a costo zero',
+            tags: ['front'],
+          },
+          {
+            title: 'CuratorDrawer.tsx con rendering progressivo token, pulsante di interruzione stream e reset sessione stateless',
+            tags: ['front'],
+          },
+          {
+            title: 'Applicazione rigorosa della Regola Zero: segretezza know-how interno fasi del set e radar di benvenuto',
+            tags: ['front', 'back'],
+          },
+        ],
+      },
     ],
   },
 ]
 
-const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v10'
+const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v11'
 
 // --- COMPONENTE VISTA CONSOLE DEDICATA DROP AGENT ---
 function DropAgentConsoleView({ onClose }: { onClose: () => void }) {

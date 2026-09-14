@@ -262,6 +262,73 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ messages }),
     }),
+  streamCurator: async (
+    messages: CuratorMessage[],
+    onChunk: (accumulatedText: string) => void,
+    signal?: AbortSignal
+  ): Promise<string> => {
+    const res = await fetch(`${apiUrl()}/api/v1/curator/chat?stream=true`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify({ messages, stream: true }),
+      signal,
+    })
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '')
+      throw new Error(errText || `Errore del curatore (HTTP ${res.status})`)
+    }
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('text/event-stream') || !res.body) {
+      const data = await res.json()
+      const reply = data?.reply || data?.text || ''
+      onChunk(reply)
+      return reply
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let fullText = ''
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith('data:')) continue
+          const dataStr = trimmed.slice(5).trim()
+          if (dataStr === '[DONE]') continue
+          try {
+            const parsed = JSON.parse(dataStr)
+            const chunkText = parsed.text ?? parsed.response ?? ''
+            if (chunkText) {
+              fullText += chunkText
+              onChunk(fullText)
+            }
+          } catch {
+            if (dataStr && !dataStr.startsWith('{')) {
+              fullText += dataStr
+              onChunk(fullText)
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock?.()
+    }
+
+    return fullText
+  },
   enqueueBatch: <T, R>(items: T[], fn: (item: T, index: number) => Promise<R>, concurrency = 3, delayMs = 100) =>
     batchProcess(items, fn, concurrency, delayMs),
 }

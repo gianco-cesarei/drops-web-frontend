@@ -15,10 +15,17 @@ export default function CuratorDrawer() {
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort()
+    }
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -36,37 +43,68 @@ export default function CuratorDrawer() {
     scrollToBottom()
   }, [messages, loading])
 
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+      setLoading(false)
+    }
+  }
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend ?? input).trim()
     if (!text || loading) return
 
-    const newMessages: CuratorMessage[] = [...messages, { role: 'user', content: text }]
-    setMessages(newMessages)
+    const userMessage: CuratorMessage = { role: 'user', content: text }
+    const updatedMessages: CuratorMessage[] = [...messages, userMessage]
+    
+    // Append user message and prepare empty model placeholder
+    setMessages([...updatedMessages, { role: 'model', content: '' }])
     if (!textToSend) setInput('')
     setLoading(true)
     setError(null)
 
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     try {
-      const res = await api.chatCurator(newMessages)
-      if (res.success && res.reply) {
-        setMessages([...newMessages, { role: 'model', content: res.reply }])
-      } else {
-        setError(res.reply || 'Errore nella ricezione della risposta dal Curatore.')
-      }
+      await api.streamCurator(
+        updatedMessages,
+        (accumulatedText) => {
+          setMessages([...updatedMessages, { role: 'model', content: accumulatedText }])
+        },
+        controller.signal
+      )
     } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setLoading(false)
+        return
+      }
       setError(err?.message || 'Connessione al server non riuscita.')
+      // If no text was received, remove the empty assistant placeholder
+      setMessages((prev) => {
+        const last = prev[prev.length - 1]
+        if (last && last.role === 'model' && !last.content) {
+          return prev.slice(0, -1)
+        }
+        return prev
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleResetSession = () => {
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
     setMessages([])
     setError(null)
     setInput('')
+    setLoading(false)
     // Trigger fresh welcome
     setTimeout(() => {
-      handleSendMessage('Inizia la sessione: dammi le 3 release calde o sold-out da tenere d\'occhio.')
+      handleSendMessage('Inizia la sessione: presentati e dammi le 3 release calde o sold-out da tenere d\'occhio.')
     }, 100)
   }
 
@@ -345,7 +383,7 @@ export default function CuratorDrawer() {
                 )
               })}
 
-              {loading && (
+              {loading && (!messages.length || messages[messages.length - 1]?.role !== 'model' || !messages[messages.length - 1]?.content) && (
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -390,7 +428,9 @@ export default function CuratorDrawer() {
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                handleSendMessage()
+                if (!loading) {
+                  handleSendMessage()
+                }
               }}
               style={{
                 padding: '14px 16px',
@@ -421,21 +461,22 @@ export default function CuratorDrawer() {
                 onBlur={(e) => (e.target.style.borderColor = '#1c2720')}
               />
               <button
-                type="submit"
-                disabled={loading || !input.trim()}
+                type={loading ? 'button' : 'submit'}
+                onClick={loading ? handleStopGeneration : undefined}
+                disabled={!loading && !input.trim()}
                 style={{
-                  backgroundColor: input.trim() && !loading ? '#10b981' : '#14251c',
-                  color: input.trim() && !loading ? '#041d13' : '#475569',
+                  backgroundColor: loading ? '#2d3748' : input.trim() ? '#10b981' : '#14251c',
+                  color: loading ? '#f8fafc' : input.trim() ? '#041d13' : '#475569',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '0 16px',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: input.trim() && !loading ? 'pointer' : 'default',
+                  cursor: loading || input.trim() ? 'pointer' : 'default',
                   transition: 'background-color 0.2s',
                 }}
               >
-                Invia
+                {loading ? 'Ferma' : 'Invia'}
               </button>
             </form>
           </div>
