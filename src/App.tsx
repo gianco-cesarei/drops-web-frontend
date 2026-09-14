@@ -12,6 +12,7 @@ import AcademyHub from './components/AcademyHub'
 import ProducerSettings from './components/ProducerSettings'
 import GlobalAudioPlayer from './components/GlobalAudioPlayer'
 import GlobalSearchModal from './components/GlobalSearchModal'
+import CuratorDrawer from './components/CuratorDrawer'
 import MultiSourceSync from './components/MultiSourceSync'
 import DownloadArchiveModal from './components/DownloadArchiveModal'
 import FolderIngestionHub, {
@@ -534,6 +535,7 @@ function PrivateFrame({ section, user, onLogoutStart, onLogoutEnd, children }: {
       {children}
       <GlobalAudioPlayer />
       <GlobalSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      <CuratorDrawer />
     </div>
   )
 }

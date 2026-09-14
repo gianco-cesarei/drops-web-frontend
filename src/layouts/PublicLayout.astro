@@ -1,6 +1,7 @@
 ---
 import PublicHeader from '../components/PublicHeader.astro'
 import GlobalAudioPlayer from '../components/GlobalAudioPlayer'
+import CuratorDrawer from '../components/CuratorDrawer'
 import 'leaflet/dist/leaflet.css'
 import '../styles.css'
 
@@ -31,5 +32,6 @@ const isLanding = Astro.url.pathname === '/' || bodyClass.includes('landing-page
     {!isLanding && <PublicHeader pathname={Astro.url.pathname} />}
     <slot />
     <GlobalAudioPlayer client:load />
+    <CuratorDrawer client:load />
   </body>
 </html>

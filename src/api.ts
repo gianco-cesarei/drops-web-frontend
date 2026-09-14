@@ -68,6 +68,8 @@ export type PlaylistPreview = PlaylistResolveBase & (
     }
 )
 export type DiscogsEnrichment = { label: string | null; year?: number | null; country?: string | null; styles?: string[]; artists?: string[]; catalog_no?: string | null; discogs_url?: string | null }
+export type CuratorMessage = { role: 'user' | 'model'; content: string }
+export type CuratorResponse = { success: boolean; reply: string }
 
 export class ApiError extends Error {
   constructor(
@@ -255,6 +257,11 @@ export const api = {
     request<any>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
   deleteFolder: (id: string) =>
     request<void>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  chatCurator: (messages: CuratorMessage[]) =>
+    request<CuratorResponse>('/api/v1/curator/chat', {
+      method: 'POST',
+      body: JSON.stringify({ messages }),
+    }),
   enqueueBatch: <T, R>(items: T[], fn: (item: T, index: number) => Promise<R>, concurrency = 3, delayMs = 100) =>
     batchProcess(items, fn, concurrency, delayMs),
 }
