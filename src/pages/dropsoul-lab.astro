@@ -1,0 +1,24 @@
+---
+import DropSoulLab from '../components/DropSoulLab'
+import PublicHeader from '../components/PublicHeader.astro'
+import '../styles.css'
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101411" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>DropSoul Lab (Staging Preview) — Drops</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body style="background: #101411; min-height: 100vh; margin: 0;">
+    <PublicHeader pathname="/dropsoul-lab" />
+    <main>
+      <DropSoulLab client:load />
+    </main>
+  </body>
+</html>
