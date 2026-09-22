@@ -8,7 +8,7 @@
     "dev:theme": "./launch-dev.sh",
     "check": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro check",
     "build": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro build",
-    "deploy": "npm run build && npx wrangler deploy",
+    "deploy": "npm run build && npx --yes wrangler@4.136.2 deploy",
     "test": "vitest run && node --test worker/index.test.mjs"
   },
   "dependencies": {
