@@ -1,45 +1,121 @@
 import React, { useState } from 'react'
 
-export interface TrackItem {
-  id: number
+export interface SoulTrack {
+  id: string
   title: string
-  camelot: string
+  artist: string
   bpm: number
-  status: 'VERIFIED_320K' | 'FLAC_LOSSLESS' | 'DOWNSIZED' | 'HUNTING' | 'SKIPPED'
+  camelot: string
+  status: 'completed' | 'queued' | 'downloading' | 'hunting' | 'downsized' | 'failed'
+  soulStatus: 'FLAC_LOSSLESS' | 'VERIFIED_320K' | 'DOWNSIZED' | 'HUNTING' | 'SKIPPED'
   cutoffHz: number
-  format: string
+  progress: number
 }
 
-const INITIAL_TRACKS: TrackItem[] = [
-  { id: 1, title: 'Blue Six - Music & Wine (Original Mix)', camelot: '11A', bpm: 122, status: 'FLAC_LOSSLESS', cutoffHz: 21800, format: 'FLAC' },
-  { id: 2, title: 'Miguel Migs - The Night (Dub)', camelot: '8A', bpm: 124, status: 'VERIFIED_320K', cutoffHz: 20400, format: '320k' },
-  { id: 3, title: 'Lisa Shaw - Always (Naked Mix)', camelot: '4A', bpm: 120, status: 'VERIFIED_320K', cutoffHz: 20100, format: '320k' },
-  { id: 4, title: 'Kerri Chandler - Atmospheric Beats', camelot: '11B', bpm: 125, status: 'DOWNSIZED', cutoffHz: 15800, format: 'WebRip' },
-  { id: 5, title: 'Aquanauts - Karma (Deep Mix)', camelot: '7A', bpm: 123, status: 'HUNTING', cutoffHz: 0, format: 'Pending' },
-  { id: 6, title: 'Julius Papp - Groove Nation', camelot: '8B', bpm: 126, status: 'VERIFIED_320K', cutoffHz: 20800, format: '320k' },
+const INITIAL_QUEUE: SoulTrack[] = [
+  {
+    id: 't-01',
+    title: 'Music & Wine (Original Mix)',
+    artist: 'Blue Six',
+    bpm: 122,
+    camelot: '11A',
+    status: 'completed',
+    soulStatus: 'FLAC_LOSSLESS',
+    cutoffHz: 21800,
+    progress: 100,
+  },
+  {
+    id: 't-02',
+    title: 'The Night (Dub)',
+    artist: 'Miguel Migs',
+    bpm: 124,
+    camelot: '8A',
+    status: 'completed',
+    soulStatus: 'VERIFIED_320K',
+    cutoffHz: 20400,
+    progress: 100,
+  },
+  {
+    id: 't-03',
+    title: 'Always (Naked Mix)',
+    artist: 'Lisa Shaw',
+    bpm: 120,
+    camelot: '4A',
+    status: 'downloading',
+    soulStatus: 'VERIFIED_320K',
+    cutoffHz: 20100,
+    progress: 68,
+  },
+  {
+    id: 't-04',
+    title: 'Atmospheric Beats',
+    artist: 'Kerri Chandler',
+    bpm: 125,
+    camelot: '11B',
+    status: 'downsized',
+    soulStatus: 'DOWNSIZED',
+    cutoffHz: 15800,
+    progress: 100,
+  },
+  {
+    id: 't-05',
+    title: 'Karma (Deep Mix)',
+    artist: 'Aquanauts',
+    bpm: 123,
+    camelot: '7A',
+    status: 'hunting',
+    soulStatus: 'HUNTING',
+    cutoffHz: 0,
+    progress: 15,
+  },
 ]
 
 export default function DropSoulLab() {
   const [mode, setMode] = useState<'drops' | 'dropsoul'>('dropsoul')
-  const [tracks, setTracks] = useState<TrackItem[]>(INITIAL_TRACKS)
-  const [selectedTrack, setSelectedTrack] = useState<TrackItem>(INITIAL_TRACKS[0])
-  const [showModal, setShowModal] = useState<boolean>(false)
-  const [rememberSetChoice, setRememberSetChoice] = useState<boolean>(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [sidebarTab, setSidebarTab] = useState<'ready' | 'archive'>('ready')
+  const [inputUrl, setInputUrl] = useState('')
+  const [queue, setQueue] = useState<SoulTrack[]>(INITIAL_QUEUE)
+  const [inspectingTrackId, setInspectingTrackId] = useState<string | null>(INITIAL_QUEUE[0].id)
+  const [showDecisionModal, setShowDecisionModal] = useState(false)
+  const [activeFolder, setActiveFolder] = useState('Nude Dimensions Vol 1 (Naked Music 1999)')
+
+  const inspectingTrack = queue.find((t) => t.id === inspectingTrackId) || queue[0]
+
+  const handleAddUrl = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputUrl.trim()) return
+    const newTrack: SoulTrack = {
+      id: `t-${Date.now()}`,
+      title: inputUrl.includes('youtube') || inputUrl.includes('soundcloud') ? 'Release Audio in Coda' : inputUrl.trim(),
+      artist: 'Artista Selezionato',
+      bpm: 124,
+      camelot: '8A',
+      status: 'downloading',
+      soulStatus: mode === 'dropsoul' ? 'VERIFIED_320K' : 'VERIFIED_320K',
+      cutoffHz: mode === 'dropsoul' ? 20400 : 16000,
+      progress: 12,
+    }
+    setQueue((cur) => [newTrack, ...cur])
+    setInputUrl('')
+  }
 
   const handleDecision = (decision: 'downsize' | 'wait' | 'skip') => {
-    setTracks(prev => prev.map(t => {
-      if (t.id === 4) {
-        if (decision === 'downsize') {
-          return { ...t, status: 'DOWNSIZED', format: 'WebRip', cutoffHz: 15800 }
-        } else if (decision === 'wait') {
-          return { ...t, status: 'HUNTING', format: 'Pending', cutoffHz: 0 }
-        } else {
-          return { ...t, status: 'SKIPPED', format: 'Excluded', cutoffHz: 0 }
+    setQueue((prev) =>
+      prev.map((t) => {
+        if (t.id === 't-04') {
+          if (decision === 'downsize') {
+            return { ...t, soulStatus: 'DOWNSIZED', status: 'downsized', cutoffHz: 15800 }
+          } else if (decision === 'wait') {
+            return { ...t, soulStatus: 'HUNTING', status: 'hunting', cutoffHz: 0 }
+          } else {
+            return { ...t, soulStatus: 'SKIPPED', status: 'failed', cutoffHz: 0 }
+          }
         }
-      }
-      return t
-    }))
-    setShowModal(false)
+        return t
+      })
+    )
+    setShowDecisionModal(false)
   }
 
   const renderSpectrumBars = (cutoff: number) => {
@@ -49,7 +125,7 @@ export default function DropSoulLab() {
     return Array.from({ length: totalBars }).map((_, i) => {
       const active = i <= cutoffBar && cutoff > 0
       const heightPercent = active ? Math.min(100, Math.max(15, 95 - Math.pow(i / totalBars, 1.8) * 60)) : 6
-      const barColor = cutoff >= 19500 ? '#10b981' : cutoff > 0 ? '#f59e0b' : '#374151'
+      const barColor = cutoff >= 19500 ? '#15803d' : cutoff > 0 ? '#d97706' : '#cbd5e1'
 
       return (
         <div
@@ -57,9 +133,9 @@ export default function DropSoulLab() {
           style={{
             flex: 1,
             height: `${heightPercent}%`,
-            background: active ? barColor : 'rgba(255,255,255,0.06)',
+            background: active ? barColor : 'rgba(0,0,0,0.06)',
             borderRadius: '2px 2px 0 0',
-            transition: 'height 0.3s ease, background 0.3s ease',
+            transition: 'height 0.25s ease, background 0.25s ease',
           }}
         />
       )
@@ -67,382 +143,489 @@ export default function DropSoulLab() {
   }
 
   return (
-    <div style={{
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '32px 20px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: '#edf3ee',
-    }}>
-      {/* Top Warning Banner: Staging Only */}
+    <div className="download-workspace-frameless" style={{ paddingTop: '16px' }}>
+      
+      {/* STAGING TEST BAR / SWITCHER */}
       <div style={{
-        background: 'rgba(139, 92, 246, 0.1)',
-        border: '1px solid rgba(139, 92, 246, 0.3)',
-        borderRadius: '12px',
-        padding: '10px 16px',
-        fontSize: '12px',
-        marginBottom: '24px',
+        maxWidth: '1200px',
+        margin: '0 auto 16px',
+        padding: '0 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        color: '#c4b5fd',
+        flexWrap: 'wrap',
+        gap: '12px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '14px' }}>🧪</span>
-          <span><strong>Ambiente Staging / Lab:</strong> Questa pagina è isolata e non è visibile nella navigazione principale di Drops.</span>
-        </div>
-        <span style={{
-          background: 'rgba(139, 92, 246, 0.25)',
-          padding: '2px 8px',
-          borderRadius: '6px',
-          fontWeight: 700,
-          fontSize: '10px',
-          letterSpacing: '0.05em',
-        }}>
-          DROPSOUL PREVIEW
-        </span>
-      </div>
-
-      {/* Main Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px',
-        marginBottom: '28px',
-        paddingBottom: '20px',
-        borderBottom: '1px solid #293029',
-      }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '28px' }}>🎛️</span>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              DropSoul <span style={{ color: '#06b6d4', fontWeight: 400 }}>Engine Lab</span>
-            </h1>
-          </div>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#8f9a90' }}>
-            High-Fidelity Soulseek P2P Ingestion & Spectrogram Verification Playground
-          </p>
+          <span style={{
+            background: '#ffffff',
+            border: '1px solid #dce1dc',
+            color: '#475569',
+            padding: '4px 10px',
+            borderRadius: '8px',
+            fontSize: '11.5px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          }}>
+            <span>🧪</span> Staging Downloader Lab
+          </span>
+          <span style={{ fontSize: '12px', color: '#626862' }}>
+            Testa l&apos;interfaccia del Downloader con la modalità Soul.
+          </span>
         </div>
 
         {/* Macro Switcher */}
         <div style={{
-          background: '#161b17',
-          border: '1px solid #293029',
-          borderRadius: '12px',
-          padding: '4px',
+          background: '#f2f4f1',
+          border: '1px solid #dce1dc',
+          borderRadius: '10px',
+          padding: '3px',
           display: 'flex',
-          gap: '4px',
+          gap: '3px',
         }}>
           <button
+            type="button"
             onClick={() => setMode('drops')}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
+              padding: '6px 14px',
+              borderRadius: '7px',
               border: 'none',
               fontSize: '12px',
-              fontWeight: 600,
+              fontWeight: mode === 'drops' ? 700 : 500,
               cursor: 'pointer',
-              background: mode === 'drops' ? '#2563eb' : 'transparent',
-              color: mode === 'drops' ? '#ffffff' : '#8f9a90',
-              transition: 'all 0.2s',
+              background: mode === 'drops' ? '#ffffff' : 'transparent',
+              color: mode === 'drops' ? '#151815' : '#626862',
+              boxShadow: mode === 'drops' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              transition: 'all 0.15s ease',
             }}
           >
-            💧 Drops (Standard)
+            💧 Drops Standard
           </button>
           <button
+            type="button"
             onClick={() => setMode('dropsoul')}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
+              padding: '6px 14px',
+              borderRadius: '7px',
               border: 'none',
               fontSize: '12px',
-              fontWeight: 700,
+              fontWeight: mode === 'dropsoul' ? 700 : 500,
               cursor: 'pointer',
-              background: mode === 'dropsoul' ? 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)' : 'transparent',
-              color: mode === 'dropsoul' ? '#ffffff' : '#8f9a90',
-              boxShadow: mode === 'dropsoul' ? '0 0 16px rgba(6, 182, 212, 0.3)' : 'none',
-              transition: 'all 0.2s',
+              background: mode === 'dropsoul' ? '#22c55e' : 'transparent',
+              color: mode === 'dropsoul' ? '#ffffff' : '#626862',
+              boxShadow: mode === 'dropsoul' ? '0 2px 6px rgba(34, 197, 94, 0.25)' : 'none',
+              transition: 'all 0.15s ease',
             }}
           >
-            🔥 DropSoul (Hi-Fi)
+            🔥 DropSoul Hi-Fi
           </button>
         </div>
       </div>
 
-      {/* Mode Status Pill */}
-      <div style={{
-        background: mode === 'dropsoul' ? 'rgba(6, 182, 212, 0.08)' : 'rgba(37, 99, 235, 0.08)',
-        border: `1px solid ${mode === 'dropsoul' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(37, 99, 235, 0.25)'}`,
-        borderRadius: '14px',
-        padding: '14px 18px',
-        marginBottom: '28px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '12px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '10px',
-            height: '10px',
-            borderRadius: '50%',
-            background: mode === 'dropsoul' ? '#06b6d4' : '#3b82f6',
-            boxShadow: `0 0 10px ${mode === 'dropsoul' ? '#06b6d4' : '#3b82f6'}`,
-          }} />
-          <div style={{ fontSize: '13px' }}>
-            <strong style={{ color: mode === 'dropsoul' ? '#06b6d4' : '#60a5fa' }}>
-              {mode === 'dropsoul' ? 'Modalità DropSoul Attiva:' : 'Modalità Drops Standard:'}
-            </strong>
-            <span style={{ color: '#8f9a90', marginLeft: '6px' }}>
-              {mode === 'dropsoul'
-                ? 'Priorità a Soulseek P2P (FLAC / 320k) con Quality Gate spettrale (>20 kHz) e Decision Gate.'
-                : 'Download rapido da YouTube/Web. Nessun controllo di frequenza bloccante.'}
-            </span>
+      {/* TOP NAVIGATION / HAMBURGER BAR (Real Drops Structure) */}
+      <div className="workspace-top-bar" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <button
+          type="button"
+          className={`drops-hamburger-btn ${isSidebarOpen ? 'is-active' : ''}`}
+          onClick={() => setIsSidebarOpen((v) => !v)}
+          title={isSidebarOpen ? 'Chiudi pannello laterale' : 'Apri Libreria e File Pronti'}
+          aria-label={isSidebarOpen ? 'Chiudi pannello laterale' : 'Apri Libreria e File Pronti'}
+          aria-expanded={isSidebarOpen}
+        >
+          <div className="drops-hamburger-icon">
+            <span className="ham-line ham-line-1" />
+            <span className="ham-line ham-line-2" />
+            <span className="ham-line ham-line-3" />
           </div>
-        </div>
-        {mode === 'dropsoul' && (
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: 'none',
-              background: '#06b6d4',
-              color: '#000000',
-              fontWeight: 700,
-              fontSize: '11px',
-              cursor: 'pointer',
-            }}
-          >
-            ⚡ Simula Decision Gate
-          </button>
-        )}
+          <span className="drops-hamburger-label">Libreria</span>
+          <span className="drops-hamburger-badge" title="Tracce pronte">
+            {queue.filter((t) => t.status === 'completed' || t.status === 'downsized').length}
+          </span>
+        </button>
       </div>
 
-      {/* Grid: Tracklist + Right Panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+      {isSidebarOpen && (
+        <div
+          className="drops-sidebar-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* MAIN WORKSPACE ROW */}
+      <div className={`workspace-stage-row ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* Tracklist Card */}
-        <div style={{
-          gridColumn: 'span 2',
-          background: '#161b17',
-          border: '1px solid #293029',
-          borderRadius: '16px',
-          padding: '20px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #293029' }}>
-            <div>
-              <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', fontWeight: 800 }}>
-                DJ Curation Vault
-              </span>
-              <h2 style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: 700 }}>
-                Nude Dimensions Vol 1 (Naked Music 1999)
-              </h2>
+        {/* UNIFIED LEFT SIDEBAR (Real Drops Downloader Sidebar) */}
+        {isSidebarOpen && (
+          <aside className="drops-unified-sidebar" aria-label="Libreria e Archivio">
+            <div className="sidebar-top-header">
+              <div className="sidebar-tabs-segmented">
+                <button
+                  type="button"
+                  className={`sidebar-tab-btn ${sidebarTab === 'ready' ? 'active' : ''}`}
+                  onClick={() => setSidebarTab('ready')}
+                >
+                  📥 Pronti ({queue.filter((t) => t.status === 'completed' || t.status === 'downsized').length})
+                </button>
+                <button
+                  type="button"
+                  className={`sidebar-tab-btn ${sidebarTab === 'archive' ? 'active' : ''}`}
+                  onClick={() => setSidebarTab('archive')}
+                >
+                  📁 Archivio (3)
+                </button>
+              </div>
+              <button
+                type="button"
+                className="sidebar-close-btn"
+                onClick={() => setIsSidebarOpen(false)}
+                title="Chiudi pannello"
+                aria-label="Chiudi pannello"
+              >
+                ✕
+              </button>
             </div>
-            <span style={{
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              color: '#10b981',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              fontSize: '11px',
-              fontWeight: 700,
-            }}>
-              ● 83% Studio Grade
-            </span>
-          </div>
 
-          {/* Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ color: '#8f9a90', borderBottom: '1px solid #293029' }}>
-                  <th style={{ padding: '8px', width: '30px' }}>#</th>
-                  <th style={{ padding: '8px' }}>Traccia</th>
-                  <th style={{ padding: '8px', width: '60px' }}>Key</th>
-                  <th style={{ padding: '8px', width: '50px' }}>BPM</th>
-                  <th style={{ padding: '8px' }}>Quality Gate</th>
-                  <th style={{ padding: '8px', textAlign: 'right' }}>Spettro</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tracks.map((t) => {
-                  const isSelected = selectedTrack.id === t.id
-                  return (
-                    <tr
-                      key={t.id}
-                      onClick={() => setSelectedTrack(t)}
-                      style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.03)',
-                        cursor: 'pointer',
-                        background: isSelected ? 'rgba(6, 182, 212, 0.08)' : 'transparent',
-                        transition: 'background 0.15s',
-                      }}
-                    >
-                      <td style={{ padding: '10px 8px', color: '#8f9a90', fontFamily: 'monospace' }}>
-                        {t.id < 10 ? `0${t.id}` : t.id}
-                      </td>
-                      <td style={{ padding: '10px 8px', fontWeight: 600 }}>{t.title}</td>
-                      <td style={{ padding: '10px 8px', color: '#06b6d4', fontWeight: 700 }}>{t.camelot}</td>
-                      <td style={{ padding: '10px 8px', fontFamily: 'monospace' }}>{t.bpm}</td>
-                      <td style={{ padding: '10px 8px' }}>
-                        {t.status === 'FLAC_LOSSLESS' && (
-                          <span style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
-                            ● FLAC LOSSLESS
-                          </span>
-                        )}
-                        {t.status === 'VERIFIED_320K' && (
-                          <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
-                            ● VERIFIED 320k
-                          </span>
-                        )}
-                        {t.status === 'DOWNSIZED' && (
-                          <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
-                            ◑ DOWNSIZED (Hunting ⏳)
-                          </span>
-                        )}
-                        {t.status === 'HUNTING' && (
-                          <span style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
-                            ○ IN ATTESA NEL CLOUD
-                          </span>
-                        )}
-                        {t.status === 'SKIPPED' && (
-                          <span style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 800 }}>
-                            ✕ ESCLUSA
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedTrack(t); }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#8f9a90',
-                            cursor: 'pointer',
-                            fontSize: '11px',
-                          }}
-                        >
-                          Analizza 🔬
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+            {/* TAB CONTENT */}
+            {sidebarTab === 'ready' ? (
+              <div className="sidebar-tab-content">
+                <div className="wing-cloud-box">
+                  <span className="wing-cloud-label">SALVATO IN CLOUD:</span>
+                  <strong className="wing-cloud-folder">📁 {activeFolder}</strong>
+                </div>
 
-        {/* Right Column: Spectrogram & Cloud Worker */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="wing-ready-list">
+                  {queue.filter((t) => t.status === 'completed' || t.status === 'downsized').map((item) => (
+                    <div key={item.id} className="wing-ready-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <button type="button" className="wing-mini-play" title="Ascolta">▶</button>
+                        <div className="wing-track-info" style={{ flex: 1, minWidth: 0 }}>
+                          <span className="wing-track-title">{item.title}</span>
+                          <div className="wing-track-meta">
+                            <span className="wing-artist">{item.artist}</span>
+                            <span className="wing-bpm">BPM {item.bpm}</span>
+                            <span style={{ fontWeight: 700, color: '#15803d' }}>{item.camelot}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Soul Layer Extra: Badge & FFT Inspection */}
+                      {mode === 'dropsoul' && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '34px', fontSize: '10.5px' }}>
+                          {item.soulStatus === 'FLAC_LOSSLESS' && (
+                            <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                              ● FLAC LOSSLESS
+                            </span>
+                          )}
+                          {item.soulStatus === 'VERIFIED_320K' && (
+                            <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                              ● VERIFIED 320k
+                            </span>
+                          )}
+                          {item.soulStatus === 'DOWNSIZED' && (
+                            <span style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                              ◑ DOWNSIZED (Hunting ⏳)
+                            </span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setInspectingTrackId(item.id)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: inspectingTrackId === item.id ? '#15803d' : '#626862',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              padding: 0,
+                            }}
+                          >
+                            {inspectingTrackId === item.id ? 'Spettro attivo ✓' : 'Analizza Spettro 🔬'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="sidebar-tab-content">
+                <div style={{ padding: '8px 12px', fontSize: '12px', color: '#626862' }}>
+                  <div
+                    onClick={() => setActiveFolder('Nude Dimensions Vol 1 (Naked Music 1999)')}
+                    style={{ padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', background: activeFolder.includes('Nude') ? '#f0fdf4' : 'transparent', fontWeight: 600, color: '#151815', marginBottom: '4px' }}
+                  >
+                    📁 Nude Dimensions Vol 1 (14 brani)
+                  </div>
+                  <div
+                    onClick={() => setActiveFolder('Cabaret Recordings Archive')}
+                    style={{ padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', background: activeFolder.includes('Cabaret') ? '#f0fdf4' : 'transparent', fontWeight: 600, color: '#151815', marginBottom: '4px' }}
+                  >
+                    📁 Cabaret Recordings Archive (84 brani)
+                  </div>
+                  <div
+                    onClick={() => setActiveFolder('Perlon Vinyl Gems')}
+                    style={{ padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', background: activeFolder.includes('Perlon') ? '#f0fdf4' : 'transparent', fontWeight: 600, color: '#151815' }}
+                  >
+                    📁 Perlon Vinyl Gems (26 brani)
+                  </div>
+                </div>
+              </div>
+            )}
+          </aside>
+        )}
+
+        {/* MAIN DOWNLOAD STAGE (Real Drops Downloader Canvas) */}
+        <main className="download-stage-frameless">
           
-          {/* FFT Spectrogram Inspector */}
-          <div style={{
-            background: '#161b17',
-            border: '1px solid #293029',
-            borderRadius: '16px',
-            padding: '18px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#8f9a90' }}>
-                🔬 FFT Cutoff Inspector
-              </span>
-              <span style={{
-                background: selectedTrack.cutoffHz >= 19500 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                color: selectedTrack.cutoffHz >= 19500 ? '#10b981' : '#f59e0b',
-                padding: '2px 8px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontWeight: 800,
-                fontFamily: 'monospace',
-              }}>
-                {selectedTrack.cutoffHz > 0 ? `${(selectedTrack.cutoffHz / 1000).toFixed(1)} kHz` : 'N/A'}
-              </span>
+          {/* Main Form */}
+          <form onSubmit={handleAddUrl} className="download-form-clean">
+            <div className="dl-field-header">
+              <label htmlFor="download-url-lab" className="dl-field-eyebrow" style={{ cursor: 'pointer', display: 'block' }}>
+                Link brano, playlist o set
+              </label>
+              <p className="dl-field-sub">
+                Incolla qui i tuoi link musicali per scaricarli direttamente in locale.
+              </p>
             </div>
 
-            <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '2px' }}>
-              {selectedTrack.title}
-            </div>
-            <div style={{ fontSize: '11px', color: '#8f9a90', marginBottom: '14px' }}>
-              {selectedTrack.cutoffHz >= 19500
-                ? `${selectedTrack.format} • Risposta in frequenza completa da studio`
-                : selectedTrack.cutoffHz > 0
-                ? 'WebRip compresso • Taglio netto delle alte frequenze'
-                : 'In attesa di download dai peer Soulseek'}
+            <div className="dl-folder-top-bar">
+              <div className="dl-select-wrap">
+                <span className="dl-select-label">Scarica in:</span>
+                <select
+                  value={activeFolder}
+                  onChange={(e) => setActiveFolder(e.target.value)}
+                  className="dl-folder-select-clean"
+                  title="Cartella cloud di salvataggio"
+                >
+                  <option value="Nude Dimensions Vol 1 (Naked Music 1999)">📁 Nude Dimensions Vol 1 (14 brani)</option>
+                  <option value="Cabaret Recordings Archive">📁 Cabaret Recordings Archive (84 brani)</option>
+                  <option value="Perlon Vinyl Gems">📁 Perlon Vinyl Gems (26 brani)</option>
+                </select>
+              </div>
             </div>
 
-            {/* Visualizer Bars Container */}
+            <textarea
+              id="download-url-lab"
+              className="download-textarea-clean"
+              placeholder={'Un link per riga · YouTube o SoundCloud / Le playlist e i set chiedono conferma delle tracce'}
+              value={inputUrl}
+              onChange={(e) => setInputUrl(e.target.value)}
+              rows={4}
+              spellCheck={false}
+            />
+
+            {/* DYNAMIC QUALITY NOTICE: DROPS VS DROPSOUL */}
+            <div className="dl-fixed-quality-notice" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              {mode === 'drops' ? (
+                <span className="dl-quality-badge">
+                  <span className="dl-quality-dot"></span>
+                  MP3 HD Quality · 320 kbps CBR (Formato fisso)
+                </span>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span className="dl-quality-badge" style={{ background: '#f0fdf4', color: '#15803d', borderColor: '#bbf7d0' }}>
+                    <span className="dl-quality-dot" style={{ background: '#22c55e' }}></span>
+                    DropSoul Hi-Fi • Soulseek P2P + Quality Gate Spettrale (&gt;20 kHz)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowDecisionModal(true)}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #bbf7d0',
+                      color: '#15803d',
+                      borderRadius: '6px',
+                      padding: '3px 8px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ⚡ Simula Decision Gate
+                  </button>
+                </div>
+              )}
+
+              {mode === 'dropsoul' && (
+                <span style={{ fontSize: '11px', color: '#626862' }}>
+                  Worker Cloud: <strong style={{ color: '#15803d' }}>● Connesso</strong>
+                </span>
+              )}
+            </div>
+
+            {/* BIG SUBMIT BUTTON */}
+            <button
+              type="submit"
+              className="primary dl-btn-submit-green"
+              disabled={!inputUrl.trim()}
+            >
+              {mode === 'dropsoul' ? 'Aggiungi alla coda DropSoul (Hi-Fi)' : 'Aggiungi alla coda'}
+            </button>
+          </form>
+
+          {/* FFT INSPECTOR CARD: VISIBLE IN DROPSOUL MODE */}
+          {mode === 'dropsoul' && inspectingTrack && (
             <div style={{
-              background: '#0d110e',
-              border: '1px solid #222923',
-              borderRadius: '10px',
-              padding: '12px',
-              height: '110px',
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: '3px',
+              background: '#ffffff',
+              border: '1px solid #dce1dc',
+              borderRadius: '14px',
+              padding: '16px 18px',
+              marginTop: '18px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
             }}>
-              {renderSpectrumBars(selectedTrack.cutoffHz)}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#626862', marginTop: '6px', fontFamily: 'monospace' }}>
-              <span>100Hz</span>
-              <span>8kHz</span>
-              <span>16kHz</span>
-              <span style={{ color: '#06b6d4', fontWeight: 700 }}>20kHz</span>
-              <span>22kHz</span>
-            </div>
-          </div>
-
-          {/* Cloud Hunt 24/7 Panel */}
-          <div style={{
-            background: '#161b17',
-            border: '1px solid #293029',
-            borderRadius: '16px',
-            padding: '18px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>☁️</span> Cloud Worker 24/7
-              </span>
-              <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>● Connesso</span>
-            </div>
-            <p style={{ fontSize: '11px', color: '#8f9a90', margin: '0 0 12px', lineHeight: 1.4 }}>
-              Il worker su server cloud scarica automaticamente da Soulseek, verifica il cutoff e salva su Cloudflare R2 anche mentre il tuo computer è spento.
-            </p>
-            <div style={{
-              background: 'rgba(168, 85, 247, 0.08)',
-              border: '1px solid rgba(168, 85, 247, 0.25)',
-              borderRadius: '10px',
-              padding: '10px 12px',
-              fontSize: '11px',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginBottom: '4px' }}>
-                <span>In caccia nel cloud:</span>
-                <span style={{ color: '#c084fc', fontFamily: 'monospace' }}>
-                  {tracks.filter(t => t.status === 'HUNTING' || t.status === 'DOWNSIZED').length} release
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#15803d' }}>
+                    🔬 FFT Cutoff Inspector
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#151815' }}>
+                    {inspectingTrack.artist} - {inspectingTrack.title}
+                  </span>
+                </div>
+                <span style={{
+                  background: inspectingTrack.cutoffHz >= 19500 ? '#f0fdf4' : '#fffbeb',
+                  color: inspectingTrack.cutoffHz >= 19500 ? '#15803d' : '#b45309',
+                  border: `1px solid ${inspectingTrack.cutoffHz >= 19500 ? '#bbf7d0' : '#fde68a'}`,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  fontFamily: 'monospace',
+                }}>
+                  {inspectingTrack.cutoffHz > 0 ? `${(inspectingTrack.cutoffHz / 1000).toFixed(1)} kHz` : 'IN ATTESA'}
                 </span>
               </div>
-              <div style={{ color: '#8f9a90', fontSize: '10.5px' }}>
-                • Kerri Chandler - Atmospheric Beats (In coda slskd)
+
+              {/* 22 Bars */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                height: '80px',
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: '4px',
+              }}>
+                {renderSpectrumBars(inspectingTrack.cutoffHz)}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748b', marginTop: '4px', fontFamily: 'monospace' }}>
+                <span>100Hz</span>
+                <span>8kHz</span>
+                <span>16kHz</span>
+                <span style={{ color: '#15803d', fontWeight: 700 }}>20kHz (Cutoff Studio)</span>
+                <span>22kHz</span>
               </div>
             </div>
-          </div>
+          )}
 
-        </div>
+          {/* REAL CODA CARD (Real Drops Downloader Queue) */}
+          <section className="download-queue-card" style={{ marginTop: '20px' }}>
+            <div className="dl-queue-header-clean">
+              <span className="eyebrow">
+                CODA &amp; BRANI IN CORSO ({queue.length})
+              </span>
+              <div className="dl-queue-header-actions">
+                <span className="dl-count">{queue.filter((t) => t.status !== 'completed').length} attivi</span>
+              </div>
+            </div>
+
+            <div className="dl-queue-list-clean">
+              {queue.map((job) => {
+                const isReady = job.status === 'completed' || job.status === 'downsized'
+                const isFailed = job.status === 'failed'
+                const isInspecting = inspectingTrackId === job.id
+
+                return (
+                  <div
+                    key={job.id}
+                    className={`dl-queue-item-clean ${isReady ? 'ready' : isFailed ? 'failed' : ''}`}
+                    onClick={() => mode === 'dropsoul' && setInspectingTrackId(job.id)}
+                    style={{ cursor: mode === 'dropsoul' ? 'pointer' : 'default', background: isInspecting && mode === 'dropsoul' ? '#f0fdf4' : undefined }}
+                  >
+                    <div className="dl-queue-info">
+                      <span className="dl-queue-icon">{isFailed ? '⚠️' : isReady ? '✓' : '◷'}</span>
+                      <div className="dl-queue-text">
+                        <span className="dl-queue-title">{job.artist} - {job.title}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                          <span className="dl-queue-detail">
+                            {isReady ? 'Completato' : job.status === 'hunting' ? 'In caccia nel cloud (slskd)' : `Download in corso (${job.progress}%)`}
+                          </span>
+                          
+                          {/* DropSoul Badges inside Queue */}
+                          {mode === 'dropsoul' && (
+                            <>
+                              {job.soulStatus === 'FLAC_LOSSLESS' && (
+                                <span style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '8px', fontSize: '9.5px', fontWeight: 800 }}>
+                                  ● FLAC
+                                </span>
+                              )}
+                              {job.soulStatus === 'VERIFIED_320K' && (
+                                <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: '8px', fontSize: '9.5px', fontWeight: 800 }}>
+                                  ● VERIFIED 320k
+                                </span>
+                              )}
+                              {job.soulStatus === 'DOWNSIZED' && (
+                                <span style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '8px', fontSize: '9.5px', fontWeight: 800 }}>
+                                  ◑ DOWNSIZED ⏳
+                                </span>
+                              )}
+                              {job.soulStatus === 'HUNTING' && (
+                                <span style={{ background: '#faf5ff', color: '#7e22ce', border: '1px solid #e9d5ff', padding: '1px 6px', borderRadius: '8px', fontSize: '9.5px', fontWeight: 800 }}>
+                                  ○ HUNTING CLOUD
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {!isReady && !isFailed && (
+                      <div className="dl-progress-track">
+                        <div className="dl-progress-bar" style={{ width: `${job.progress}%` }} />
+                      </div>
+                    )}
+
+                    <span className="dl-queue-pct">{isReady ? '100%' : `${job.progress}%`}</span>
+
+                    {mode === 'dropsoul' && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setInspectingTrackId(job.id) }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#626862',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                        title="Ispeziona spettro FFT"
+                      >
+                        🔬
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        </main>
       </div>
 
-      {/* Modal Decision Gate */}
-      {showModal && (
+      {/* MODAL DECISION GATE (Drops White Design) */}
+      {showDecisionModal && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(0, 0, 0, 0.45)',
+          backdropFilter: 'blur(3px)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
@@ -450,20 +633,20 @@ export default function DropSoulLab() {
           padding: '20px',
         }}>
           <div style={{
-            background: '#161b17',
-            border: '1px solid #3b82f6',
-            borderRadius: '20px',
+            background: '#ffffff',
+            border: '1px solid #dce1dc',
+            borderRadius: '16px',
             maxWidth: '520px',
             width: '100%',
             padding: '24px',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.15)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
                 <span style={{
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  color: '#f59e0b',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  background: '#fffbeb',
+                  color: '#b45309',
+                  border: '1px solid #fde68a',
                   padding: '2px 8px',
                   borderRadius: '6px',
                   fontSize: '10px',
@@ -472,30 +655,29 @@ export default function DropSoulLab() {
                 }}>
                   ⚠️ Decision Gate — Release Not Immediate
                 </span>
-                <h3 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 700 }}>
-                  Traccia 04: Kerri Chandler - Atmospheric Beats
+                <h3 style={{ margin: '8px 0 4px', fontSize: '16px', fontWeight: 700, color: '#151815' }}>
+                  Kerri Chandler - Atmospheric Beats
                 </h3>
-                <p style={{ margin: 0, fontSize: '12px', color: '#8f9a90' }}>
+                <p style={{ margin: 0, fontSize: '12.5px', color: '#626862' }}>
                   Nessuna release verificata (&gt;20kHz) disponibile subito su Soulseek. Come vuoi procedere?
                 </p>
               </div>
               <button
-                onClick={() => setShowModal(false)}
-                style={{ background: 'transparent', border: 'none', color: '#8f9a90', cursor: 'pointer', fontSize: '16px' }}
+                type="button"
+                onClick={() => setShowDecisionModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#626862', cursor: 'pointer', fontSize: '16px' }}
               >
                 ✕
               </button>
             </div>
 
-            {/* Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '20px 0' }}>
-              
-              {/* Option 1: Downsizing */}
               <button
+                type="button"
                 onClick={() => handleDecision('downsize')}
                 style={{
-                  background: 'rgba(245, 158, 11, 0.05)',
-                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  background: '#fbfcfb',
+                  border: '1px solid #fde68a',
                   borderRadius: '12px',
                   padding: '12px 14px',
                   textAlign: 'left',
@@ -506,21 +688,21 @@ export default function DropSoulLab() {
               >
                 <span style={{ fontSize: '18px' }}>⚡</span>
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#b45309' }}>
                     Downsizing Provvisorio + Soul Hunt (Consigliato)
                   </div>
-                  <div style={{ fontSize: '11px', color: '#8f9a90', marginTop: '2px' }}>
-                    Scarica subito il WebRip da YouTube per ascoltare il set. Il worker cloud continua a cercare il FLAC per sostituirlo in automatico.
+                  <div style={{ fontSize: '11.5px', color: '#626862', marginTop: '2px' }}>
+                    Scarica subito il WebRip per la sessione. Il worker cloud cerca il FLAC per sostituirlo in automatico.
                   </div>
                 </div>
               </button>
 
-              {/* Option 2: Wait */}
               <button
+                type="button"
                 onClick={() => handleDecision('wait')}
                 style={{
-                  background: 'rgba(168, 85, 247, 0.05)',
-                  border: '1px solid rgba(168, 85, 247, 0.25)',
+                  background: '#fbfcfb',
+                  border: '1px solid #e9d5ff',
                   borderRadius: '12px',
                   padding: '12px 14px',
                   textAlign: 'left',
@@ -531,21 +713,21 @@ export default function DropSoulLab() {
               >
                 <span style={{ fontSize: '18px' }}>⏳</span>
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#7e22ce' }}>
                     Pure Quality: Aspetta nel Cloud
                   </div>
-                  <div style={{ fontSize: '11px', color: '#8f9a90', marginTop: '2px' }}>
-                    Nessun file a bassa risoluzione. Lo slot resta in attesa nel cloud e la traccia verrà scaricata solo quando il master vero è online.
+                  <div style={{ fontSize: '11.5px', color: '#626862', marginTop: '2px' }}>
+                    Nessun file a bassa risoluzione. La traccia verrà scaricata solo quando il master vero è online.
                   </div>
                 </div>
               </button>
 
-              {/* Option 3: Skip */}
               <button
+                type="button"
                 onClick={() => handleDecision('skip')}
                 style={{
-                  background: 'rgba(244, 63, 94, 0.05)',
-                  border: '1px solid rgba(244, 63, 94, 0.25)',
+                  background: '#fbfcfb',
+                  border: '1px solid #fecdd3',
                   borderRadius: '12px',
                   padding: '12px 14px',
                   textAlign: 'left',
@@ -556,29 +738,21 @@ export default function DropSoulLab() {
               >
                 <span style={{ fontSize: '18px' }}>⏭️</span>
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#f43f5e' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#be123c' }}>
                     Salta Traccia
                   </div>
-                  <div style={{ fontSize: '11px', color: '#8f9a90', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11.5px', color: '#626862', marginTop: '2px' }}>
                     Escludi questa traccia dal set senza cercarla nel cloud.
                   </div>
                 </div>
               </button>
-
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #293029' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#8f9a90', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={rememberSetChoice}
-                  onChange={(e) => setRememberSetChoice(e.target.checked)}
-                />
-                <span>Ricorda per tutto il set</span>
-              </label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '12px', borderTop: '1px solid #f2f4f1' }}>
               <button
-                onClick={() => setShowModal(false)}
-                style={{ background: 'transparent', border: 'none', color: '#8f9a90', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
+                type="button"
+                onClick={() => setShowDecisionModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#626862', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
               >
                 Chiudi
               </button>
@@ -589,3 +763,4 @@ export default function DropSoulLab() {
     </div>
   )
 }
+
