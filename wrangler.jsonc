@@ -12,7 +12,7 @@
   },
   "vars": {
     "API_ORIGIN": "https://mp3-ytb.onrender.com",
-    "PUBLIC_API_URL": "https://drops.giancarlocesarei.workers.dev"
+    "PUBLIC_API_URL": "https://drops.musicagent.workers.dev"
   },
   "ai": {
     "binding": "AI"

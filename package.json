@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "dev:theme": "./launch-dev.sh",
-    "build": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro check && cross-env ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "check": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro check",
+    "build": "cross-env ASTRO_TELEMETRY_DISABLED=1 astro build",
     "deploy": "npm run build && npx wrangler deploy",
     "test": "vitest run && node --test worker/index.test.mjs"
   },

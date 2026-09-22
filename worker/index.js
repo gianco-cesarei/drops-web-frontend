@@ -1,5 +1,5 @@
 const DEFAULT_API_ORIGIN = 'https://mp3-ytb.onrender.com'
-const WORKER_ORIGIN = 'https://drops.giancarlocesarei.workers.dev'
+const WORKER_ORIGIN = 'https://drops.musicagent.workers.dev'
 
 function apiOrigin(env) {
   const configured = String(env.API_ORIGIN || DEFAULT_API_ORIGIN).trim()

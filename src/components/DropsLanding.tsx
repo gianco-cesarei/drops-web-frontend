@@ -26,9 +26,57 @@ export default function DropsLanding() {
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [copiedCode, setCopiedCode] = useState(false)
+  const [demoStep, setDemoStep] = useState<1 | 2 | 3>(1)
+  const [demoPlaying, setDemoPlaying] = useState(true)
+  const [typedCommand, setTypedCommand] = useState('')
+  const [showOutput, setShowOutput] = useState(false)
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const cliCommand = 'curl -fsSL https://raw.githubusercontent.com/gianco-cesarei/drop-agent/main/install.sh | bash'
+
+  // Typewriter effect: types command character-by-character, presses ENTER, then reveals output
+  useEffect(() => {
+    let active = true
+    setTypedCommand('')
+    setShowOutput(false)
+
+    const stepCommands = {
+      1: 'curl -fsSL https://raw.github.../install.sh | bash',
+      2: 'drop-agent',
+      3: 'https://youtube.com/watch?v=NudeDimensions',
+    }
+
+    const fullCmd = stepCommands[demoStep]
+    let charIdx = 0
+
+    const typingTimer = setInterval(() => {
+      if (!active) return
+      if (charIdx < fullCmd.length) {
+        charIdx++
+        setTypedCommand(fullCmd.slice(0, charIdx))
+      } else {
+        clearInterval(typingTimer)
+        // Simulate pressing Enter: short pause then reveal output
+        setTimeout(() => {
+          if (!active) return
+          setShowOutput(true)
+
+          // Keep output visible, then auto-advance to next step if playing
+          if (demoPlaying) {
+            setTimeout(() => {
+              if (!active) return
+              setDemoStep((prev) => (prev === 1 ? 2 : prev === 2 ? 3 : 1))
+            }, 4200)
+          }
+        }, 360)
+      }
+    }, 28)
+
+    return () => {
+      active = false
+      clearInterval(typingTimer)
+    }
+  }, [demoStep, demoPlaying])
 
   useEffect(() => {
     let active = true
@@ -254,6 +302,227 @@ export default function DropsLanding() {
             <span className="spec-tag">Rekordbox &amp; Traktor Export</span>
           </div>
         </div>
+
+        {/* WALKTHROUGH SECTION: MINIMAL PARAGRAPH & WHITE TERMINAL DEMO */}
+        <section className="agent-walkthrough-container">
+          <div className="agent-walkthrough-grid">
+            {/* LEFT / MOBILE-TOP: MINIMAL EXPLANATION & STEPS */}
+            <div className="agent-walkthrough-text">
+              <div className="walkthrough-eyebrow">
+                <span className="live-dot" /> GUIDA RAPIDA TERMINALE
+              </div>
+              <h3 className="agent-walkthrough-title">Come funziona l&apos;agente in 3 passaggi</h3>
+              <p className="agent-walkthrough-subtitle">
+                Nessuna configurazione complessa. Drop Agent viene eseguito in background nel terminale del tuo Mac o Linux per scaricare, analizzare e preparare le tue tracce per la consolle.
+              </p>
+
+              <div className="agent-steps-list">
+                <div
+                  className={`agent-step-item ${demoStep === 1 ? 'is-active' : ''}`}
+                  onClick={() => { setDemoStep(1); setDemoPlaying(false) }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="agent-step-num">1</div>
+                  <div className="agent-step-content">
+                    <div className="step-content-header">
+                      <h4>Installa con un comando</h4>
+                      <span className="step-badge-mini">30 sec</span>
+                    </div>
+                    <p>Incolla il comando nel terminale del tuo computer. Configura automaticamente l&apos;ambiente Python, FFmpeg e tutte le librerie audio in pochi secondi.</p>
+                  </div>
+                </div>
+
+                <div
+                  className={`agent-step-item ${demoStep === 2 ? 'is-active' : ''}`}
+                  onClick={() => { setDemoStep(2); setDemoPlaying(false) }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="agent-step-num">2</div>
+                  <div className="agent-step-content">
+                    <div className="step-content-header">
+                      <h4>Digita <code className="inline-code-badge">drop-agent</code></h4>
+                      <span className="step-badge-mini">Avvio rapido</span>
+                    </div>
+                    <p>Avvia l&apos;agente autonomo. Si apre subito il selettore interattivo con le opzioni di download da link, scansione cartelle e chat con <em>The Vinyl Head</em>.</p>
+                  </div>
+                </div>
+
+                <div
+                  className={`agent-step-item ${demoStep === 3 ? 'is-active' : ''}`}
+                  onClick={() => { setDemoStep(3); setDemoPlaying(false) }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="agent-step-num">3</div>
+                  <div className="agent-step-content">
+                    <div className="step-content-header">
+                      <h4>Incolla il link o parla con l&apos;AI</h4>
+                      <span className="step-badge-mini">CDJ Ready</span>
+                    </div>
+                    <p>Incolla qualsiasi set o playlist da YouTube, Spotify o SoundCloud: scarica a 320k reali, calcola tonalità Camelot, BPM, copertina HD e genera i file Rekordbox XML pronti per la tua chiavetta USB.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="agent-tips-note">
+                <span>💡 Compatibile con macOS (Terminale nativo, iTerm, Warp) e Linux. Nessuna conoscenza tecnica richiesta.</span>
+              </div>
+            </div>
+
+            {/* RIGHT / MOBILE-BOTTOM: WHITE TERMINAL PREVIEW (SIMULATED GIF) */}
+            <div className="agent-white-terminal-wrapper">
+              <div className="white-terminal-window">
+                <div className="white-terminal-topbar">
+                  <div className="mac-window-buttons">
+                    <span className="mac-btn mac-close" />
+                    <span className="mac-btn mac-minimize" />
+                    <span className="mac-btn mac-zoom" />
+                  </div>
+                  <div className="white-terminal-title">
+                    iltuo@macbook: ~ &mdash; zsh &mdash; 80&times;24
+                  </div>
+                  <button
+                    type="button"
+                    className="terminal-anim-toggle"
+                    onClick={() => setDemoPlaying(!demoPlaying)}
+                  >
+                    {demoPlaying ? '⏸ Live Demo' : '▶ Riproduci'}
+                  </button>
+                </div>
+
+                <div className="white-terminal-body">
+                  {demoStep === 1 && (
+                    <div className="term-scene-frame">
+                      <div className="term-row">
+                        <span className="term-user-prompt">iltuo@macbook ~ %</span>{' '}
+                        <span className="term-typed-cmd">{typedCommand}</span>
+                        {!showOutput && <span className="term-caret">&#9646;</span>}
+                      </div>
+                      {showOutput && (
+                        <>
+                          <div className="term-gap" />
+                          <div className="term-log-dim">[1/4] Checking System Environment...</div>
+                          <div className="term-log-success">&#10003; Python 3 available: Python 3.12.3</div>
+                          <div className="term-log-success">&#10003; FFmpeg audio converter ready</div>
+                          <div className="term-gap-sm" />
+                          <div className="term-log-dim">[2/4] Fetching Drop Agent...</div>
+                          <div className="term-log-text">&#8594; Cloning into ~/.drop-agent...</div>
+                          <div className="term-gap-sm" />
+                          <div className="term-log-dim">[3/4] Installing Audio &amp; Metadata Packages...</div>
+                          <div className="term-log-success">&#10003; yt-dlp, mutagen, Pillow, numpy installed</div>
+                          <div className="term-log-success">&#10003; Audio library vault: ~/Music/Drops</div>
+                          <div className="term-gap-sm" />
+                          <div className="term-log-accent">&#10003; Drop Agent installato con successo!</div>
+                          <div className="term-row term-cursor-row">
+                            <span className="term-user-prompt">iltuo@macbook ~ %</span>{' '}
+                            <span className="term-caret">&#9646;</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {demoStep === 2 && (
+                    <div className="term-scene-frame">
+                      <div className="term-row">
+                        <span className="term-user-prompt">iltuo@macbook ~ %</span>{' '}
+                        <span className="term-typed-cmd term-bold-cmd">{typedCommand}</span>
+                        {!showOutput && <span className="term-caret">&#9646;</span>}
+                      </div>
+                      {showOutput && (
+                        <>
+                          <div className="term-banner-ascii">
+                            =================================================================<br />
+                            &#x1F4A7; DROP AGENT &mdash; AUTONOMOUS SELECTOR &amp; CURATION BOT &#x1F4A7;<br />
+                            =================================================================
+                          </div>
+                          <div className="term-menu-list">
+                            <div className="term-menu-row"><span className="term-menu-key">[1]</span> INGEST WEB LINK &nbsp;&nbsp;&rarr; Spotify / YouTube (320k + Camelot + CUE)</div>
+                            <div className="term-menu-row"><span className="term-menu-key">[2]</span> AUDIT LOCAL FOLDER&nbsp;&rarr; Tag Camelot Key, BPM e Rekordbox XML</div>
+                            <div className="term-menu-row"><span className="term-menu-key">[3]</span> VAULT METRICS &nbsp;&nbsp;&nbsp;&rarr; Ore totali e statistiche libreria</div>
+                            <div className="term-menu-row"><span className="term-menu-key">[4]</span> CHAT (AI CURATOR) &nbsp;&rarr; Parla con <em>The Vinyl Head</em> (Gemini)</div>
+                          </div>
+                          <div className="term-gap-sm" />
+                          <div className="term-row">
+                            <span className="term-selector-prompt">&#x1F449; SELECT [1/2/3/4] (default 1):</span>{' '}
+                            <span className="term-active-input">1</span>
+                          </div>
+                          <div className="term-row term-cursor-row">
+                            <span className="term-selector-prompt">&#x1F517; PASTE URL:</span>{' '}
+                            <span className="term-caret">&#9646;</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {demoStep === 3 && (
+                    <div className="term-scene-frame">
+                      <div className="term-row">
+                        <span className="term-selector-prompt">&#x1F517; PASTE URL:</span>{' '}
+                        <span className="term-typed-cmd">{typedCommand}</span>
+                        {!showOutput && <span className="term-caret">&#9646;</span>}
+                      </div>
+                      {showOutput && (
+                        <>
+                          <div className="term-row">
+                            <span className="term-selector-prompt">&#x1F3F7;&#xFE0F; GENRE:</span>{' '}
+                            <span className="term-typed-cmd">Deep House</span>
+                          </div>
+                          <div className="term-gap-sm" />
+                          <div className="term-tag-info">&#x1F50E; Extracting tracklist &amp; downloading HQ audio...</div>
+                          <div className="term-log-text">&#x1F4BF; 01. Naked Music &mdash; It&apos;s The Music [320 kbps MP3]</div>
+                          <div className="term-log-success">&#10003; Camelot: <strong>8A</strong> (A minor) &bull; BPM: <strong>124.0</strong></div>
+                          <div className="term-log-success">&#10003; Artwork: 1400x1400 JPEG embedded (ID3v2.4 APIC)</div>
+                          <div className="term-log-text">&#x1F4BF; 02. Miguel Migs &mdash; The Night [320 kbps MP3]</div>
+                          <div className="term-log-success">&#10003; Camelot: <strong>9A</strong> (E minor) &bull; BPM: <strong>124.5</strong></div>
+                          <div className="term-gap-sm" />
+                          <div className="term-highlight-callout">
+                            &#x1F4DC; <strong>Rekordbox XML &amp; Traktor NML pronti in ~/Music/Drops/</strong><br />
+                            &#x2728; Esportazione diretta su chiavetta USB Pioneer CDJ completata.
+                          </div>
+                          <div className="term-row term-cursor-row">
+                            <span className="term-user-prompt">iltuo@macbook ~ %</span>{' '}
+                            <span className="term-caret">&#9646;</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="white-terminal-statusbar">
+                  <div className="status-steps-pills">
+                    <button
+                      type="button"
+                      className={`status-pill ${demoStep === 1 ? 'is-pill-active' : ''}`}
+                      onClick={() => { setDemoStep(1); setDemoPlaying(false) }}
+                    >
+                      Step 1: Installa
+                    </button>
+                    <button
+                      type="button"
+                      className={`status-pill ${demoStep === 2 ? 'is-pill-active' : ''}`}
+                      onClick={() => { setDemoStep(2); setDemoPlaying(false) }}
+                    >
+                      Step 2: Avvia
+                    </button>
+                    <button
+                      type="button"
+                      className={`status-pill ${demoStep === 3 ? 'is-pill-active' : ''}`}
+                      onClick={() => { setDemoStep(3); setDemoPlaying(false) }}
+                    >
+                      Step 3: Risultato
+                    </button>
+                  </div>
+                  <span className="status-loop-badge">&#x21BB; Animated Demo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* 3 OUTCOME-FOCUSED BOXES: WHAT YOU CAN ACTUALLY DO (100% ENGLISH) */}
         <div className="modalities-grid" id="features">

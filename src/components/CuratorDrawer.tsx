@@ -140,7 +140,7 @@ export default function CuratorDrawer() {
           ])
 
           try {
-            const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://drops.giancarlocesarei.workers.dev'
+            const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://drops.musicagent.workers.dev'
             const urlObj = href.startsWith('http') ? new URL(href) : new URL(href, baseOrigin)
             const isDirectResolver = urlObj.pathname.includes('/curator/listen')
             const isDirectYtWatch = (urlObj.hostname.includes('youtube.com') && urlObj.pathname.includes('/watch')) || urlObj.hostname.includes('youtu.be')

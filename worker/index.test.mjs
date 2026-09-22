@@ -10,7 +10,7 @@ test('serves non-API requests from Worker Static Assets', async () => {
   const originalFetch = globalThis.fetch
   globalThis.fetch = async () => { throw new Error('asset route must not call upstream') }
   try {
-    const response = await worker.fetch(new Request('https://drops.giancarlocesarei.workers.dev/'), env())
+    const response = await worker.fetch(new Request('https://drops.musicagent.workers.dev/'), env())
     assert.equal(await response.text(), 'asset-body')
   } finally {
     globalThis.fetch = originalFetch
@@ -26,15 +26,15 @@ test('proxies API method, query, body, Origin and streaming response unchanged',
     return new Response(stream, { status: 201, headers: { 'content-type': 'text/plain', 'set-cookie': 'drops_session=abc; HttpOnly; Secure' } })
   }
   try {
-    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/downloads?next=%2Fitem', {
+    const request = new Request('https://drops.musicagent.workers.dev/api/v1/downloads?next=%2Fitem', {
       method: 'POST',
-      headers: { Origin: 'https://drops.giancarlocesarei.workers.dev', 'content-type': 'application/json' },
+      headers: { Origin: 'https://drops.musicagent.workers.dev', 'content-type': 'application/json' },
       body: JSON.stringify({ url: 'https://youtu.be/example' }),
     })
     const response = await worker.fetch(request, env())
     assert.equal(captured.url, 'https://mp3-ytb.onrender.com/api/v1/downloads?next=%2Fitem')
     assert.equal(captured.method, 'POST')
-    assert.equal(captured.headers.get('origin'), 'https://drops.giancarlocesarei.workers.dev')
+    assert.equal(captured.headers.get('origin'), 'https://drops.musicagent.workers.dev')
     assert.deepEqual(await captured.json(), { url: 'https://youtu.be/example' })
     assert.equal(response.status, 201)
     assert.equal(response.headers.get('set-cookie'), 'drops_session=abc; HttpOnly; Secure')
@@ -49,7 +49,7 @@ test('does not create an open proxy', async () => {
   let called = false
   globalThis.fetch = async () => { called = true; return new Response('unexpected') }
   try {
-    const response = await worker.fetch(new Request('https://drops.giancarlocesarei.workers.dev/?url=https://attacker.example'), env())
+    const response = await worker.fetch(new Request('https://drops.musicagent.workers.dev/?url=https://attacker.example'), env())
     assert.equal(await response.text(), 'asset-body')
     assert.equal(called, false)
   } finally {
@@ -101,7 +101,7 @@ test('handles /api/v1/curator/chat using Workers AI with streaming SSE', async (
     },
   }
 
-  const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/chat?stream=true', {
+  const request = new Request('https://drops.musicagent.workers.dev/api/v1/curator/chat?stream=true', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'Inizia la sessione' }] }),
@@ -126,7 +126,7 @@ test('handles /api/v1/curator/chat using Workers AI without streaming (JSON)', a
     },
   }
 
-  const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/chat', {
+  const request = new Request('https://drops.musicagent.workers.dev/api/v1/curator/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'Dammi le release' }] }),
@@ -150,7 +150,7 @@ test('falls back to upstream proxy for curator chat when no edge AI is available
   }
 
   try {
-    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/chat', {
+    const request = new Request('https://drops.musicagent.workers.dev/api/v1/curator/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: [{ role: 'user', content: 'test' }] }),
@@ -173,7 +173,7 @@ test('handles /api/v1/curator/listen and redirects directly to YouTube track', a
     return new Response('not found', { status: 404 })
   }
   try {
-    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/listen?q=Skee+Mask+Routine')
+    const request = new Request('https://drops.musicagent.workers.dev/api/v1/curator/listen?q=Skee+Mask+Routine')
     const response = await worker.fetch(request, env())
     assert.equal(response.status, 302)
     assert.equal(response.headers.get('location'), 'https://www.youtube.com/watch?v=D5LkLmxcgIQ')
@@ -191,7 +191,7 @@ test('handles /api/v1/curator/listen with soundcloud platform and redirects to t
     return new Response('not found', { status: 404 })
   }
   try {
-    const request = new Request('https://drops.giancarlocesarei.workers.dev/api/v1/curator/listen?q=So+Inagawa+Logo+Queen&platform=soundcloud')
+    const request = new Request('https://drops.musicagent.workers.dev/api/v1/curator/listen?q=So+Inagawa+Logo+Queen&platform=soundcloud')
     const response = await worker.fetch(request, env())
     assert.equal(response.status, 302)
     assert.equal(response.headers.get('location'), 'https://soundcloud.com/max-wiebenga/so-inagawa-logo-queen')

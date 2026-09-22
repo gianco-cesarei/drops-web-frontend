@@ -90,7 +90,15 @@ export function resolveApiUrl(configuredValue: string | undefined, localMode: bo
   throw new ApiError(0, 'Configurazione API mancante. Contatta il supporto.')
 }
 
-const apiUrl = () => resolveApiUrl(import.meta.env.PUBLIC_API_URL, import.meta.env.DEV || import.meta.env.MODE === 'test')
+const apiUrl = () => {
+  if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+    return resolveApiUrl(import.meta.env.PUBLIC_API_URL, true)
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin
+  }
+  return resolveApiUrl(import.meta.env.PUBLIC_API_URL, false)
+}
 
 const errorMessage = (status: number, payload: unknown, context: RequestContext) => {
   if (status === 401 && context === 'login') return 'Credenziali non valide.'
