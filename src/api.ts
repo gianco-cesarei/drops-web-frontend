@@ -23,6 +23,10 @@ export type Job = {
   bpm?: number
   source?: string
   url?: string
+  cutoffHz?: number
+  verdict?: string
+  soulStatus?: string
+  spectrumBars?: number[]
 }
 
 export type SpotifyTrack = {
@@ -191,6 +195,10 @@ export const normalizeJob = (payload: unknown): Job => {
     bpm: typeof raw.bpm === 'number' ? raw.bpm : undefined,
     source: typeof raw.source === 'string' && raw.source.trim() ? raw.source.trim() : undefined,
     url: typeof raw.source_url === 'string' ? raw.source_url : typeof raw.url === 'string' ? raw.url : undefined,
+    cutoffHz: typeof raw.cutoff_hz === 'number' ? raw.cutoff_hz : typeof raw.cutoff_frequency_hz === 'number' ? raw.cutoff_frequency_hz : undefined,
+    verdict: typeof raw.verdict === 'string' ? raw.verdict : undefined,
+    soulStatus: typeof raw.soul_status === 'string' ? raw.soul_status : undefined,
+    spectrumBars: Array.isArray(raw.spectrum_bars) ? raw.spectrum_bars : undefined,
   }
 }
 
@@ -265,6 +273,15 @@ export const api = {
     request<any>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
   deleteFolder: (id: string) =>
     request<void>(`/api/v1/folders/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  dropsoulDecision: (jobId: string, decision: 'downsize' | 'wait' | 'skip') =>
+    request<{ ok: boolean; job: any }>('/api/v1/dropsoul/decision', {
+      method: 'POST',
+      body: JSON.stringify({ job_id: jobId, decision }),
+    }),
+  dropsoulStatus: () =>
+    request<{ slskd_online: boolean; worker_active: boolean; fft_verifier_ready: boolean; hq_threshold_hz: number }>(
+      '/api/v1/dropsoul/status'
+    ),
   chatCurator: (messages: CuratorMessage[]) =>
     request<CuratorResponse>('/api/v1/curator/chat', {
       method: 'POST',
