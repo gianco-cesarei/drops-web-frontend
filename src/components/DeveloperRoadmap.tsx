@@ -124,6 +124,35 @@ const DEFAULT_SECTIONS: Section[] = [
           },
         ],
       },
+      {
+        id: '1.5',
+        title: 'DropSoul Hi-Fi Engine & Quality Gate Spettrale (>20kHz)',
+        benefit:
+          "Acquisisci release audiophile e vinili rari via Soulseek P2P (slskd), smaschera i falsi 320k tramite FFT frequency cutoff (>20 kHz) e gestisci la coda cloud con Decision Gate (Downsizing, Aspetta, Salta).",
+        status: 'completed',
+        subtasks: [
+          {
+            title: 'Analizzatore spettrale FFT e rilevamento cutoff >20kHz (quality_verifier.py)',
+            tags: ['back'],
+          },
+          {
+            title: 'Client REST per Soulseek P2P e demone slskd (soulseek_client.py)',
+            tags: ['back'],
+          },
+          {
+            title: 'Orchestratore Decision Gate interattivo: Downsizing vs Aspetta vs Salta (engine.py)',
+            tags: ['back'],
+          },
+          {
+            title: 'Queue Manager cloud 24/7 per download asincrono a PC spento (queue_manager.py)',
+            tags: ['back'],
+          },
+          {
+            title: 'DropSoul Lab Playground frontend e route di staging /dropsoul-lab',
+            tags: ['front'],
+          },
+        ],
+      },
     ],
   },
   {
@@ -570,7 +599,7 @@ const DEFAULT_SECTIONS: Section[] = [
   },
 ]
 
-const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v12'
+const LOCAL_STORAGE_KEY = 'drops.developer.roadmap.v13'
 
 // --- COMPONENTE VISTA CONSOLE DEDICATA DROP AGENT ---
 function DropAgentConsoleView({ onClose }: { onClose: () => void }) {

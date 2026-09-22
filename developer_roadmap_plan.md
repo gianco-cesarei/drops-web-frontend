@@ -79,6 +79,19 @@ L'obiettivo è creare una pagina di pianificazione interattiva per lo sviluppo d
    * *d) Modalità Autonomous Digging ("Portami 10 perle Minimal in 8A a 124 BPM")* `[back]`
      * **Stato:** Ingestion mirata per parametri armonici e stilistici.
 
+5. **Task 1.5: DropSoul Hi-Fi Engine & Quality Gate Spettrale (>20kHz) [COMPLETATO]**
+   * *Miglioramento Utente:* Acquisisci release audiophile e vinili rari via Soulseek P2P (slskd), smaschera i falsi 320k tramite FFT frequency cutoff (>20 kHz) e gestisci la coda cloud con Decision Gate (Downsizing, Aspetta, Salta).
+   * *a) Analizzatore spettrale FFT e rilevamento cutoff >20kHz (quality_verifier.py)* `[back]`
+     * **Stato:** Modulo FFT con calcolo spettrogramma e soglia dinamica a 19.5-20.0 kHz per smascherare transcode 128k upscalati a 320k.
+   * *b) Client REST per Soulseek P2P e demone slskd (soulseek_client.py)* `[back]`
+     * **Stato:** Client asincrono per ricerca, download e ranking flac/320k da peer Soulseek.
+   * *c) Orchestratore Decision Gate interattivo: Downsizing vs Aspetta vs Salta (engine.py)* `[back]`
+     * **Stato:** Workflow con gate selettivo: download WebRip provvisorio con hunt in background o attesa del 320k autentico.
+   * *d) Queue Manager cloud 24/7 per download asincrono a PC spento (queue_manager.py)* `[back]`
+     * **Stato:** Persistenza su SQLite/JSON locale e Supabase per hunt continui via `dropsoul_worker.py`.
+   * *e) DropSoul Lab Playground frontend e route di staging /dropsoul-lab* `[front]`
+     * **Stato:** Nuova route `/dropsoul-lab` con componente interattivo `DropSoulLab.tsx`, simulatore Decision Gate, visualizzatore spettrale a 22 barre e switch Drops/DropSoul.
+
 ---
 
 ### Sezione 2: Downloader Singolo & Tracce Esclusive (YT/SC)
